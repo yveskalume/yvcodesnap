@@ -3,15 +3,22 @@ import { CODE_THEMES, type CodeThemeId } from '../types';
 
 let highlighterReady = false;
 
+function normalizeThemeId(theme: unknown): CodeThemeId {
+  if (typeof theme !== 'string') return 'dracula';
+  const found = CODE_THEMES.some((t) => t.id === theme);
+  return (found ? theme : 'dracula') as CodeThemeId;
+}
+
 export async function highlightCode(
   code: string,
   language: string,
   theme: CodeThemeId
 ): Promise<string> {
   try {
+    const safeTheme = normalizeThemeId(theme);
     const html = await codeToHtml(code, {
       lang: language as BundledLanguage,
-      theme: theme as BundledTheme,
+      theme: safeTheme as BundledTheme,
     });
     highlighterReady = true;
     return html;
@@ -36,9 +43,10 @@ export async function tokenizeCode(
   theme: CodeThemeId
 ): Promise<LineTokens[]> {
   try {
+    const safeTheme = normalizeThemeId(theme);
     const result = await codeToTokens(code, {
       lang: language as BundledLanguage,
-      theme: theme as BundledTheme,
+      theme: safeTheme as BundledTheme,
     });
     highlighterReady = true;
     return result.tokens.map(line => ({
@@ -56,12 +64,12 @@ export async function tokenizeCode(
   }
 }
 
-export function getThemeBackground(themeId: CodeThemeId): string {
+export function getThemeBackground(themeId: string): string {
   const theme = CODE_THEMES.find(t => t.id === themeId);
   return theme?.bg || '#1e1e2e';
 }
 
-export function isLightTheme(themeId: CodeThemeId): boolean {
+export function isLightTheme(themeId: string): boolean {
   const lightThemes = ['github-light', 'vitesse-light', 'min-light', 'solarized-light', 'light-plus'];
   return lightThemes.includes(themeId);
 }

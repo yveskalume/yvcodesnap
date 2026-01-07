@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { Group, Rect, Text, Transformer } from 'react-konva';
+import { Html } from 'react-konva-utils';
 import type Konva from 'konva';
 import type { CodeElement } from '../../types';
 import { tokenizeCode, getThemeBackground, isLightTheme, type LineTokens } from '../../utils/highlighter';
@@ -91,21 +91,17 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
       const stage = group.getStage();
       if (!stage) return;
 
-      const stageBox = stage.container().getBoundingClientRect();
       const scale = stage.scaleX();
       
       // Calculate absolute position accounting for stage position and scale
       const textColor = isLightTheme(props.theme) ? '#1f1f1f' : '#e5e5e5';
       const lineNumberWidth = props.lineNumbers ? 55 : 0;
-      
-      // Get group's position relative to stage
-      const absolutePos = group.getAbsolutePosition();
 
-      // Set textarea style first
+      // Set textarea style - position relative to the Html container
       setTextareaStyle({
-        position: 'fixed',
-        left: stageBox.left + absolutePos.x + (props.padding + lineNumberWidth) * scale,
-        top: stageBox.top + absolutePos.y + props.padding * scale,
+        position: 'absolute',
+        left: (props.padding + lineNumberWidth) * scale,
+        top: props.padding * scale,
         width: (width - props.padding * 2 - lineNumberWidth) * scale,
         height: (height - props.padding * 2) * scale,
         fontSize: props.fontSize * scale,
@@ -122,7 +118,6 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
         whiteSpace: 'pre',
         zIndex: 1000,
         transformOrigin: 'top left',
-        transform: `rotate(${rotation}deg)`,
         tabSize: 2,
         caretColor: textColor,
       });
@@ -131,7 +126,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
       setIsEditing(true);
       setEditValue(props.code);
     }
-  }, [element.locked, props, width, height, rotation]);
+  }, [element.locked, props, width, height]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Handle Tab for indentation
@@ -390,6 +385,26 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
         >
           {!isEditing && renderCode()}
         </Group>
+
+        {/* Inline code editor */}
+        {isEditing && (
+          <Html
+            divProps={{ style: { pointerEvents: 'auto' } }}
+          >
+            <textarea
+              ref={textareaRef}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleSaveEdit}
+              style={textareaStyle}
+              spellCheck={false}
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+            />
+          </Html>
+        )}
       </Group>
       
       {isSelected && !isEditing && (
@@ -403,23 +418,6 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
             return newBox;
           }}
         />
-      )}
-
-      {/* Inline code editor */}
-      {isEditing && createPortal(
-        <textarea
-          ref={textareaRef}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={handleSaveEdit}
-          style={textareaStyle}
-          spellCheck={false}
-          autoCapitalize="off"
-          autoComplete="off"
-          autoCorrect="off"
-        />,
-        document.body
       )}
     </>
   );

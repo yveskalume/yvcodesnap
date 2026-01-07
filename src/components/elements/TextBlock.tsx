@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Group, Rect, Text, Transformer } from 'react-konva';
+import { Html } from 'react-konva-utils';
 import type Konva from 'konva';
 import type { TextElement } from '../../types';
 
@@ -14,7 +15,11 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
   const groupRef = useRef<Konva.Group>(null);
   const textRef = useRef<Konva.Text>(null);
   const trRef = useRef<Konva.Transformer>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [textDimensions, setTextDimensions] = useState({ width: 200, height: 30 });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(element.props.text);
+  const [textareaStyle, setTextareaStyle] = useState<React.CSSProperties>({ display: 'none' });
   const { x, y, rotation, props } = element;
 
   useEffect(() => {
@@ -32,6 +37,19 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
       });
     }
   }, [props.text, props.fontSize, props.fontFamily, props.bold, props.italic]);
+
+  // Sync editValue when text changes externally
+  useEffect(() => {
+    setEditValue(props.text);
+  }, [props.text]);
+
+  // Focus textarea when editing starts
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, [isEditing]);
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     onChange({
@@ -54,6 +72,74 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
     });
   };
 
+  const handleSaveEdit = useCallback(() => {
+    setIsEditing(false);
+    setTextareaStyle({ display: 'none' });
+    onChange({
+      props: { ...props, text: editValue },
+    });
+  }, [editValue, onChange, props]);
+
+  // Close editing when deselecting
+  useEffect(() => {
+    if (!isSelected && isEditing) {
+      handleSaveEdit();
+    }
+  }, [isSelected, isEditing, handleSaveEdit]);
+
+  const handleDoubleClick = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    e.cancelBubble = true;
+    onSelect();
+
+    if (element.locked || !groupRef.current) return;
+    const group = groupRef.current;
+    const stage = group.getStage();
+    if (!stage) return;
+
+    const scale = stage.scaleX();
+
+    setTextareaStyle({
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      width: Math.max(40, textDimensions.width) * scale,
+      height: Math.max(24, textDimensions.height) * scale,
+      fontSize: props.fontSize * scale,
+      fontFamily: props.fontFamily,
+      fontWeight: props.bold ? 'bold' : 'normal',
+      fontStyle: props.italic ? 'italic' : 'normal',
+      lineHeight: '1.2',
+      background: 'transparent',
+      color: props.color,
+      border: 'none',
+      outline: 'none',
+      padding: '0',
+      margin: '0',
+      resize: 'none',
+      overflow: 'hidden',
+      whiteSpace: 'pre',
+      textAlign: props.align,
+      zIndex: 1000,
+      transformOrigin: 'top left',
+      caretColor: props.color,
+    });
+
+    setIsEditing(true);
+    setEditValue(props.text);
+  }, [element.locked, onSelect, props, textDimensions.height, textDimensions.width]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      handleSaveEdit();
+    }
+
+    if ((e.key === 'Enter' && (e.metaKey || e.ctrlKey))) {
+      e.preventDefault();
+      handleSaveEdit();
+    }
+  }, [handleSaveEdit]);
+
   const totalWidth = textDimensions.width + props.padding * 2;
   const totalHeight = textDimensions.height + props.padding * 2;
 
@@ -69,9 +155,11 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
         x={x}
         y={y}
         rotation={rotation}
-        draggable={!element.locked}
+        draggable={!element.locked && !isEditing}
         onClick={onSelect}
         onTap={onSelect}
+        onDblClick={handleDoubleClick}
+        onDblTap={handleDoubleClick}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >
@@ -97,10 +185,31 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
           fill={props.color}
           align={props.align}
           textDecoration={props.underline ? 'underline' : ''}
+          visible={!isEditing}
         />
+
+        {/* Inline text editor */}
+        {isEditing && (
+          <Html
+            divProps={{ style: { pointerEvents: 'auto' } }}
+          >
+            <textarea
+              ref={textareaRef}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleSaveEdit}
+              style={textareaStyle}
+              spellCheck={false}
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+            />
+          </Html>
+        )}
       </Group>
       
-      {isSelected && (
+      {isSelected && !isEditing && (
         <Transformer
           ref={trRef}
           flipEnabled={false}

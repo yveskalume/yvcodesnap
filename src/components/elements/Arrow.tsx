@@ -89,6 +89,25 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
   const start = points[0];
   const end = points[points.length - 1];
 
+  const hasValidEndpoints =
+    !!start &&
+    !!end &&
+    Number.isFinite(start.x) &&
+    Number.isFinite(start.y) &&
+    Number.isFinite(end.x) &&
+    Number.isFinite(end.y);
+
+  const dx = hasValidEndpoints ? end.x - start.x : 0;
+  const dy = hasValidEndpoints ? end.y - start.y : 0;
+  const isDegenerate = !hasValidEndpoints || Math.hypot(dx, dy) < 0.5;
+
+  // Konva can throw when drawing shadows for 0x0 bounds (e.g. when start/end overlap).
+  // Use a tiny, non-zero end point for rendering only.
+  const renderStart = hasValidEndpoints ? start : { x: 0, y: 0 };
+  const renderEnd = hasValidEndpoints
+    ? (isDegenerate ? { x: start.x + 1, y: start.y + 1 } : end)
+    : { x: 1, y: 1 };
+
   // Get control points (either from props or auto-generate for curved)
   const controlPoints = useMemo(() => {
     if (props.style === 'curved') {
@@ -96,25 +115,25 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
         return props.controlPoints;
       }
       // Auto-generate a control point
-      const midX = (start.x + end.x) / 2;
-      const midY = (start.y + end.y) / 2;
-      const dx = end.x - start.x;
-      const dy = end.y - start.y;
+      const midX = (renderStart.x + renderEnd.x) / 2;
+      const midY = (renderStart.y + renderEnd.y) / 2;
+      const dx = renderEnd.x - renderStart.x;
+      const dy = renderEnd.y - renderStart.y;
       return [{
         x: midX - dy * 0.3,
         y: midY + dx * 0.3,
       }];
     }
     return [];
-  }, [props.style, props.controlPoints, start, end]);
+  }, [props.style, props.controlPoints, renderStart.x, renderStart.y, renderEnd.x, renderEnd.y]);
 
   // Calculate points for rendering
   const flatPoints = useMemo(() => {
     if (props.style === 'curved') {
-      return getBezierPoints(start, end, controlPoints);
+      return getBezierPoints(renderStart, renderEnd, controlPoints);
     }
     return points.flatMap(p => [p.x, p.y]);
-  }, [props.style, points, start, end, controlPoints]);
+  }, [props.style, points, renderStart, renderEnd, controlPoints]);
 
   const handlePointDrag = (index: number, e: Konva.KonvaEventObject<DragEvent>) => {
     const newPoints = [...points];
@@ -141,13 +160,27 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
   // Calculate label position
   const labelPosition = props.labelPosition ?? 0.5;
   const labelPoint = props.style === 'curved'
-    ? getPointOnBezier(start, end, controlPoints, labelPosition)
-    : { x: start.x + (end.x - start.x) * labelPosition, y: start.y + (end.y - start.y) * labelPosition };
+    ? getPointOnBezier(renderStart, renderEnd, controlPoints, labelPosition)
+    : { x: renderStart.x + (renderEnd.x - renderStart.x) * labelPosition, y: renderStart.y + (renderEnd.y - renderStart.y) * labelPosition };
 
   return (
     <Group>
+      {/* If endpoints overlap/invalid, render a small dot instead of a shadowed arrow to avoid Konva draw crashes. */}
+      {isDegenerate && (
+        <Circle
+          x={renderStart.x}
+          y={renderStart.y}
+          radius={Math.max(6, props.thickness * 2)}
+          fill={props.color}
+          opacity={0.8}
+          onClick={onSelect}
+          onTap={onSelect}
+          hitStrokeWidth={20}
+        />
+      )}
+
       {/* For curved arrows, use Line with many points */}
-      {props.style === 'curved' ? (
+      {!isDegenerate && props.style === 'curved' ? (
         <Line
           points={flatPoints}
           stroke={props.color}
@@ -163,6 +196,7 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
           hitStrokeWidth={20}
         />
       ) : (
+        !isDegenerate && (
         <KonvaArrow
           ref={arrowRef}
           points={flatPoints}
@@ -181,16 +215,17 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
           onTap={onSelect}
           hitStrokeWidth={20}
         />
+        )
       )}
 
       {/* Arrow head for curved arrows (drawn separately) */}
-      {props.style === 'curved' && props.head !== 'none' && (
+      {!isDegenerate && props.style === 'curved' && props.head !== 'none' && (
         <KonvaArrow
           points={[
-            flatPoints[flatPoints.length - 4] || start.x,
-            flatPoints[flatPoints.length - 3] || start.y,
-            end.x,
-            end.y,
+            flatPoints[flatPoints.length - 4] ?? renderStart.x,
+            flatPoints[flatPoints.length - 3] ?? renderStart.y,
+            renderEnd.x,
+            renderEnd.y,
           ]}
           stroke={props.color}
           strokeWidth={props.thickness}

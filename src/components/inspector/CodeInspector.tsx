@@ -53,6 +53,72 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
 
   const totalLines = element.props.code.split('\n').length;
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle Tab for indentation
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+
+      if (e.shiftKey) {
+        // Shift+Tab: Remove indentation
+        const beforeCursor = value.substring(0, start);
+        const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+        const linePrefix = value.substring(lineStart, start);
+        
+        if (linePrefix.startsWith('  ')) {
+          const newValue = value.substring(0, lineStart) + value.substring(lineStart + 2);
+          handleCodeChange(newValue);
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = Math.max(lineStart, start - 2);
+          }, 0);
+        } else if (linePrefix.startsWith('\t')) {
+          const newValue = value.substring(0, lineStart) + value.substring(lineStart + 1);
+          handleCodeChange(newValue);
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = Math.max(lineStart, start - 1);
+          }, 0);
+        }
+      } else {
+        // Tab: Add indentation (2 spaces)
+        const newValue = value.substring(0, start) + '  ' + value.substring(end);
+        handleCodeChange(newValue);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 2;
+        }, 0);
+      }
+    }
+    
+    // Handle Enter for auto-indentation
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      
+      const beforeCursor = value.substring(0, start);
+      const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+      const currentLine = value.substring(lineStart, start);
+      const indentMatch = currentLine.match(/^(\s*)/);
+      const indent = indentMatch ? indentMatch[1] : '';
+      
+      const trimmedLine = currentLine.trim();
+      const needsExtraIndent = trimmedLine.endsWith('{') || trimmedLine.endsWith(':') || trimmedLine.endsWith('(');
+      const extraIndent = needsExtraIndent ? '  ' : '';
+      
+      const newValue = value.substring(0, start) + '\n' + indent + extraIndent + value.substring(end);
+      handleCodeChange(newValue);
+      
+      const newCursorPos = start + 1 + indent.length + extraIndent.length;
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+      }, 0);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Code editor */}
@@ -61,9 +127,11 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         <textarea
           value={element.props.code}
           onChange={(e) => handleCodeChange(e.target.value)}
+          onKeyDown={handleKeyDown}
           onBlur={saveToHistory}
           className="w-full h-32 bg-neutral-900 text-white text-sm font-mono p-3 rounded resize-y"
           spellCheck={false}
+          style={{ tabSize: 2 }}
         />
       </div>
 

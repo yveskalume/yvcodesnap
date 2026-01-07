@@ -18,6 +18,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-konva": "^19.2.1",
+    "react-konva-utils": "^2.0.0",
     "shiki": "^3.21.0",
     "tailwindcss": "^4.1.18",
     "uuid": "^13.0.0",
