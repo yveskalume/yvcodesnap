@@ -10,10 +10,22 @@ export interface GradientBackground {
   angle: number;
 }
 
+export interface BrandStrip {
+  enabled: boolean;
+  position: 'top' | 'bottom';
+  height: number;
+  color: string;
+  text: string;
+  textColor: string;
+  fontSize: number;
+  fontFamily: string;
+}
+
 export interface Background {
   type: BackgroundType;
   solid: SolidBackground;
   gradient: GradientBackground;
+  brandStrip: BrandStrip;
 }
 
 export interface Shadow {
@@ -61,6 +73,9 @@ export interface ArrowProps {
   color: string;
   thickness: number;
   head: 'filled' | 'outline' | 'none';
+  controlPoints?: { x: number; y: number }[]; // For curved arrows - bezier control points
+  label?: string; // Optional text label
+  labelPosition?: number; // 0-1, position along the arrow
 }
 
 export type ElementType = 'code' | 'text' | 'arrow';
@@ -180,6 +195,24 @@ export const LANGUAGES = [
 ] as const;
 
 export const FONT_FAMILIES = {
-  code: ['JetBrains Mono', 'Fira Code', 'Source Code Pro', 'monospace'],
-  text: ['Inter', 'Roboto', 'Open Sans', 'sans-serif'],
+  code: ['JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Cascadia Code', 'monospace'],
+  text: ['Inter', 'Roboto', 'Open Sans', 'Poppins', 'Montserrat', 'Lato', 'Nunito', 'Raleway', 'sans-serif'],
+  brand: ['Inter', 'Roboto', 'Poppins', 'Montserrat', 'sans-serif'],
 };
+
+// Google Fonts URLs for custom fonts
+export const GOOGLE_FONTS = [
+  { name: 'Inter', url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' },
+  { name: 'Roboto', url: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap' },
+  { name: 'Poppins', url: 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap' },
+  { name: 'Montserrat', url: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap' },
+  { name: 'Lato', url: 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap' },
+  { name: 'Nunito', url: 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap' },
+  { name: 'Raleway', url: 'https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap' },
+  { name: 'Open Sans', url: 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap' },
+  { name: 'JetBrains Mono', url: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap' },
+  { name: 'Fira Code', url: 'https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap' },
+  { name: 'Source Code Pro', url: 'https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;700&display=swap' },
+  { name: 'IBM Plex Mono', url: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap' },
+  { name: 'Cascadia Code', url: 'https://fonts.googleapis.com/css2?family=Cascadia+Code&display=swap' },
+];

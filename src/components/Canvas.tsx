@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Stage, Layer, Rect, Line } from 'react-konva';
+import { Stage, Layer, Rect, Line, Text } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
@@ -145,6 +145,41 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     return <>{lines}</>;
   };
 
+  // Brand strip
+  const renderBrandStrip = () => {
+    const brandStrip = background.brandStrip;
+    if (!brandStrip?.enabled) return null;
+
+    const stripHeight = brandStrip.height || 60;
+    const stripY = brandStrip.position === 'top' ? 0 : height - stripHeight;
+
+    return (
+      <>
+        <Rect
+          x={0}
+          y={stripY}
+          width={width}
+          height={stripHeight}
+          fill={brandStrip.color || '#000000'}
+        />
+        {brandStrip.text && (
+          <Text
+            x={0}
+            y={stripY}
+            width={width}
+            height={stripHeight}
+            text={brandStrip.text}
+            fontSize={brandStrip.fontSize || 16}
+            fontFamily={brandStrip.fontFamily || 'Inter'}
+            fill={brandStrip.textColor || '#ffffff'}
+            align="center"
+            verticalAlign="middle"
+          />
+        )}
+      </>
+    );
+  };
+
   const stagePosition = getStagePosition();
 
   return (
@@ -165,6 +200,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       >
         <Layer>
           {renderBackground()}
+          {renderBrandStrip()}
           {renderGrid()}
           
           {snap.elements.map((element) => {

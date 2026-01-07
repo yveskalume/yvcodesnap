@@ -64,6 +64,16 @@ const defaultSnap: Snap = {
     type: 'gradient',
     solid: { color: '#101022' },
     gradient: { from: '#101022', to: '#1f1f3a', angle: 135 },
+    brandStrip: {
+      enabled: false,
+      position: 'bottom',
+      height: 60,
+      color: '#000000',
+      text: '',
+      textColor: '#ffffff',
+      fontSize: 16,
+      fontFamily: 'Inter',
+    },
   },
   elements: [],
 };

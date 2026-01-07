@@ -4,6 +4,8 @@ import Canvas from './components/Canvas';
 import TopBar from './components/TopBar';
 import Toolbar from './components/Toolbar';
 import Inspector from './components/Inspector';
+import LayersPanel from './components/LayersPanel';
+import FontLoader from './components/FontLoader';
 import { useCanvasStore } from './store/canvasStore';
 
 function App() {
@@ -105,8 +107,10 @@ function App() {
 
   return (
     <div className="h-screen flex flex-col bg-neutral-900 text-white">
+      <FontLoader />
       <TopBar stageRef={stageRef} />
       <div className="flex-1 flex overflow-hidden">
+        <LayersPanel />
         <Toolbar />
         <Canvas stageRef={stageRef} />
         <Inspector />

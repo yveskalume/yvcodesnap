@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { FONT_FAMILIES } from '../../types';
 
 const GRADIENT_PRESETS = [
   { from: '#101022', to: '#1f1f3a', name: 'Midnight' },
@@ -152,6 +153,178 @@ const BackgroundPanel: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Brand Strip Section */}
+      <div className="pt-4 border-t border-white/5">
+        <div className="flex items-center justify-between mb-3">
+          <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">Brand Strip</label>
+          <button
+            onClick={() => setBackground({
+              brandStrip: { ...background.brandStrip, enabled: !background.brandStrip?.enabled }
+            })}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+              background.brandStrip?.enabled ? 'bg-blue-600' : 'bg-white/10'
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                background.brandStrip?.enabled ? 'translate-x-4' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {background.brandStrip?.enabled && (
+          <div className="space-y-4">
+            {/* Position */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Position</label>
+              <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/5">
+                <button
+                  onClick={() => setBackground({
+                    brandStrip: { ...background.brandStrip, position: 'top' }
+                  })}
+                  className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    background.brandStrip.position === 'top'
+                      ? 'bg-neutral-700 text-white shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Top
+                </button>
+                <button
+                  onClick={() => setBackground({
+                    brandStrip: { ...background.brandStrip, position: 'bottom' }
+                  })}
+                  className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    background.brandStrip.position === 'bottom'
+                      ? 'bg-neutral-700 text-white shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Bottom
+                </button>
+              </div>
+            </div>
+
+            {/* Height */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
+                Height: {background.brandStrip.height || 60}px
+              </label>
+              <input
+                type="range"
+                min="30"
+                max="120"
+                value={background.brandStrip.height || 60}
+                onChange={(e) => setBackground({
+                  brandStrip: { ...background.brandStrip, height: parseInt(e.target.value) }
+                })}
+                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              />
+            </div>
+
+            {/* Strip Color */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Strip Color</label>
+              <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                <div className="w-6 h-6 rounded overflow-hidden relative border border-white/10 shrink-0">
+                  <input
+                    type="color"
+                    value={background.brandStrip.color || '#000000'}
+                    onChange={(e) => setBackground({
+                      brandStrip: { ...background.brandStrip, color: e.target.value }
+                    })}
+                    className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={background.brandStrip.color || '#000000'}
+                  onChange={(e) => setBackground({
+                    brandStrip: { ...background.brandStrip, color: e.target.value }
+                  })}
+                  className="w-full bg-transparent text-white text-xs focus:outline-none font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Brand Text */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Text</label>
+              <input
+                type="text"
+                value={background.brandStrip.text || ''}
+                onChange={(e) => setBackground({
+                  brandStrip: { ...background.brandStrip, text: e.target.value }
+                })}
+                placeholder="@yourhandle"
+                className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+              />
+            </div>
+
+            {/* Text Color */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Text Color</label>
+              <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                <div className="w-6 h-6 rounded overflow-hidden relative border border-white/10 shrink-0">
+                  <input
+                    type="color"
+                    value={background.brandStrip.textColor || '#ffffff'}
+                    onChange={(e) => setBackground({
+                      brandStrip: { ...background.brandStrip, textColor: e.target.value }
+                    })}
+                    className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer"
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={background.brandStrip.textColor || '#ffffff'}
+                  onChange={(e) => setBackground({
+                    brandStrip: { ...background.brandStrip, textColor: e.target.value }
+                  })}
+                  className="w-full bg-transparent text-white text-xs focus:outline-none font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Font Family */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Font</label>
+              <select
+                value={background.brandStrip.fontFamily || 'Inter'}
+                onChange={(e) => setBackground({
+                  brandStrip: { ...background.brandStrip, fontFamily: e.target.value }
+                })}
+                className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+              >
+                {FONT_FAMILIES.brand.map((font) => (
+                  <option key={font} value={font} style={{ fontFamily: font }}>
+                    {font}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Font Size */}
+            <div>
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
+                Font Size: {background.brandStrip.fontSize || 16}px
+              </label>
+              <input
+                type="range"
+                min="12"
+                max="32"
+                value={background.brandStrip.fontSize || 16}
+                onChange={(e) => setBackground({
+                  brandStrip: { ...background.brandStrip, fontSize: parseInt(e.target.value) }
+                })}
+                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

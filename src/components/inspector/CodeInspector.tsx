@@ -3,6 +3,7 @@ import { useCanvasStore } from '../../store/canvasStore';
 import type { CodeElement, LineHighlight } from '../../types';
 import { LANGUAGES, FONT_FAMILIES, CODE_THEMES } from '../../types';
 import { detectLanguage } from '../../utils/highlighter';
+import { loadFont } from '../../utils/fontLoader';
 
 interface CodeInspectorProps {
   element: CodeElement;
@@ -116,18 +117,30 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
 
       {/* Font */}
       <div>
-        <label className="block text-sm text-neutral-400 mb-2">Font</label>
-        <select
-          value={element.props.fontFamily}
-          onChange={(e) => updateProps({ fontFamily: e.target.value })}
-          className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
-        >
+        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Font Family</label>
+        <div className="space-y-1 max-h-36 overflow-y-auto p-1 bg-white/5 rounded-lg border border-white/5">
           {FONT_FAMILIES.code.map((font) => (
-            <option key={font} value={font}>
-              {font}
-            </option>
+            <button
+              key={font}
+              onClick={() => {
+                loadFont(font);
+                updateProps({ fontFamily: font });
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-all ${
+                element.props.fontFamily === font
+                  ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                  : 'text-neutral-300 hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              <span style={{ fontFamily: font }}>{font}</span>
+              {element.props.fontFamily === font && (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
           ))}
-        </select>
+        </div>
       </div>
 
       {/* Font size & Line height */}

@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { Group, Arrow as KonvaArrow, Circle } from 'react-konva';
+import React, { useRef, useMemo } from 'react';
+import { Group, Arrow as KonvaArrow, Circle, Line, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { ArrowElement } from '../../types';
 
@@ -10,12 +10,111 @@ interface ArrowProps {
   onChange: (updates: Partial<ArrowElement>) => void;
 }
 
+// Calculate bezier curve points for smooth curved arrows
+const getBezierPoints = (
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  controlPoints: { x: number; y: number }[] = []
+): number[] => {
+  const numSegments = 50;
+  const points: number[] = [];
+
+  if (controlPoints.length === 0) {
+    // No control points, use auto-calculated curve
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    // Perpendicular offset for natural curve
+    const cp = {
+      x: midX - dy * 0.3,
+      y: midY + dx * 0.3,
+    };
+    controlPoints = [cp];
+  }
+
+  if (controlPoints.length === 1) {
+    // Quadratic bezier
+    const cp = controlPoints[0];
+    for (let t = 0; t <= 1; t += 1 / numSegments) {
+      const x = Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * cp.x + Math.pow(t, 2) * end.x;
+      const y = Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * cp.y + Math.pow(t, 2) * end.y;
+      points.push(x, y);
+    }
+  } else if (controlPoints.length >= 2) {
+    // Cubic bezier
+    const cp1 = controlPoints[0];
+    const cp2 = controlPoints[1];
+    for (let t = 0; t <= 1; t += 1 / numSegments) {
+      const x = Math.pow(1 - t, 3) * start.x + 3 * Math.pow(1 - t, 2) * t * cp1.x + 3 * (1 - t) * Math.pow(t, 2) * cp2.x + Math.pow(t, 3) * end.x;
+      const y = Math.pow(1 - t, 3) * start.y + 3 * Math.pow(1 - t, 2) * t * cp1.y + 3 * (1 - t) * Math.pow(t, 2) * cp2.y + Math.pow(t, 3) * end.y;
+      points.push(x, y);
+    }
+  }
+
+  return points;
+};
+
+// Get point along bezier curve at parameter t (0-1)
+const getPointOnBezier = (
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  controlPoints: { x: number; y: number }[],
+  t: number
+): { x: number; y: number } => {
+  if (controlPoints.length === 1) {
+    const cp = controlPoints[0];
+    return {
+      x: Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * cp.x + Math.pow(t, 2) * end.x,
+      y: Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * cp.y + Math.pow(t, 2) * end.y,
+    };
+  } else if (controlPoints.length >= 2) {
+    const cp1 = controlPoints[0];
+    const cp2 = controlPoints[1];
+    return {
+      x: Math.pow(1 - t, 3) * start.x + 3 * Math.pow(1 - t, 2) * t * cp1.x + 3 * (1 - t) * Math.pow(t, 2) * cp2.x + Math.pow(t, 3) * end.x,
+      y: Math.pow(1 - t, 3) * start.y + 3 * Math.pow(1 - t, 2) * t * cp1.y + 3 * (1 - t) * Math.pow(t, 2) * cp2.y + Math.pow(t, 3) * end.y,
+    };
+  }
+  // Linear
+  return {
+    x: start.x + (end.x - start.x) * t,
+    y: start.y + (end.y - start.y) * t,
+  };
+};
+
 const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }) => {
   const arrowRef = useRef<Konva.Arrow>(null);
   const { points, props } = element;
+  const start = points[0];
+  const end = points[points.length - 1];
 
-  // Flatten points for Konva
-  const flatPoints = points.flatMap(p => [p.x, p.y]);
+  // Get control points (either from props or auto-generate for curved)
+  const controlPoints = useMemo(() => {
+    if (props.style === 'curved') {
+      if (props.controlPoints && props.controlPoints.length > 0) {
+        return props.controlPoints;
+      }
+      // Auto-generate a control point
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      return [{
+        x: midX - dy * 0.3,
+        y: midY + dx * 0.3,
+      }];
+    }
+    return [];
+  }, [props.style, props.controlPoints, start, end]);
+
+  // Calculate points for rendering
+  const flatPoints = useMemo(() => {
+    if (props.style === 'curved') {
+      return getBezierPoints(start, end, controlPoints);
+    }
+    return points.flatMap(p => [p.x, p.y]);
+  }, [props.style, points, start, end, controlPoints]);
 
   const handlePointDrag = (index: number, e: Konva.KonvaEventObject<DragEvent>) => {
     const newPoints = [...points];
@@ -26,62 +125,208 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
     onChange({ points: newPoints });
   };
 
+  const handleControlPointDrag = (index: number, e: Konva.KonvaEventObject<DragEvent>) => {
+    const newControlPoints = [...controlPoints];
+    newControlPoints[index] = {
+      x: e.target.x(),
+      y: e.target.y(),
+    };
+    onChange({ props: { ...props, controlPoints: newControlPoints } });
+  };
+
   // Modern arrow head calculations
-  // Make the head slightly sleeker
   const pointerLength = props.head === 'none' ? 0 : Math.max(props.thickness * 3, 12);
   const pointerWidth = props.head === 'none' ? 0 : Math.max(props.thickness * 2.5, 12);
 
+  // Calculate label position
+  const labelPosition = props.labelPosition ?? 0.5;
+  const labelPoint = props.style === 'curved'
+    ? getPointOnBezier(start, end, controlPoints, labelPosition)
+    : { x: start.x + (end.x - start.x) * labelPosition, y: start.y + (end.y - start.y) * labelPosition };
+
   return (
     <Group>
-      <KonvaArrow
-        ref={arrowRef}
-        points={flatPoints}
-        stroke={props.color}
-        strokeWidth={props.thickness}
-        fill={props.head === 'filled' ? props.color : 'transparent'}
-        pointerLength={pointerLength}
-        pointerWidth={pointerWidth}
-        tension={props.style === 'curved' ? 0.4 : 0}
-        lineCap="round"
-        lineJoin="round"
-        // Add subtle glow/shadow for modern feel
-        shadowColor={props.color}
-        shadowBlur={8}
-        shadowOpacity={0.2}
-        shadowOffset={{ x: 0, y: 0 }}
-        onClick={onSelect}
-        onTap={onSelect}
-        hitStrokeWidth={20}
-      />
-      
-      {/* Control points when selected */}
-      {isSelected && points.map((point, index) => (
-        <Circle
-          key={index}
-          x={point.x}
-          y={point.y}
-          radius={5}
-          fill="#ffffff"
-          stroke="#3b82f6"
-          strokeWidth={2}
-          shadowColor="rgba(0,0,0,0.15)"
-          shadowBlur={4}
-          shadowOffset={{ x: 0, y: 1 }}
-          draggable={!element.locked}
-          onDragMove={(e) => handlePointDrag(index, e)}
-          onDragEnd={(e) => handlePointDrag(index, e)}
-          onMouseEnter={(e) => {
-            const container = e.target.getStage()?.container();
-            if (container) container.style.cursor = 'grab';
-            e.target.scale({ x: 1.5, y: 1.5 });
-          }}
-          onMouseLeave={(e) => {
-            const container = e.target.getStage()?.container();
-            if (container) container.style.cursor = 'default';
-            e.target.scale({ x: 1, y: 1 });
-          }}
+      {/* For curved arrows, use Line with many points */}
+      {props.style === 'curved' ? (
+        <Line
+          points={flatPoints}
+          stroke={props.color}
+          strokeWidth={props.thickness}
+          lineCap="round"
+          lineJoin="round"
+          shadowColor={props.color}
+          shadowBlur={8}
+          shadowOpacity={0.2}
+          shadowOffset={{ x: 0, y: 0 }}
+          onClick={onSelect}
+          onTap={onSelect}
+          hitStrokeWidth={20}
         />
-      ))}
+      ) : (
+        <KonvaArrow
+          ref={arrowRef}
+          points={flatPoints}
+          stroke={props.color}
+          strokeWidth={props.thickness}
+          fill={props.head === 'filled' ? props.color : 'transparent'}
+          pointerLength={pointerLength}
+          pointerWidth={pointerWidth}
+          lineCap="round"
+          lineJoin="round"
+          shadowColor={props.color}
+          shadowBlur={8}
+          shadowOpacity={0.2}
+          shadowOffset={{ x: 0, y: 0 }}
+          onClick={onSelect}
+          onTap={onSelect}
+          hitStrokeWidth={20}
+        />
+      )}
+
+      {/* Arrow head for curved arrows (drawn separately) */}
+      {props.style === 'curved' && props.head !== 'none' && (
+        <KonvaArrow
+          points={[
+            flatPoints[flatPoints.length - 4] || start.x,
+            flatPoints[flatPoints.length - 3] || start.y,
+            end.x,
+            end.y,
+          ]}
+          stroke={props.color}
+          strokeWidth={props.thickness}
+          fill={props.head === 'filled' ? props.color : 'transparent'}
+          pointerLength={pointerLength}
+          pointerWidth={pointerWidth}
+          lineCap="round"
+          lineJoin="round"
+        />
+      )}
+
+      {/* Label text */}
+      {props.label && (
+        <Text
+          x={labelPoint.x}
+          y={labelPoint.y - 20}
+          text={props.label}
+          fontSize={14}
+          fill={props.color}
+          fontFamily="Inter, sans-serif"
+          align="center"
+          offsetX={props.label.length * 3.5}
+        />
+      )}
+      
+      {/* Control points when selected (for curved arrows) */}
+      {isSelected && props.style === 'curved' && (
+        <>
+          {/* Control point lines */}
+          {controlPoints.map((cp, index) => (
+            <React.Fragment key={`line-${index}`}>
+              <Line
+                points={index === 0 ? [start.x, start.y, cp.x, cp.y] : [controlPoints[index - 1].x, controlPoints[index - 1].y, cp.x, cp.y]}
+                stroke="#60a5fa"
+                strokeWidth={1}
+                dash={[4, 4]}
+                opacity={0.5}
+              />
+              {index === controlPoints.length - 1 && (
+                <Line
+                  points={[cp.x, cp.y, end.x, end.y]}
+                  stroke="#60a5fa"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                  opacity={0.5}
+                />
+              )}
+            </React.Fragment>
+          ))}
+
+          {/* Control point handles */}
+          {controlPoints.map((cp, index) => (
+            <Circle
+              key={`cp-${index}`}
+              x={cp.x}
+              y={cp.y}
+              radius={6}
+              fill="#60a5fa"
+              stroke="#ffffff"
+              strokeWidth={2}
+              shadowColor="rgba(0,0,0,0.3)"
+              shadowBlur={4}
+              shadowOffset={{ x: 0, y: 1 }}
+              draggable={!element.locked}
+              onDragMove={(e) => handleControlPointDrag(index, e)}
+              onDragEnd={(e) => handleControlPointDrag(index, e)}
+              onMouseEnter={(e) => {
+                const container = e.target.getStage()?.container();
+                if (container) container.style.cursor = 'move';
+                e.target.scale({ x: 1.3, y: 1.3 });
+              }}
+              onMouseLeave={(e) => {
+                const container = e.target.getStage()?.container();
+                if (container) container.style.cursor = 'default';
+                e.target.scale({ x: 1, y: 1 });
+              }}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Endpoint control points when selected */}
+      {isSelected && (
+        <>
+          {/* Start point */}
+          <Circle
+            x={start.x}
+            y={start.y}
+            radius={5}
+            fill="#ffffff"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            shadowColor="rgba(0,0,0,0.15)"
+            shadowBlur={4}
+            shadowOffset={{ x: 0, y: 1 }}
+            draggable={!element.locked}
+            onDragMove={(e) => handlePointDrag(0, e)}
+            onDragEnd={(e) => handlePointDrag(0, e)}
+            onMouseEnter={(e) => {
+              const container = e.target.getStage()?.container();
+              if (container) container.style.cursor = 'grab';
+              e.target.scale({ x: 1.5, y: 1.5 });
+            }}
+            onMouseLeave={(e) => {
+              const container = e.target.getStage()?.container();
+              if (container) container.style.cursor = 'default';
+              e.target.scale({ x: 1, y: 1 });
+            }}
+          />
+          {/* End point */}
+          <Circle
+            x={end.x}
+            y={end.y}
+            radius={5}
+            fill="#ffffff"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            shadowColor="rgba(0,0,0,0.15)"
+            shadowBlur={4}
+            shadowOffset={{ x: 0, y: 1 }}
+            draggable={!element.locked}
+            onDragMove={(e) => handlePointDrag(points.length - 1, e)}
+            onDragEnd={(e) => handlePointDrag(points.length - 1, e)}
+            onMouseEnter={(e) => {
+              const container = e.target.getStage()?.container();
+              if (container) container.style.cursor = 'grab';
+              e.target.scale({ x: 1.5, y: 1.5 });
+            }}
+            onMouseLeave={(e) => {
+              const container = e.target.getStage()?.container();
+              if (container) container.style.cursor = 'default';
+              e.target.scale({ x: 1, y: 1 });
+            }}
+          />
+        </>
+      )}
     </Group>
   );
 };
