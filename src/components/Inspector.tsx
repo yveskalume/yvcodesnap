@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import type { CodeElement, TextElement, ArrowElement } from '../types';
 import BackgroundPanel from './inspector/BackgroundPanel';
@@ -16,7 +16,34 @@ const Inspector: React.FC = () => {
     moveElementDown,
   } = useCanvasStore();
 
-  const selectedElement = snap.elements.find(el => el.id === selectedElementId);
+  const selectedElement = useMemo(
+    () => snap.elements.find(el => el.id === selectedElementId),
+    [snap.elements, selectedElementId]
+  );
+  
+  const handleDelete = useCallback(() => {
+    if (selectedElement) {
+      deleteElement(selectedElement.id);
+    }
+  }, [selectedElement, deleteElement]);
+  
+  const handleDuplicate = useCallback(() => {
+    if (selectedElement) {
+      duplicateElement(selectedElement.id);
+    }
+  }, [selectedElement, duplicateElement]);
+  
+  const handleMoveUp = useCallback(() => {
+    if (selectedElement) {
+      moveElementUp(selectedElement.id);
+    }
+  }, [selectedElement, moveElementUp]);
+  
+  const handleMoveDown = useCallback(() => {
+    if (selectedElement) {
+      moveElementDown(selectedElement.id);
+    }
+  }, [selectedElement, moveElementDown]);
 
   return (
     <div className="w-80 bg-[#09090b] border-l border-white/5 overflow-y-auto h-full">
@@ -30,7 +57,7 @@ const Inspector: React.FC = () => {
               </h3>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => duplicateElement(selectedElement.id)}
+                  onClick={handleDuplicate}
                   className="p-1.5 hover:bg-white/10 rounded-md text-neutral-400 hover:text-white transition-colors"
                   title="Duplicate (⌘D)"
                 >
@@ -40,7 +67,7 @@ const Inspector: React.FC = () => {
                 </button>
                 <div className="w-px h-3 bg-white/10 mx-1" />
                 <button
-                  onClick={() => deleteElement(selectedElement.id)}
+                  onClick={handleDelete}
                   className="p-1.5 hover:bg-red-500/10 hover:text-red-500 rounded-md text-neutral-400 transition-colors"
                   title="Delete (⌫)"
                 >
@@ -54,7 +81,7 @@ const Inspector: React.FC = () => {
              {/* Layer Controls */}
              <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => moveElementDown(selectedElement.id)}
+                  onClick={handleMoveDown}
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
                 >
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,7 +90,7 @@ const Inspector: React.FC = () => {
                   Send Backward
                 </button>
                 <button
-                  onClick={() => moveElementUp(selectedElement.id)}
+                  onClick={handleMoveUp}
                   className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
                 >
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,4 +125,4 @@ const Inspector: React.FC = () => {
     </div>
   );
 };
-export default Inspector;
+export default memo(Inspector);

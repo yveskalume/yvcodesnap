@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Stage, Layer, Rect, Line, Text } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
@@ -112,8 +112,8 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     );
   };
 
-  // Grid overlay
-  const renderGrid = () => {
+  // Grid overlay - memoized for performance
+  const gridLines = useMemo(() => {
     if (!showGrid) return null;
     const gridSize = 50;
     const lines = [];
@@ -143,10 +143,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     }
     
     return <>{lines}</>;
-  };
+  }, [showGrid, width, height]);
 
-  // Brand strip
-  const renderBrandStrip = () => {
+  // Brand strip - memoized
+  const brandStripElement = useMemo(() => {
     const brandStrip = background.brandStrip;
     if (!brandStrip?.enabled) return null;
 
@@ -178,9 +178,9 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         )}
       </>
     );
-  };
+  }, [background.brandStrip, width, height]);
 
-  const stagePosition = getStagePosition();
+  const stagePosition = useMemo(() => getStagePosition(), [getStagePosition]);
 
   return (
     <div 
@@ -200,8 +200,8 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       >
         <Layer>
           {renderBackground()}
-          {renderBrandStrip()}
-          {renderGrid()}
+          {brandStripElement}
+          {gridLines}
           
           {snap.elements.map((element) => {
             if (!element.visible) return null;
@@ -247,4 +247,4 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   );
 };
 
-export default Canvas;
+export default memo(Canvas);

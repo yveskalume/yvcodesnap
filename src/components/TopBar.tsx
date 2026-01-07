@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useState, useRef, useCallback, memo } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
+import { useRecentSnapsStore } from '../store/recentSnapsStore';
 import { ASPECT_RATIOS } from '../types';
 import type Konva from 'konva';
+import RecentSnapsDropdown from './RecentSnapsDropdown';
 
 interface TopBarProps {
   stageRef: React.RefObject<Konva.Stage | null>;
 }
 
 const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
+  const [showRecentSnaps, setShowRecentSnaps] = useState(false);
+  const recentButtonRef = useRef<HTMLButtonElement>(null);
+  
   const { 
     snap, 
     updateMeta, 
@@ -17,15 +22,22 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
     undo,
     redo,
     history,
+    saveToHistory,
   } = useCanvasStore();
+  
+  const { addRecentSnap } = useRecentSnapsStore();
 
-  const handleNewSnap = () => {
+  const handleNewSnap = useCallback(() => {
     if (confirm('Create a new canvas? Unsaved changes will be lost.')) {
+      // Save current snap to recent before creating new
+      if (snap.elements.length > 0) {
+        addRecentSnap(snap);
+      }
       newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
     }
-  };
+  }, [snap, addRecentSnap, newSnap]);
 
-  const handleAspectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleAspectChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const ratio = ASPECT_RATIOS.find(r => r.name === e.target.value);
     if (ratio) {
       updateMeta({
@@ -34,9 +46,9 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
         height: ratio.height,
       });
     }
-  };
+  }, [updateMeta]);
 
-  const handleExportImage = async (format: 'png' | 'jpeg', scale: number = 2) => {
+  const handleExportImage = useCallback(async (format: 'png' | 'jpeg', scale: number = 2) => {
     const stage = stageRef.current;
     if (!stage) return;
 
@@ -64,9 +76,9 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
     link.download = `${snap.meta.title || 'canvas'}.${format}`;
     link.href = dataUrl;
     link.click();
-  };
+  }, [stageRef, snap.meta]);
 
-  const handleExportJSON = () => {
+  const handleExportJSON = useCallback(() => {
     const json = exportSnap();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -75,15 +87,23 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
-  };
+    
+    // Save to recent snaps when exporting
+    addRecentSnap(snap);
+  }, [exportSnap, snap, addRecentSnap]);
 
-  const handleImportJSON = () => {
+  const handleImportJSON = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
+        // Save current snap to recent before importing
+        if (snap.elements.length > 0) {
+          addRecentSnap(snap);
+        }
+        saveToHistory();
         const reader = new FileReader();
         reader.onload = (e) => {
           const json = e.target?.result as string;
@@ -93,7 +113,11 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
       }
     };
     input.click();
-  };
+  }, [snap, addRecentSnap, saveToHistory, importSnap]);
+
+  const toggleRecentSnaps = useCallback(() => {
+    setShowRecentSnaps((prev) => !prev);
+  }, []);
 
   return (
     <div className="h-16 bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-40 fixed top-0 w-full">
@@ -123,12 +147,35 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
           <button
             onClick={handleImportJSON}
             className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-all active:scale-95"
-            title="Open"
+            title="Open File (⌘O)"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
             </svg>
           </button>
+          
+          {/* Recent Snaps Button */}
+          <div className="relative">
+            <button
+              ref={recentButtonRef}
+              onClick={toggleRecentSnaps}
+              className={`p-2 rounded-lg transition-all active:scale-95 ${
+                showRecentSnaps 
+                  ? 'text-white bg-white/10' 
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Recent Projects"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+            <RecentSnapsDropdown
+              isOpen={showRecentSnaps}
+              onClose={() => setShowRecentSnaps(false)}
+              anchorRef={recentButtonRef as React.RefObject<HTMLElement>}
+            />
+          </div>
         </div>
       </div>
 
@@ -225,4 +272,4 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
   );
 };
 
-export default TopBar;
+export default memo(TopBar);

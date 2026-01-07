@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import type Konva from 'konva';
 import Canvas from './components/Canvas';
 import TopBar from './components/TopBar';
@@ -7,10 +7,12 @@ import Inspector from './components/Inspector';
 import LayersPanel from './components/LayersPanel';
 import FontLoader from './components/FontLoader';
 import { useCanvasStore } from './store/canvasStore';
+import { useRecentSnapsStore } from './store/recentSnapsStore';
 
 function App() {
   const stageRef = useRef<Konva.Stage>(null);
   const { 
+    snap,
     deleteElement, 
     duplicateElement, 
     selectedElementId, 
@@ -22,12 +24,83 @@ function App() {
     showGrid,
     setTool,
     selectElement,
+    newSnap,
+    importSnap,
+    exportSnap,
+    saveToHistory,
   } = useCanvasStore();
+  
+  const { addRecentSnap } = useRecentSnapsStore();
+
+  // Handle file import
+  const handleImportFile = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // Save current snap to recent before importing
+        if (snap.elements.length > 0) {
+          addRecentSnap(snap);
+        }
+        saveToHistory();
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const json = evt.target?.result as string;
+          importSnap(json);
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  }, [snap, addRecentSnap, saveToHistory, importSnap]);
+
+  // Handle file export
+  const handleExportFile = useCallback(() => {
+    const json = exportSnap();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${snap.meta.title || 'canvas'}.json`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    addRecentSnap(snap);
+  }, [exportSnap, snap, addRecentSnap]);
+
+  // Handle new snap
+  const handleNewSnap = useCallback(() => {
+    if (confirm('Create a new canvas? Unsaved changes will be lost.')) {
+      if (snap.elements.length > 0) {
+        addRecentSnap(snap);
+      }
+      newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
+    }
+  }, [snap, addRecentSnap, newSnap]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMeta = e.metaKey || e.ctrlKey;
+      
+      // New snap (⌘N)
+      if (isMeta && e.key === 'n') {
+        e.preventDefault();
+        handleNewSnap();
+      }
+      
+      // Open file (⌘O)
+      if (isMeta && e.key === 'o') {
+        e.preventDefault();
+        handleImportFile();
+      }
+      
+      // Save/Export (⌘S)
+      if (isMeta && e.key === 's') {
+        e.preventDefault();
+        handleExportFile();
+      }
       
       // Delete
       if (e.key === 'Backspace' || e.key === 'Delete') {
@@ -103,7 +176,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElementId, deleteElement, duplicateElement, undo, redo, zoom, setZoom, showGrid, setShowGrid, setTool, selectElement]);
+  }, [selectedElementId, deleteElement, duplicateElement, undo, redo, zoom, setZoom, showGrid, setShowGrid, setTool, selectElement, handleNewSnap, handleImportFile, handleExportFile]);
 
   return (
     <div className="h-screen flex flex-col bg-neutral-900 text-white">
