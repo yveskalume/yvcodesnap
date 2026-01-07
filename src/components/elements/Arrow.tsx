@@ -164,7 +164,41 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
     : { x: renderStart.x + (renderEnd.x - renderStart.x) * labelPosition, y: renderStart.y + (renderEnd.y - renderStart.y) * labelPosition };
 
   return (
-    <Group>
+    <Group
+      draggable={!element.locked}
+      onDragEnd={(e) => {
+        if (e.target !== e.currentTarget) return;
+
+        const node = e.target;
+        const dx = node.x();
+        const dy = node.y();
+
+        const newPoints = points.map((p) => ({
+          x: p.x + dx,
+          y: p.y + dy,
+        }));
+
+        let newControlPoints = undefined;
+        if (props.controlPoints && props.controlPoints.length > 0) {
+          newControlPoints = props.controlPoints.map((p) => ({
+            x: p.x + dx,
+            y: p.y + dy,
+          }));
+        }
+
+        // Reset relative position
+        node.x(0);
+        node.y(0);
+
+        onChange({
+          points: newPoints,
+          props: {
+            ...props,
+            controlPoints: newControlPoints || props.controlPoints,
+          },
+        });
+      }}
+    >
       {/* If endpoints overlap/invalid, render a small dot instead of a shadowed arrow to avoid Konva draw crashes. */}
       {isDegenerate && (
         <Circle
