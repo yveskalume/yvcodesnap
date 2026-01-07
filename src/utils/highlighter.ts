@@ -1,16 +1,17 @@
-import { codeToHtml } from 'shiki';
+import { codeToHtml, codeToTokens, type BundledTheme, type BundledLanguage } from 'shiki';
+import { CODE_THEMES, type CodeThemeId } from '../types';
 
 let highlighterReady = false;
 
 export async function highlightCode(
   code: string,
   language: string,
-  theme: 'dark' | 'light'
+  theme: CodeThemeId
 ): Promise<string> {
   try {
     const html = await codeToHtml(code, {
-      lang: language,
-      theme: theme === 'dark' ? 'github-dark' : 'github-light',
+      lang: language as BundledLanguage,
+      theme: theme as BundledTheme,
     });
     highlighterReady = true;
     return html;
@@ -18,6 +19,51 @@ export async function highlightCode(
     console.error('Highlighting error:', error);
     return `<pre><code>${escapeHtml(code)}</code></pre>`;
   }
+}
+
+export interface TokenInfo {
+  content: string;
+  color: string;
+}
+
+export interface LineTokens {
+  tokens: TokenInfo[];
+}
+
+export async function tokenizeCode(
+  code: string,
+  language: string,
+  theme: CodeThemeId
+): Promise<LineTokens[]> {
+  try {
+    const result = await codeToTokens(code, {
+      lang: language as BundledLanguage,
+      theme: theme as BundledTheme,
+    });
+    highlighterReady = true;
+    return result.tokens.map(line => ({
+      tokens: line.map(token => ({
+        content: token.content,
+        color: token.color || '#ffffff',
+      })),
+    }));
+  } catch (error) {
+    console.error('Tokenization error:', error);
+    // Fallback: return plain text tokens
+    return code.split('\n').map(line => ({
+      tokens: [{ content: line, color: '#ffffff' }],
+    }));
+  }
+}
+
+export function getThemeBackground(themeId: CodeThemeId): string {
+  const theme = CODE_THEMES.find(t => t.id === themeId);
+  return theme?.bg || '#1e1e2e';
+}
+
+export function isLightTheme(themeId: CodeThemeId): boolean {
+  const lightThemes = ['github-light', 'vitesse-light', 'catppuccin-latte', 'min-light', 'solarized-light'];
+  return lightThemes.includes(themeId);
 }
 
 function escapeHtml(text: string): string {

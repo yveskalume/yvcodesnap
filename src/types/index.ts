@@ -31,7 +31,7 @@ export interface LineHighlight {
 export interface CodeBlockProps {
   code: string;
   language: string;
-  theme: 'dark' | 'light';
+  theme: CodeThemeId;
   fontFamily: string;
   fontSize: number;
   lineHeight: number;
@@ -124,7 +124,30 @@ export const ASPECT_RATIOS: AspectRatio[] = [
   { name: 'Story', width: 1080, height: 1920 },
 ];
 
-export const CODE_THEMES = ['dark', 'light'] as const;
+export const CODE_THEMES = [
+  { id: 'github-dark', name: 'GitHub Dark', bg: '#0d1117' },
+  { id: 'github-light', name: 'GitHub Light', bg: '#ffffff' },
+  { id: 'dracula', name: 'Dracula', bg: '#282a36' },
+  { id: 'nord', name: 'Nord', bg: '#2e3440' },
+  { id: 'one-dark-pro', name: 'One Dark Pro', bg: '#282c34' },
+  { id: 'monokai', name: 'Monokai', bg: '#272822' },
+  { id: 'tokyo-night', name: 'Tokyo Night', bg: '#1a1b26' },
+  { id: 'vitesse-dark', name: 'Vitesse Dark', bg: '#121212' },
+  { id: 'vitesse-light', name: 'Vitesse Light', bg: '#ffffff' },
+  { id: 'material-theme-darker', name: 'Material Darker', bg: '#212121' },
+  { id: 'catppuccin-mocha', name: 'Catppuccin Mocha', bg: '#1e1e2e' },
+  { id: 'catppuccin-latte', name: 'Catppuccin Latte', bg: '#eff1f5' },
+  { id: 'slack-dark', name: 'Slack Dark', bg: '#222222' },
+  { id: 'poimandres', name: 'Poimandres', bg: '#1b1e28' },
+  { id: 'night-owl', name: 'Night Owl', bg: '#011627' },
+  { id: 'min-dark', name: 'Min Dark', bg: '#1f1f1f' },
+  { id: 'min-light', name: 'Min Light', bg: '#ffffff' },
+  { id: 'ayu-dark', name: 'Ayu Dark', bg: '#0b0e14' },
+  { id: 'solarized-dark', name: 'Solarized Dark', bg: '#002b36' },
+  { id: 'solarized-light', name: 'Solarized Light', bg: '#fdf6e3' },
+] as const;
+
+export type CodeThemeId = typeof CODE_THEMES[number]['id'];
 
 export const LANGUAGES = [
   'javascript',

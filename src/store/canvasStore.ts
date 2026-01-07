@@ -237,7 +237,7 @@ export const createCodeElement = (x: number, y: number): CodeElement => ({
   props: {
     code: '// Your code here\nconsole.log("Hello, World!");',
     language: 'javascript',
-    theme: 'dark',
+    theme: 'github-dark',
     fontFamily: 'JetBrains Mono',
     fontSize: 14,
     lineHeight: 1.5,

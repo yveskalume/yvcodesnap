@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
-import type { CodeElement } from '../../types';
-import { LANGUAGES, FONT_FAMILIES } from '../../types';
+import type { CodeElement, LineHighlight } from '../../types';
+import { LANGUAGES, FONT_FAMILIES, CODE_THEMES } from '../../types';
 import { detectLanguage } from '../../utils/highlighter';
 
 interface CodeInspectorProps {
@@ -10,6 +10,9 @@ interface CodeInspectorProps {
 
 const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
   const { updateElement, saveToHistory } = useCanvasStore();
+  const [highlightFrom, setHighlightFrom] = useState('');
+  const [highlightTo, setHighlightTo] = useState('');
+  const [highlightStyle, setHighlightStyle] = useState<'focus' | 'added' | 'removed'>('focus');
 
   const update = (updates: Partial<CodeElement>) => {
     updateElement(element.id, updates);
@@ -27,6 +30,27 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
     const detected = detectLanguage(element.props.code);
     updateProps({ language: detected });
   };
+
+  const addHighlight = () => {
+    const from = parseInt(highlightFrom);
+    const to = parseInt(highlightTo) || from;
+    if (isNaN(from) || from < 1) return;
+    
+    const newHighlight: LineHighlight = { from, to: Math.max(from, to), style: highlightStyle };
+    const highlights = [...element.props.highlights, newHighlight];
+    updateProps({ highlights });
+    saveToHistory();
+    setHighlightFrom('');
+    setHighlightTo('');
+  };
+
+  const removeHighlight = (index: number) => {
+    const highlights = element.props.highlights.filter((_, i) => i !== index);
+    updateProps({ highlights });
+    saveToHistory();
+  };
+
+  const totalLines = element.props.code.split('\n').length;
 
   return (
     <div className="space-y-4">
@@ -69,27 +93,24 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
       {/* Theme */}
       <div>
         <label className="block text-sm text-neutral-400 mb-2">Theme</label>
-        <div className="flex gap-2">
-          <button
-            onClick={() => updateProps({ theme: 'dark' })}
-            className={`flex-1 py-2 rounded text-sm ${
-              element.props.theme === 'dark'
-                ? 'bg-blue-600 text-white'
-                : 'bg-neutral-700 text-neutral-300'
-            }`}
-          >
-            Dark
-          </button>
-          <button
-            onClick={() => updateProps({ theme: 'light' })}
-            className={`flex-1 py-2 rounded text-sm ${
-              element.props.theme === 'light'
-                ? 'bg-blue-600 text-white'
-                : 'bg-neutral-700 text-neutral-300'
-            }`}
-          >
-            Light
-          </button>
+        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+          {CODE_THEMES.map((theme) => (
+            <button
+              key={theme.id}
+              onClick={() => updateProps({ theme: theme.id })}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-all ${
+                element.props.theme === theme.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+              }`}
+            >
+              <div 
+                className="w-4 h-4 rounded border border-white/20 shrink-0" 
+                style={{ backgroundColor: theme.bg }}
+              />
+              <span className="truncate">{theme.name}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -194,6 +215,84 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
           min={0}
           max={64}
         />
+      </div>
+
+      {/* Line Highlights */}
+      <div>
+        <label className="block text-sm text-neutral-400 mb-2">
+          Line Highlights <span className="text-neutral-500">({totalLines} lines)</span>
+        </label>
+        
+        {/* Existing highlights */}
+        {element.props.highlights.length > 0 && (
+          <div className="space-y-1 mb-3">
+            {element.props.highlights.map((h, i) => (
+              <div 
+                key={i} 
+                className="flex items-center justify-between bg-neutral-700 px-2 py-1.5 rounded text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <span 
+                    className={`w-2 h-2 rounded-full ${
+                      h.style === 'focus' ? 'bg-yellow-400' : 
+                      h.style === 'added' ? 'bg-green-400' : 'bg-red-400'
+                    }`} 
+                  />
+                  <span className="text-white">
+                    {h.from === h.to ? `Line ${h.from}` : `Lines ${h.from}-${h.to}`}
+                  </span>
+                  <span className="text-neutral-400 text-xs">({h.style})</span>
+                </div>
+                <button
+                  onClick={() => removeHighlight(i)}
+                  className="text-neutral-400 hover:text-red-400 text-lg leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Add new highlight */}
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="number"
+              placeholder="From"
+              value={highlightFrom}
+              onChange={(e) => setHighlightFrom(e.target.value)}
+              className="w-20 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
+              min={1}
+              max={totalLines}
+            />
+            <input
+              type="number"
+              placeholder="To"
+              value={highlightTo}
+              onChange={(e) => setHighlightTo(e.target.value)}
+              className="w-20 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
+              min={1}
+              max={totalLines}
+            />
+            <select
+              value={highlightStyle}
+              onChange={(e) => setHighlightStyle(e.target.value as 'focus' | 'added' | 'removed')}
+              className="flex-1 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
+            >
+              <option value="focus">Focus</option>
+              <option value="added">Added</option>
+              <option value="removed">Removed</option>
+            </select>
+          </div>
+          <button
+            onClick={addHighlight}
+            disabled={!highlightFrom}
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-600 disabled:opacity-50 text-white py-1.5 rounded text-sm transition-colors"
+          >
+            Add Highlight
+          </button>
+        </div>
       </div>
     </div>
   );
