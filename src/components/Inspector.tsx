@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import type { CodeElement, TextElement, ArrowElement } from '../types';
 import BackgroundPanel from './inspector/BackgroundPanel';
@@ -7,7 +7,13 @@ import CodeInspector from './inspector/CodeInspector';
 import TextInspector from './inspector/TextInspector';
 import ArrowInspector from './inspector/ArrowInspector';
 
+const DEFAULT_WIDTH = 320;
+const MIN_WIDTH = 260;
+const MAX_WIDTH = 520;
+const EXPANDED_WIDTH = 420;
+
 const Inspector: React.FC = () => {
+  const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
   const { 
     snap, 
     selectedElementId, 
@@ -17,10 +23,58 @@ const Inspector: React.FC = () => {
     moveElementDown,
   } = useCanvasStore();
 
+  const dragStateRef = useRef({
+    startX: 0,
+    startWidth: DEFAULT_WIDTH,
+    isDragging: false,
+  });
+
   const selectedElement = useMemo(
     () => snap.elements.find(el => el.id === selectedElementId),
     [snap.elements, selectedElementId]
   );
+
+  const handleResizeMove = useCallback((event: MouseEvent) => {
+    if (!dragStateRef.current.isDragging) return;
+
+    const delta = dragStateRef.current.startX - event.clientX;
+    const nextWidth = Math.min(
+      Math.max(dragStateRef.current.startWidth + delta, MIN_WIDTH),
+      MAX_WIDTH
+    );
+
+    setWidth(nextWidth);
+  }, []);
+
+  const stopDragging = useCallback(() => {
+    if (!dragStateRef.current.isDragging) return;
+
+    dragStateRef.current.isDragging = false;
+    window.removeEventListener('mousemove', handleResizeMove);
+    window.removeEventListener('mouseup', stopDragging);
+  }, [handleResizeMove]);
+
+  const handleResizeStart = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragStateRef.current = {
+      startX: event.clientX,
+      startWidth: width,
+      isDragging: true,
+    };
+
+    window.addEventListener('mousemove', handleResizeMove);
+    window.addEventListener('mouseup', stopDragging);
+  }, [width, handleResizeMove, stopDragging]);
+
+  const handleHandleDoubleClick = useCallback(() => {
+    setWidth(prev => (prev < EXPANDED_WIDTH ? EXPANDED_WIDTH : DEFAULT_WIDTH));
+  }, []);
+
+  useEffect(() => (
+    () => {
+      stopDragging();
+    }
+  ), [stopDragging]);
   
   const handleDelete = useCallback(() => {
     if (selectedElement) {
@@ -47,8 +101,21 @@ const Inspector: React.FC = () => {
   }, [selectedElement, moveElementDown]);
 
   return (
-    <div className="w-80 bg-[#09090b] border-l border-white/5 overflow-y-auto h-full">
-      <div className="p-6">
+    <div
+      className="relative flex-shrink-0 h-full bg-[#09090b] border-l border-white/5 transition-[width] duration-150 ease-out"
+      style={{ width }}
+    >
+      <div
+        className="absolute left-0 top-0 h-full w-2 cursor-col-resize group"
+        onMouseDown={handleResizeStart}
+        onDoubleClick={handleHandleDoubleClick}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize inspector"
+      >
+        <div className="mx-auto mt-1 h-full w-0.5 rounded-full bg-white/5 transition-all group-hover:bg-white/20" />
+      </div>
+      <div className="p-6 overflow-y-auto h-full">
         {selectedElement ? (
           <div className="space-y-6">
             {/* Header with Title and Element Actions */}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { useBrandingStore } from '../../store/brandingStore';
 import { FONT_FAMILIES } from '../../types';
@@ -20,6 +20,78 @@ const SOCIAL_PLATFORMS = [
   { key: 'tiktok', label: 'TikTok', placeholder: '@username' },
 ] as const;
 
+const MAX_AVATAR_DIMENSION = 192;
+const MAX_EMBEDDED_AVATAR_LENGTH = 350000;
+
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (typeof reader.result === 'string') {
+      resolve(reader.result);
+    } else {
+      reject(new Error('Could not read file contents.'));
+    }
+  };
+  reader.onerror = () => reject(reader.error ?? new Error('Avatar read failed.'));
+  reader.readAsDataURL(file);
+});
+
+const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+  const img = new Image();
+  img.onload = () => resolve(img);
+  img.onerror = () => reject(new Error('Avatar image could not be loaded.'));
+  img.src = src;
+});
+
+const optimiseAvatarFile = async (file: File): Promise<string> => {
+  const rawDataUrl = await readFileAsDataUrl(file);
+
+  if (rawDataUrl.length <= MAX_EMBEDDED_AVATAR_LENGTH) {
+    return rawDataUrl;
+  }
+
+  try {
+    const image = await loadImage(rawDataUrl);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return rawDataUrl;
+    }
+
+    let targetSize = MAX_AVATAR_DIMENSION;
+    let optimised = rawDataUrl;
+
+    while (targetSize >= 96) {
+      const maxSide = Math.max(image.width, image.height);
+      const scale = maxSide > targetSize ? targetSize / maxSide : 1;
+      const width = Math.max(1, Math.round(image.width * scale));
+      const height = Math.max(1, Math.round(image.height * scale));
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(image, 0, 0, width, height);
+
+      optimised = canvas.toDataURL('image/png');
+      if (optimised.length <= MAX_EMBEDDED_AVATAR_LENGTH) {
+        break;
+      }
+
+      optimised = canvas.toDataURL('image/jpeg', 0.82);
+      if (optimised.length <= MAX_EMBEDDED_AVATAR_LENGTH) {
+        break;
+      }
+
+      targetSize = Math.floor(targetSize * 0.75);
+    }
+
+    return optimised.length <= MAX_EMBEDDED_AVATAR_LENGTH ? optimised : rawDataUrl;
+  } catch (error) {
+    console.warn('Avatar optimisation failed, keeping the original image.', error);
+    return rawDataUrl;
+  }
+};
+
 const BrandingPanel: React.FC = () => {
   const { setBackground } = useCanvasStore();
   const { info, preferences, updateInfo, updateSocial, updatePreferences } = useBrandingStore();
@@ -32,6 +104,7 @@ const BrandingPanel: React.FC = () => {
         name: info.name,
         website: info.website,
         social: info.social,
+        avatarUrl: info.avatarUrl,
       },
     });
   }, [info, preferences, setBackground]);
@@ -47,6 +120,35 @@ const BrandingPanel: React.FC = () => {
   const handleUpdateSocial = (platform: string, value: string) => {
     updateSocial(platform, value);
   };
+
+  const handleAvatarUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    const resetInput = () => {
+      if (event.target) {
+        event.target.value = '';
+      }
+    };
+
+    if (!file || !file.type.startsWith('image/')) {
+      resetInput();
+      return;
+    }
+
+    void optimiseAvatarFile(file)
+      .then((dataUrl) => {
+        handleUpdateInfo({ avatarUrl: dataUrl });
+        handleUpdatePreferences({ showAvatar: true });
+      })
+      .catch((error) => {
+        console.warn('Avatar upload cancelled.', error);
+      })
+      .finally(resetInput);
+  }, [handleUpdateInfo, handleUpdatePreferences]);
+
+  const handleAvatarClear = useCallback(() => {
+    handleUpdateInfo({ avatarUrl: '' });
+  }, [handleUpdateInfo]);
 
   return (
     <div className="space-y-6">
@@ -91,6 +193,74 @@ const BrandingPanel: React.FC = () => {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Avatar */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                Avatar
+              </label>
+              <button
+                onClick={() => handleUpdatePreferences({ showAvatar: !preferences.showAvatar })}
+                className={`text-xs px-2 py-0.5 rounded ${
+                  preferences.showAvatar
+                    ? 'bg-blue-600/20 text-blue-400'
+                    : 'bg-white/5 text-neutral-500'
+                }`}
+              >
+                {preferences.showAvatar ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="relative w-16 h-16 rounded-full border border-white/10 bg-white/5 overflow-hidden cursor-pointer group">
+                {info.avatarUrl ? (
+                  <img
+                    src={info.avatarUrl}
+                    alt="Brand avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-neutral-500 group-hover:text-neutral-300">
+                    <span>Upload</span>
+                    <span className="text-[9px] text-neutral-600">PNG/JPG</span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  aria-label="Upload avatar"
+                />
+              </label>
+              <div className="flex-1 text-[11px] text-neutral-500 space-y-1">
+                <p>Use a square image for best results. Supported formats: PNG, JPG, SVG.</p>
+                {info.avatarUrl && (
+                  <button
+                    onClick={handleAvatarClear}
+                    className="text-xs text-neutral-400 hover:text-red-400 transition-colors"
+                  >
+                    Remove avatar
+                  </button>
+                )}
+              </div>
+            </div>
+            {preferences.showAvatar && (
+              <div className="mt-3">
+                <label className="block text-xs text-neutral-500 mb-2">
+                  Size: {preferences.avatarSize}px
+                </label>
+                <input
+                  type="range"
+                  min={32}
+                  max={120}
+                  value={preferences.avatarSize}
+                  onChange={(e) => handleUpdatePreferences({ avatarSize: parseInt(e.target.value) })}
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
+            )}
           </div>
 
           {/* Name */}

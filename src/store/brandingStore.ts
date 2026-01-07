@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface BrandingInfo {
   name: string;
@@ -12,6 +12,7 @@ interface BrandingInfo {
     youtube?: string;
     tiktok?: string;
   };
+  avatarUrl?: string;
 }
 
 interface BrandingPreferences {
@@ -20,6 +21,7 @@ interface BrandingPreferences {
   showName: boolean;
   showWebsite: boolean;
   showSocial: boolean;
+  showAvatar: boolean;
   fontSize: number;
   fontFamily: string;
   color: string;
@@ -27,6 +29,7 @@ interface BrandingPreferences {
   padding: number;
   socialIconSize: number;
   socialLayout: 'horizontal' | 'vertical';
+  avatarSize: number;
 }
 
 interface BrandingStore {
@@ -44,7 +47,10 @@ const defaultInfo: BrandingInfo = {
   name: '',
   website: '',
   social: {},
+  avatarUrl: '',
 };
+
+const MAX_PERSISTED_AVATAR_LENGTH = 350000;
 
 const defaultPreferences: BrandingPreferences = {
   enabled: false,
@@ -52,6 +58,7 @@ const defaultPreferences: BrandingPreferences = {
   showName: true,
   showWebsite: true,
   showSocial: true,
+  showAvatar: false,
   fontSize: 14,
   fontFamily: 'Inter',
   color: '#ffffff',
@@ -59,6 +66,7 @@ const defaultPreferences: BrandingPreferences = {
   padding: 24,
   socialIconSize: 20,
   socialLayout: 'horizontal',
+  avatarSize: 56,
 };
 
 export const useBrandingStore = create<BrandingStore>()(
@@ -89,6 +97,36 @@ export const useBrandingStore = create<BrandingStore>()(
     }),
     {
       name: 'yvcode-branding',
+      storage: createJSONStorage(() => {
+        if (typeof window === 'undefined') {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          };
+        }
+
+        return {
+          getItem: (name: string) => window.localStorage.getItem(name),
+          setItem: (name: string, value: string) => {
+            try {
+              window.localStorage.setItem(name, value);
+            } catch (error) {
+              console.warn('Failed to persist branding preferences (quota exceeded).', error);
+            }
+          },
+          removeItem: (name: string) => window.localStorage.removeItem(name),
+        };
+      }),
+      partialize: (state) => ({
+        info: {
+          ...state.info,
+          avatarUrl: state.info.avatarUrl && state.info.avatarUrl.length > MAX_PERSISTED_AVATAR_LENGTH
+            ? ''
+            : state.info.avatarUrl,
+        },
+        preferences: state.preferences,
+      }),
     }
   )
 );

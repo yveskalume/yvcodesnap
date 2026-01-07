@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   Snap,
@@ -52,6 +52,8 @@ interface CanvasState {
   importSnap: (json: string) => void;
 }
 
+const MAX_PERSISTED_AVATAR_LENGTH = 350000;
+
 const defaultSnap: Snap = {
   version: '1.0.0',
   meta: {
@@ -80,14 +82,19 @@ const defaultSnap: Snap = {
       name: '',
       website: '',
       social: {},
+      avatarUrl: '',
       showName: true,
       showWebsite: true,
       showSocial: true,
+      showAvatar: false,
       fontSize: 14,
       fontFamily: 'Inter',
       color: '#ffffff',
       opacity: 0.8,
       padding: 24,
+      socialIconSize: 20,
+      socialLayout: 'horizontal',
+      avatarSize: 56,
     },
   },
   elements: [],
@@ -243,7 +250,35 @@ export const useCanvasStore = create<CanvasState>()(
     })),
     {
       name: 'code-canvas-storage',
-      partialize: (state) => ({ snap: state.snap }),
+      storage: createJSONStorage(() => {
+        if (typeof window === 'undefined') {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          };
+        }
+
+        return {
+          getItem: (name: string) => window.localStorage.getItem(name),
+          setItem: (name: string, value: string) => {
+            try {
+              window.localStorage.setItem(name, value);
+            } catch (error) {
+              console.warn('Failed to persist canvas state (quota exceeded).', error);
+            }
+          },
+          removeItem: (name: string) => window.localStorage.removeItem(name),
+        };
+      }),
+      partialize: (state) => {
+        const snap = JSON.parse(JSON.stringify(state.snap)) as Snap;
+        if (snap.background?.branding?.avatarUrl && snap.background.branding.avatarUrl.length > MAX_PERSISTED_AVATAR_LENGTH) {
+          snap.background.branding.avatarUrl = '';
+          snap.background.branding.showAvatar = false;
+        }
+        return { snap };
+      },
     }
   )
 );

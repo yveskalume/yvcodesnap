@@ -25,9 +25,11 @@ export interface Branding {
   name: string;
   website: string;
   social: SocialMedia;
+  avatarUrl?: string;
   showName: boolean;
   showWebsite: boolean;
   showSocial: boolean;
+  showAvatar?: boolean;
   fontSize: number;
   fontFamily: string;
   color: string;
@@ -35,6 +37,7 @@ export interface Branding {
   padding: number;
   socialIconSize?: number;
   socialLayout?: 'horizontal' | 'vertical';
+  avatarSize?: number;
 }
 
 export interface BrandStrip {

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { Stage, Layer, Rect, Line, Text, Group, Path } from 'react-konva';
+import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
@@ -28,6 +28,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
 
   const { width, height } = snap.meta;
   const { background } = snap;
+  const [brandingAvatar, setBrandingAvatar] = useState<HTMLImageElement | null>(null);
 
   // Handle resize
   useEffect(() => {
@@ -44,6 +45,25 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
+
+  useEffect(() => {
+    const url = background.branding?.avatarUrl || '';
+    if (!url) {
+      setBrandingAvatar(null);
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => setBrandingAvatar(img);
+    img.onerror = () => setBrandingAvatar(null);
+    img.src = url;
+
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [background.branding?.avatarUrl]);
 
   // Calculate stage position to center the canvas
   const getStagePosition = useCallback(() => {
@@ -193,6 +213,9 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     const socialLayout = branding.socialLayout || 'horizontal';
     const iconGap = 16;
     const iconTextGap = 6; // Gap between icon and its text
+    const avatarSize = branding.avatarSize || 56;
+    const avatarGap = 14;
+    const hasAvatar = Boolean(branding.showAvatar && branding.avatarUrl && brandingAvatar);
 
     // Build branding text lines
     const lines: string[] = [];
@@ -204,7 +227,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     }
 
     // Get active social platforms with their values
-    const activeSocialPlatforms = branding.showSocial && branding.social 
+    const activeSocialPlatforms = branding.showSocial && branding.social
       ? SOCIAL_PLATFORMS_CONFIG.filter(p => branding.social[p.key as keyof typeof branding.social])
           .map(p => ({
             ...p,
@@ -215,10 +238,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     const hasTextContent = lines.length > 0;
     const hasSocialIcons = activeSocialPlatforms.length > 0;
 
-    if (!hasTextContent && !hasSocialIcons) return null;
+    if (!hasTextContent && !hasSocialIcons && !hasAvatar) return null;
 
     const textHeight = lines.length * lineHeight;
-    
+
     // Calculate social section dimensions (icon + text for each platform)
     const socialItemHeight = Math.max(iconSize, fontSize);
     const socialHeight = socialLayout === 'vertical'
@@ -226,7 +249,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       : socialItemHeight;
 
     // Calculate total content height
-    const contentHeight = textHeight + (hasTextContent && hasSocialIcons ? 16 : 0) + (hasSocialIcons ? socialHeight : 0);
+    const contentHeight = (hasTextContent || hasSocialIcons)
+      ? textHeight + (hasTextContent && hasSocialIcons ? 16 : 0) + (hasSocialIcons ? socialHeight : 0)
+      : 0;
+    const blockHeight = Math.max(contentHeight, hasAvatar ? avatarSize : 0);
 
     // Calculate position based on setting
     let x = padding;
@@ -246,28 +272,60 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         break;
       case 'bottom-left':
         x = padding;
-        y = height - padding - contentHeight;
+        y = height - padding - blockHeight;
         align = 'left';
         break;
       case 'bottom-right':
         x = width - padding;
-        y = height - padding - contentHeight;
+        y = height - padding - blockHeight;
         align = 'right';
         break;
     }
 
+    const totalHeight = blockHeight;
+    const contentTop = contentHeight > 0 ? y + (totalHeight - contentHeight) / 2 : y;
+    const avatarY = hasAvatar ? y + (totalHeight - avatarSize) / 2 : 0;
+    const avatarCenterX = align === 'right' ? x - avatarSize / 2 : x + avatarSize / 2;
+    const avatarCenterY = avatarY + avatarSize / 2;
+    const avatarPatternScale = hasAvatar && brandingAvatar && brandingAvatar.width && brandingAvatar.height
+      ? Math.max(avatarSize / brandingAvatar.width, avatarSize / brandingAvatar.height)
+      : 1;
+
+    const avatarOffset = hasAvatar ? avatarSize + avatarGap : 0;
+    const textStartXBase = align === 'right' ? x - avatarOffset : x + avatarOffset;
+    const textX = align === 'right' ? 0 : textStartXBase;
+    const textWidth = align === 'right'
+      ? Math.max(textStartXBase, 0)
+      : Math.max(width - padding - textStartXBase, 0);
+
     // Calculate icon positions
     const iconScale = iconSize / 24; // SVG viewBox is 24x24
-    const socialStartY = y + textHeight + (hasTextContent ? 16 : 0);
+    const socialStartY = contentTop + textHeight + (hasTextContent ? 16 : 0);
+    const anchorX = textStartXBase;
 
     return (
       <Group opacity={branding.opacity || 0.8}>
+        {/* Avatar */}
+        {hasAvatar && brandingAvatar && (
+          <Circle
+            x={avatarCenterX}
+            y={avatarCenterY}
+            radius={avatarSize / 2}
+            fillPatternImage={brandingAvatar}
+            fillPatternScaleX={avatarPatternScale}
+            fillPatternScaleY={avatarPatternScale}
+            fillPatternOffsetX={brandingAvatar.width / 2}
+            fillPatternOffsetY={brandingAvatar.height / 2}
+            listening={false}
+          />
+        )}
+
         {/* Text content */}
         {hasTextContent && (
           <Text
-            x={align === 'right' ? 0 : x}
-            y={y}
-            width={align === 'right' ? x : width - padding}
+            x={textX}
+            y={contentTop}
+            width={textWidth}
             text={lines.join('\n')}
             fontSize={fontSize}
             fontFamily={branding.fontFamily || 'Inter'}
@@ -288,16 +346,16 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           
           if (socialLayout === 'vertical') {
             itemY = socialStartY + index * (socialItemHeight + iconGap - 4);
-            itemX = align === 'right' ? x : x;
+            itemX = anchorX;
           } else {
             itemY = socialStartY;
             // For horizontal layout, we need to calculate cumulative width
             // This is simplified - for perfect alignment we'd need to measure text
             const prevItemsWidth = activeSocialPlatforms.slice(0, index).reduce((acc, p) => {
-              const textWidth = (p.value.length * fontSize * 0.5); // Approximate text width
-              return acc + iconSize + iconTextGap + textWidth + iconGap;
+              const textWidthEstimate = (p.value.length * fontSize * 0.5); // Approximate text width
+              return acc + iconSize + iconTextGap + textWidthEstimate + iconGap;
             }, 0);
-            itemX = align === 'right' ? x - prevItemsWidth : x + prevItemsWidth;
+            itemX = align === 'right' ? anchorX - prevItemsWidth : anchorX + prevItemsWidth;
           }
 
           // Icon vertical centering within item
@@ -307,7 +365,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
 
           if (align === 'right') {
             // For right alignment: text first, then icon
-            const textWidth = platform.value.length * fontSize * 0.5; // Approximate
+            const textWidthEstimate = platform.value.length * fontSize * 0.5; // Approximate
             return (
               <Group key={platform.key}>
                 <Path
@@ -319,7 +377,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
                   scaleY={iconScale}
                 />
                 <Text
-                  x={itemX - iconSize - iconTextGap - textWidth}
+                  x={itemX - iconSize - iconTextGap - textWidthEstimate}
                   y={textY}
                   text={platform.value}
                   fontSize={fontSize}
@@ -354,7 +412,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         })}
       </Group>
     );
-  }, [background.branding, width, height]);
+  }, [background.branding, width, height, brandingAvatar]);
 
   const stagePosition = useMemo(() => getStagePosition(), [getStagePosition]);
 
