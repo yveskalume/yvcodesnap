@@ -180,6 +180,85 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     );
   }, [background.brandStrip, width, height]);
 
+  // Branding watermark - memoized
+  const brandingElement = useMemo(() => {
+    const branding = background.branding;
+    if (!branding?.enabled) return null;
+
+    const padding = branding.padding || 24;
+    const fontSize = branding.fontSize || 14;
+    const lineHeight = fontSize * 1.5;
+
+    // Build branding text lines
+    const lines: string[] = [];
+    if (branding.showName && branding.name) {
+      lines.push(branding.name);
+    }
+    if (branding.showWebsite && branding.website) {
+      lines.push(branding.website);
+    }
+    if (branding.showSocial && branding.social) {
+      const socialParts: string[] = [];
+      if (branding.social.twitter) socialParts.push(branding.social.twitter);
+      if (branding.social.linkedin) socialParts.push(branding.social.linkedin);
+      if (branding.social.instagram) socialParts.push(branding.social.instagram);
+      if (branding.social.github) socialParts.push(branding.social.github);
+      if (branding.social.youtube) socialParts.push(branding.social.youtube);
+      if (branding.social.tiktok) socialParts.push(branding.social.tiktok);
+      if (socialParts.length > 0) {
+        lines.push(socialParts.join(' • '));
+      }
+    }
+
+    if (lines.length === 0) return null;
+
+    const text = lines.join('\n');
+    const textHeight = lines.length * lineHeight;
+
+    // Calculate position based on setting
+    let x = padding;
+    let y = padding;
+    let align: 'left' | 'right' = 'left';
+
+    switch (branding.position) {
+      case 'top-left':
+        x = padding;
+        y = padding;
+        align = 'left';
+        break;
+      case 'top-right':
+        x = width - padding;
+        y = padding;
+        align = 'right';
+        break;
+      case 'bottom-left':
+        x = padding;
+        y = height - padding - textHeight;
+        align = 'left';
+        break;
+      case 'bottom-right':
+        x = width - padding;
+        y = height - padding - textHeight;
+        align = 'right';
+        break;
+    }
+
+    return (
+      <Text
+        x={align === 'right' ? 0 : x}
+        y={y}
+        width={align === 'right' ? x : width - padding}
+        text={text}
+        fontSize={fontSize}
+        fontFamily={branding.fontFamily || 'Inter'}
+        fill={branding.color || '#ffffff'}
+        opacity={branding.opacity || 0.8}
+        align={align}
+        lineHeight={1.5}
+      />
+    );
+  }, [background.branding, width, height]);
+
   const stagePosition = useMemo(() => getStagePosition(), [getStagePosition]);
 
   return (
@@ -201,6 +280,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         <Layer>
           {renderBackground()}
           {brandStripElement}
+          {brandingElement}
           {gridLines}
           
           {snap.elements.map((element) => {

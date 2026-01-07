@@ -10,6 +10,31 @@ export interface GradientBackground {
   angle: number;
 }
 
+export interface SocialMedia {
+  twitter?: string;
+  linkedin?: string;
+  instagram?: string;
+  github?: string;
+  youtube?: string;
+  tiktok?: string;
+}
+
+export interface Branding {
+  enabled: boolean;
+  position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  name: string;
+  website: string;
+  social: SocialMedia;
+  showName: boolean;
+  showWebsite: boolean;
+  showSocial: boolean;
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+  opacity: number;
+  padding: number;
+}
+
 export interface BrandStrip {
   enabled: boolean;
   position: 'top' | 'bottom';
@@ -26,6 +51,7 @@ export interface Background {
   solid: SolidBackground;
   gradient: GradientBackground;
   brandStrip: BrandStrip;
+  branding: Branding;
 }
 
 export interface Shadow {

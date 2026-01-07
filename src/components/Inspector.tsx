@@ -2,6 +2,7 @@ import React, { memo, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import type { CodeElement, TextElement, ArrowElement } from '../types';
 import BackgroundPanel from './inspector/BackgroundPanel';
+import BrandingPanel from './inspector/BrandingPanel';
 import CodeInspector from './inspector/CodeInspector';
 import TextInspector from './inspector/TextInspector';
 import ArrowInspector from './inspector/ArrowInspector';
@@ -119,6 +120,11 @@ const Inspector: React.FC = () => {
           <div className="space-y-6">
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Canvas Settings</h3>
             <BackgroundPanel />
+            
+            <div className="h-px bg-white/5 w-full" />
+            
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Branding</h3>
+            <BrandingPanel />
           </div>
         )}
       </div>
