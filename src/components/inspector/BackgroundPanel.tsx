@@ -19,27 +19,27 @@ const BackgroundPanel: React.FC = () => {
   const { background } = snap;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Background type */}
       <div>
-        <label className="block text-sm text-neutral-400 mb-2">Type</label>
-        <div className="flex gap-2">
+        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Type</label>
+        <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/5">
           <button
             onClick={() => setBackground({ type: 'solid' })}
-            className={`flex-1 py-2 rounded text-sm ${
+            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
               background.type === 'solid'
-                ? 'bg-blue-600 text-white'
-                : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                ? 'bg-neutral-700 text-white shadow-sm'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
             }`}
           >
             Solid
           </button>
           <button
             onClick={() => setBackground({ type: 'gradient' })}
-            className={`flex-1 py-2 rounded text-sm ${
+            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
               background.type === 'gradient'
-                ? 'bg-blue-600 text-white'
-                : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                ? 'bg-neutral-700 text-white shadow-sm'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
             }`}
           >
             Gradient
@@ -49,26 +49,28 @@ const BackgroundPanel: React.FC = () => {
 
       {background.type === 'solid' ? (
         <div>
-          <label className="block text-sm text-neutral-400 mb-2">Color</label>
-          <div className="flex gap-2 items-center">
-            <input
-              type="color"
-              value={background.solid.color}
-              onChange={(e) => setBackground({ solid: { color: e.target.value } })}
-              className="w-10 h-10 rounded cursor-pointer bg-transparent"
-            />
+          <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Color</label>
+          <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
+             <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
+               <input
+                type="color"
+                value={background.solid.color}
+                onChange={(e) => setBackground({ solid: { color: e.target.value } })}
+                className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer p-0 m-0 border-none"
+              />
+            </div>
             <input
               type="text"
               value={background.solid.color}
               onChange={(e) => setBackground({ solid: { color: e.target.value } })}
-              className="flex-1 bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+              className="flex-1 bg-transparent text-white text-sm focus:outline-none font-mono"
             />
           </div>
         </div>
       ) : (
         <>
           <div>
-            <label className="block text-sm text-neutral-400 mb-2">Presets</label>
+            <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Presets</label>
             <div className="grid grid-cols-5 gap-2">
               {GRADIENT_PRESETS.map((preset, i) => (
                 <button
@@ -76,7 +78,7 @@ const BackgroundPanel: React.FC = () => {
                   onClick={() => setBackground({
                     gradient: { ...background.gradient, from: preset.from, to: preset.to }
                   })}
-                  className="w-10 h-10 rounded border border-neutral-600 hover:border-blue-500 transition-colors"
+                  className="w-full aspect-square rounded-lg border border-white/10 hover:border-white/40 transition-all hover:scale-105 shadow-sm"
                   style={{
                     background: `linear-gradient(135deg, ${preset.from}, ${preset.to})`
                   }}
@@ -88,53 +90,55 @@ const BackgroundPanel: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-neutral-400 mb-2">From</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="color"
-                  value={background.gradient.from}
-                  onChange={(e) => setBackground({
-                    gradient: { ...background.gradient, from: e.target.value }
-                  })}
-                  className="w-8 h-8 rounded cursor-pointer bg-transparent"
-                />
-                <input
-                  type="text"
-                  value={background.gradient.from}
-                  onChange={(e) => setBackground({
-                    gradient: { ...background.gradient, from: e.target.value }
-                  })}
-                  className="flex-1 bg-neutral-700 text-white px-2 py-1.5 rounded text-xs"
-                />
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">From</label>
+              <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                 <div className="w-6 h-6 rounded overflow-hidden relative border border-white/10 shrink-0">
+                    <input
+                      type="color"
+                      value={background.gradient.from}
+                      onChange={(e) => setBackground({
+                        gradient: { ...background.gradient, from: e.target.value }
+                      })}
+                      className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer"
+                    />
+                 </div>
+                 <input
+                    type="text"
+                    value={background.gradient.from}
+                    onChange={(e) => setBackground({
+                      gradient: { ...background.gradient, from: e.target.value }
+                    })}
+                     className="w-full bg-transparent text-white text-xs focus:outline-none font-mono"
+                  />
               </div>
             </div>
             <div>
-              <label className="block text-sm text-neutral-400 mb-2">To</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="color"
-                  value={background.gradient.to}
-                  onChange={(e) => setBackground({
-                    gradient: { ...background.gradient, to: e.target.value }
-                  })}
-                  className="w-8 h-8 rounded cursor-pointer bg-transparent"
-                />
-                <input
-                  type="text"
-                  value={background.gradient.to}
-                  onChange={(e) => setBackground({
-                    gradient: { ...background.gradient, to: e.target.value }
-                  })}
-                  className="flex-1 bg-neutral-700 text-white px-2 py-1.5 rounded text-xs"
-                />
+              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">To</label>
+               <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                 <div className="w-6 h-6 rounded overflow-hidden relative border border-white/10 shrink-0">
+                    <input
+                      type="color"
+                      value={background.gradient.to}
+                      onChange={(e) => setBackground({
+                        gradient: { ...background.gradient, from: e.target.value }
+                      })}
+                      className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer"
+                    />
+                 </div>
+                 <input
+                    type="text"
+                    value={background.gradient.to}
+                    onChange={(e) => setBackground({
+                      gradient: { ...background.gradient, from: e.target.value }
+                    })}
+                     className="w-full bg-transparent text-white text-xs focus:outline-none font-mono"
+                  />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-neutral-400 mb-2">
-              Angle: {background.gradient.angle}°
-            </label>
+            <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Angle: {background.gradient.angle}°</label>
             <input
               type="range"
               min="0"
@@ -143,7 +147,7 @@ const BackgroundPanel: React.FC = () => {
               onChange={(e) => setBackground({
                 gradient: { ...background.gradient, angle: parseInt(e.target.value) }
               })}
-              className="w-full"
+              className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
             />
           </div>
         </>

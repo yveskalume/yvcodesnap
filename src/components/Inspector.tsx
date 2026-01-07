@@ -19,46 +19,29 @@ const Inspector: React.FC = () => {
   const selectedElement = snap.elements.find(el => el.id === selectedElementId);
 
   return (
-    <div className="w-72 bg-neutral-800 border-l border-neutral-700 overflow-y-auto">
-      <div className="p-4">
+    <div className="w-80 bg-[#09090b] border-l border-white/5 overflow-y-auto h-full">
+      <div className="p-6">
         {selectedElement ? (
-          <>
-            {/* Element header */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium capitalize">
-                {selectedElement.type} Element
+          <div className="space-y-6">
+            {/* Header with Title and Element Actions */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-semibold text-sm uppercase tracking-wider">
+                {selectedElement.type}
               </h3>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => moveElementDown(selectedElement.id)}
-                  className="p-1.5 hover:bg-neutral-700 rounded text-neutral-400 hover:text-white"
-                  title="Move Back"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => moveElementUp(selectedElement.id)}
-                  className="p-1.5 hover:bg-neutral-700 rounded text-neutral-400 hover:text-white"
-                  title="Move Front"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                  </svg>
-                </button>
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => duplicateElement(selectedElement.id)}
-                  className="p-1.5 hover:bg-neutral-700 rounded text-neutral-400 hover:text-white"
+                  className="p-1.5 hover:bg-white/10 rounded-md text-neutral-400 hover:text-white transition-colors"
                   title="Duplicate (⌘D)"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </button>
+                <div className="w-px h-3 bg-white/10 mx-1" />
                 <button
                   onClick={() => deleteElement(selectedElement.id)}
-                  className="p-1.5 hover:bg-red-600 rounded text-neutral-400 hover:text-white"
+                  className="p-1.5 hover:bg-red-500/10 hover:text-red-500 rounded-md text-neutral-400 transition-colors"
                   title="Delete (⌫)"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,26 +51,51 @@ const Inspector: React.FC = () => {
               </div>
             </div>
 
+             {/* Layer Controls */}
+             <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => moveElementDown(selectedElement.id)}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  Send Backward
+                </button>
+                <button
+                  onClick={() => moveElementUp(selectedElement.id)}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  Bring Forward
+                </button>
+             </div>
+
+             <div className="h-px bg-white/5 w-full -mx-2" />
+
             {/* Element-specific inspector */}
-            {selectedElement.type === 'code' && (
-              <CodeInspector element={selectedElement as CodeElement} />
-            )}
-            {selectedElement.type === 'text' && (
-              <TextInspector element={selectedElement as TextElement} />
-            )}
-            {selectedElement.type === 'arrow' && (
-              <ArrowInspector element={selectedElement as ArrowElement} />
-            )}
-          </>
+            <div className="inspector-content">
+              {selectedElement.type === 'code' && (
+                <CodeInspector element={selectedElement as CodeElement} />
+              )}
+              {selectedElement.type === 'text' && (
+                <TextInspector element={selectedElement as TextElement} />
+              )}
+              {selectedElement.type === 'arrow' && (
+                <ArrowInspector element={selectedElement as ArrowElement} />
+              )}
+            </div>
+          </div>
         ) : (
-          <>
-            <h3 className="text-white font-medium mb-4">Canvas Settings</h3>
+          <div className="space-y-6">
+            <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Canvas Settings</h3>
             <BackgroundPanel />
-          </>
+          </div>
         )}
       </div>
     </div>
   );
 };
-
 export default Inspector;

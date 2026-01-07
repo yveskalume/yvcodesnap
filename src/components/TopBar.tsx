@@ -96,13 +96,24 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
   };
 
   return (
-    <div className="h-14 bg-neutral-800 border-b border-neutral-700 flex items-center justify-between px-4">
-      {/* Left section */}
+    <div className="h-16 bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-40 fixed top-0 w-full">
+      {/* Left section: Logo & Actions */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pr-4 border-r border-white/5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-900/20 flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+            YvCode
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1">
           <button
             onClick={handleNewSnap}
-            className="p-2 hover:bg-neutral-700 rounded text-neutral-300 hover:text-white transition-colors"
+            className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-all active:scale-95"
             title="New (⌘N)"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -111,7 +122,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
           </button>
           <button
             onClick={handleImportJSON}
-            className="p-2 hover:bg-neutral-700 rounded text-neutral-300 hover:text-white transition-colors"
+            className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-all active:scale-95"
             title="Open"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -119,95 +130,93 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
             </svg>
           </button>
         </div>
-        
-        <div className="h-6 w-px bg-neutral-600" />
-        
-        <div className="flex items-center gap-2">
+      </div>
+
+      {/* Center section: Title & Tools */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+        <div className="flex flex-col items-center">
+          <input
+            type="text"
+            value={snap.meta.title}
+            onChange={(e) => updateMeta({ title: e.target.value })}
+            className="bg-transparent text-sm font-medium text-center text-neutral-200 focus:text-white px-2 py-1 outline-none rounded hover:bg-white/5 focus:bg-white/10 transition-colors placeholder-neutral-600 w-48"
+            placeholder="Untitled Project"
+          />
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+             <select
+              value={snap.meta.aspect}
+              onChange={handleAspectChange}
+              className="bg-transparent text-[10px] items-center uppercase tracking-wider font-semibold text-neutral-500 hover:text-neutral-300 outline-none cursor-pointer appearance-none text-center"
+            >
+              {ASPECT_RATIOS.map((ratio) => (
+                <option key={ratio.name} value={ratio.name}>
+                  {ratio.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Right section: History & Export */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-0.5 p-1 bg-white/5 rounded-lg border border-white/5">
           <button
             onClick={undo}
             disabled={history.past.length === 0}
-            className="p-2 hover:bg-neutral-700 rounded text-neutral-300 hover:text-white transition-colors disabled:opacity-30"
+            className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Undo (⌘Z)"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
             </svg>
           </button>
           <button
             onClick={redo}
             disabled={history.future.length === 0}
-            className="p-2 hover:bg-neutral-700 rounded text-neutral-300 hover:text-white transition-colors disabled:opacity-30"
+            className="p-1.5 rounded text-neutral-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
             title="Redo (⇧⌘Z)"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
             </svg>
           </button>
         </div>
-      </div>
-
-      {/* Center section */}
-      <div className="flex items-center gap-4">
-        <input
-          type="text"
-          value={snap.meta.title}
-          onChange={(e) => updateMeta({ title: e.target.value })}
-          className="bg-transparent text-white text-center px-2 py-1 border-b border-transparent hover:border-neutral-600 focus:border-blue-500 outline-none"
-        />
         
-        <select
-          value={snap.meta.aspect}
-          onChange={handleAspectChange}
-          className="bg-neutral-700 text-white px-3 py-1.5 rounded text-sm"
-        >
-          {ASPECT_RATIOS.map((ratio) => (
-            <option key={ratio.name} value={ratio.name}>
-              {ratio.name}
-            </option>
-          ))}
-        </select>
-      </div>
+        <div className="h-6 w-px bg-white/10" />
 
-      {/* Right section */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleExportJSON}
-          className="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 rounded text-white transition-colors"
-        >
-          Save JSON
-        </button>
-        
         <div className="relative group">
           <button
-            className="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 rounded text-white font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black hover:bg-blue-50 text-sm font-semibold rounded-lg shadow-lg shadow-white/5 transition-all active:scale-95"
           >
-            Export
+            <span>Export</span>
+            <svg className="w-4 h-4 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
-          <div className="absolute right-0 top-full mt-1 bg-neutral-800 border border-neutral-700 rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-            <button
-              onClick={() => handleExportImage('png', 1)}
-              className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-neutral-700"
-            >
-              PNG (1x)
-            </button>
+          
+          <div className="absolute right-0 top-full mt-2 w-48 bg-[#09090b] border border-white/10 rounded-xl shadow-2xl p-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform origin-top-right">
+             <div className="px-3 py-2 text-xs font-semibold text-neutral-500 uppercase tracking-wider">Format</div>
             <button
               onClick={() => handleExportImage('png', 2)}
-              className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-neutral-700"
+              className="w-full text-left px-3 py-2 text-sm text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex justify-between group/item"
             >
-              PNG (2x)
+              <span>PNG Image</span>
+              <span className="bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-neutral-400 group-hover/item:text-white">2x</span>
             </button>
-            <button
-              onClick={() => handleExportImage('png', 3)}
-              className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-neutral-700"
-            >
-              PNG (3x)
-            </button>
-            <div className="border-t border-neutral-700" />
             <button
               onClick={() => handleExportImage('jpeg', 2)}
-              className="block w-full px-4 py-2 text-sm text-left text-white hover:bg-neutral-700"
+              className="w-full text-left px-3 py-2 text-sm text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              JPEG (2x)
+              JPEG Image
+            </button>
+            <div className="h-px bg-white/5 my-1" />
+            <button
+              onClick={handleExportJSON}
+              className="w-full text-left px-3 py-2 text-sm text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            >
+              Save Project JSON
             </button>
           </div>
         </div>
