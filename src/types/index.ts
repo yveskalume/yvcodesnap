@@ -33,6 +33,8 @@ export interface Branding {
   color: string;
   opacity: number;
   padding: number;
+  socialIconSize?: number;
+  socialLayout?: 'horizontal' | 'vertical';
 }
 
 export interface BrandStrip {

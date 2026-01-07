@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { Stage, Layer, Rect, Line, Text } from 'react-konva';
+import { Stage, Layer, Rect, Line, Text, Group, Path } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
 import TextBlock from './elements/TextBlock';
 import Arrow from './elements/Arrow';
+import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
 import type { CodeElement, TextElement, ArrowElement } from '../types';
 
 interface CanvasProps {
@@ -188,6 +189,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     const padding = branding.padding || 24;
     const fontSize = branding.fontSize || 14;
     const lineHeight = fontSize * 1.5;
+    const iconSize = branding.socialIconSize || 20;
+    const socialLayout = branding.socialLayout || 'horizontal';
+    const iconGap = 16;
+    const iconTextGap = 6; // Gap between icon and its text
 
     // Build branding text lines
     const lines: string[] = [];
@@ -197,23 +202,31 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     if (branding.showWebsite && branding.website) {
       lines.push(branding.website);
     }
-    if (branding.showSocial && branding.social) {
-      const socialParts: string[] = [];
-      if (branding.social.twitter) socialParts.push(branding.social.twitter);
-      if (branding.social.linkedin) socialParts.push(branding.social.linkedin);
-      if (branding.social.instagram) socialParts.push(branding.social.instagram);
-      if (branding.social.github) socialParts.push(branding.social.github);
-      if (branding.social.youtube) socialParts.push(branding.social.youtube);
-      if (branding.social.tiktok) socialParts.push(branding.social.tiktok);
-      if (socialParts.length > 0) {
-        lines.push(socialParts.join(' • '));
-      }
-    }
 
-    if (lines.length === 0) return null;
+    // Get active social platforms with their values
+    const activeSocialPlatforms = branding.showSocial && branding.social 
+      ? SOCIAL_PLATFORMS_CONFIG.filter(p => branding.social[p.key as keyof typeof branding.social])
+          .map(p => ({
+            ...p,
+            value: branding.social[p.key as keyof typeof branding.social] || ''
+          }))
+      : [];
 
-    const text = lines.join('\n');
+    const hasTextContent = lines.length > 0;
+    const hasSocialIcons = activeSocialPlatforms.length > 0;
+
+    if (!hasTextContent && !hasSocialIcons) return null;
+
     const textHeight = lines.length * lineHeight;
+    
+    // Calculate social section dimensions (icon + text for each platform)
+    const socialItemHeight = Math.max(iconSize, fontSize);
+    const socialHeight = socialLayout === 'vertical'
+      ? activeSocialPlatforms.length * socialItemHeight + (activeSocialPlatforms.length - 1) * (iconGap - 4)
+      : socialItemHeight;
+
+    // Calculate total content height
+    const contentHeight = textHeight + (hasTextContent && hasSocialIcons ? 16 : 0) + (hasSocialIcons ? socialHeight : 0);
 
     // Calculate position based on setting
     let x = padding;
@@ -233,29 +246,113 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         break;
       case 'bottom-left':
         x = padding;
-        y = height - padding - textHeight;
+        y = height - padding - contentHeight;
         align = 'left';
         break;
       case 'bottom-right':
         x = width - padding;
-        y = height - padding - textHeight;
+        y = height - padding - contentHeight;
         align = 'right';
         break;
     }
 
+    // Calculate icon positions
+    const iconScale = iconSize / 24; // SVG viewBox is 24x24
+    const socialStartY = y + textHeight + (hasTextContent ? 16 : 0);
+
     return (
-      <Text
-        x={align === 'right' ? 0 : x}
-        y={y}
-        width={align === 'right' ? x : width - padding}
-        text={text}
-        fontSize={fontSize}
-        fontFamily={branding.fontFamily || 'Inter'}
-        fill={branding.color || '#ffffff'}
-        opacity={branding.opacity || 0.8}
-        align={align}
-        lineHeight={1.5}
-      />
+      <Group opacity={branding.opacity || 0.8}>
+        {/* Text content */}
+        {hasTextContent && (
+          <Text
+            x={align === 'right' ? 0 : x}
+            y={y}
+            width={align === 'right' ? x : width - padding}
+            text={lines.join('\n')}
+            fontSize={fontSize}
+            fontFamily={branding.fontFamily || 'Inter'}
+            fill={branding.color || '#ffffff'}
+            align={align}
+            lineHeight={1.5}
+          />
+        )}
+        
+        {/* Social icons with text */}
+        {hasSocialIcons && activeSocialPlatforms.map((platform, index) => {
+          const path = SOCIAL_ICON_PATHS[platform.key];
+          if (!path) return null;
+          
+          // Calculate position for this social item
+          let itemX: number;
+          let itemY: number;
+          
+          if (socialLayout === 'vertical') {
+            itemY = socialStartY + index * (socialItemHeight + iconGap - 4);
+            itemX = align === 'right' ? x : x;
+          } else {
+            itemY = socialStartY;
+            // For horizontal layout, we need to calculate cumulative width
+            // This is simplified - for perfect alignment we'd need to measure text
+            const prevItemsWidth = activeSocialPlatforms.slice(0, index).reduce((acc, p) => {
+              const textWidth = (p.value.length * fontSize * 0.5); // Approximate text width
+              return acc + iconSize + iconTextGap + textWidth + iconGap;
+            }, 0);
+            itemX = align === 'right' ? x - prevItemsWidth : x + prevItemsWidth;
+          }
+
+          // Icon vertical centering within item
+          const iconY = itemY + (socialItemHeight - iconSize) / 2;
+          // Text vertical centering
+          const textY = itemY + (socialItemHeight - fontSize) / 2;
+
+          if (align === 'right') {
+            // For right alignment: text first, then icon
+            const textWidth = platform.value.length * fontSize * 0.5; // Approximate
+            return (
+              <Group key={platform.key}>
+                <Path
+                  x={itemX - iconSize}
+                  y={iconY}
+                  data={path}
+                  fill={branding.color || '#ffffff'}
+                  scaleX={iconScale}
+                  scaleY={iconScale}
+                />
+                <Text
+                  x={itemX - iconSize - iconTextGap - textWidth}
+                  y={textY}
+                  text={platform.value}
+                  fontSize={fontSize}
+                  fontFamily={branding.fontFamily || 'Inter'}
+                  fill={branding.color || '#ffffff'}
+                />
+              </Group>
+            );
+          } else {
+            // For left alignment: icon first, then text
+            return (
+              <Group key={platform.key}>
+                <Path
+                  x={itemX}
+                  y={iconY}
+                  data={path}
+                  fill={branding.color || '#ffffff'}
+                  scaleX={iconScale}
+                  scaleY={iconScale}
+                />
+                <Text
+                  x={itemX + iconSize + iconTextGap}
+                  y={textY}
+                  text={platform.value}
+                  fontSize={fontSize}
+                  fontFamily={branding.fontFamily || 'Inter'}
+                  fill={branding.color || '#ffffff'}
+                />
+              </Group>
+            );
+          }
+        })}
+      </Group>
     );
   }, [background.branding, width, height]);
 

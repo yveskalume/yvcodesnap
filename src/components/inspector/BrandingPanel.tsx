@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
+import { useBrandingStore } from '../../store/brandingStore';
 import { FONT_FAMILIES } from '../../types';
+import { SocialIcon } from '../elements/SocialIcons';
 
 const POSITION_OPTIONS = [
   { value: 'top-left', label: 'Top Left' },
@@ -19,40 +21,31 @@ const SOCIAL_PLATFORMS = [
 ] as const;
 
 const BrandingPanel: React.FC = () => {
-  const { snap, setBackground } = useCanvasStore();
-  
-  // Default branding values for backwards compatibility
-  const defaultBranding = {
-    enabled: false,
-    position: 'bottom-right' as const,
-    name: '',
-    website: '',
-    social: {},
-    showName: true,
-    showWebsite: true,
-    showSocial: true,
-    fontSize: 14,
-    fontFamily: 'Inter',
-    color: '#ffffff',
-    opacity: 0.8,
-    padding: 24,
-  };
-  
-  const branding = snap.background.branding || defaultBranding;
+  const { setBackground } = useCanvasStore();
+  const { info, preferences, updateInfo, updateSocial, updatePreferences } = useBrandingStore();
 
-  const updateBranding = (updates: Partial<typeof branding>) => {
-    setBackground({
-      branding: { ...branding, ...updates },
-    });
-  };
-
-  const updateSocial = (platform: string, value: string) => {
+  // Sync branding store to canvas whenever it changes
+  useEffect(() => {
     setBackground({
       branding: {
-        ...branding,
-        social: { ...(branding.social || {}), [platform]: value },
+        ...preferences,
+        name: info.name,
+        website: info.website,
+        social: info.social,
       },
     });
+  }, [info, preferences, setBackground]);
+
+  const handleUpdatePreferences = (updates: Partial<typeof preferences>) => {
+    updatePreferences(updates);
+  };
+
+  const handleUpdateInfo = (updates: Partial<typeof info>) => {
+    updateInfo(updates);
+  };
+
+  const handleUpdateSocial = (platform: string, value: string) => {
+    updateSocial(platform, value);
   };
 
   return (
@@ -63,20 +56,20 @@ const BrandingPanel: React.FC = () => {
           Branding Watermark
         </label>
         <button
-          onClick={() => updateBranding({ enabled: !branding.enabled })}
+          onClick={() => handleUpdatePreferences({ enabled: !preferences.enabled })}
           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-            branding.enabled ? 'bg-blue-600' : 'bg-white/10'
+            preferences.enabled ? 'bg-blue-600' : 'bg-white/10'
           }`}
         >
           <span
             className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-              branding.enabled ? 'translate-x-4' : 'translate-x-1'
+              preferences.enabled ? 'translate-x-4' : 'translate-x-1'
             }`}
           />
         </button>
       </div>
 
-      {branding.enabled && (
+      {preferences.enabled && (
         <div className="space-y-5">
           {/* Position */}
           <div>
@@ -87,9 +80,9 @@ const BrandingPanel: React.FC = () => {
               {POSITION_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => updateBranding({ position: opt.value })}
+                  onClick={() => handleUpdatePreferences({ position: opt.value })}
                   className={`py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
-                    branding.position === opt.value
+                    preferences.position === opt.value
                       ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
                       : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
                   }`}
@@ -107,20 +100,20 @@ const BrandingPanel: React.FC = () => {
                 Name
               </label>
               <button
-                onClick={() => updateBranding({ showName: !branding.showName })}
+                onClick={() => handleUpdatePreferences({ showName: !preferences.showName })}
                 className={`text-xs px-2 py-0.5 rounded ${
-                  branding.showName
+                  preferences.showName
                     ? 'bg-blue-600/20 text-blue-400'
                     : 'bg-white/5 text-neutral-500'
                 }`}
               >
-                {branding.showName ? 'Show' : 'Hide'}
+                {preferences.showName ? 'Show' : 'Hide'}
               </button>
             </div>
             <input
               type="text"
-              value={branding.name}
-              onChange={(e) => updateBranding({ name: e.target.value })}
+              value={info.name}
+              onChange={(e) => handleUpdateInfo({ name: e.target.value })}
               placeholder="Your Name"
               className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
             />
@@ -133,20 +126,20 @@ const BrandingPanel: React.FC = () => {
                 Website
               </label>
               <button
-                onClick={() => updateBranding({ showWebsite: !branding.showWebsite })}
+                onClick={() => handleUpdatePreferences({ showWebsite: !preferences.showWebsite })}
                 className={`text-xs px-2 py-0.5 rounded ${
-                  branding.showWebsite
+                  preferences.showWebsite
                     ? 'bg-blue-600/20 text-blue-400'
                     : 'bg-white/5 text-neutral-500'
                 }`}
               >
-                {branding.showWebsite ? 'Show' : 'Hide'}
+                {preferences.showWebsite ? 'Show' : 'Hide'}
               </button>
             </div>
             <input
               type="text"
-              value={branding.website}
-              onChange={(e) => updateBranding({ website: e.target.value })}
+              value={info.website}
+              onChange={(e) => handleUpdateInfo({ website: e.target.value })}
               placeholder="yourwebsite.com"
               className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
             />
@@ -159,31 +152,74 @@ const BrandingPanel: React.FC = () => {
                 Social Media
               </label>
               <button
-                onClick={() => updateBranding({ showSocial: !branding.showSocial })}
+                onClick={() => handleUpdatePreferences({ showSocial: !preferences.showSocial })}
                 className={`text-xs px-2 py-0.5 rounded ${
-                  branding.showSocial
+                  preferences.showSocial
                     ? 'bg-blue-600/20 text-blue-400'
                     : 'bg-white/5 text-neutral-500'
                 }`}
               >
-                {branding.showSocial ? 'Show' : 'Hide'}
+                {preferences.showSocial ? 'Show' : 'Hide'}
               </button>
             </div>
             <div className="space-y-2">
               {SOCIAL_PLATFORMS.map((platform) => (
                 <div key={platform.key} className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-500 w-20 shrink-0">
-                    {platform.label}
-                  </span>
+                  <div className="w-5 h-5 shrink-0 flex items-center justify-center text-neutral-400">
+                    <SocialIcon platform={platform.key} size={16} color="currentColor" />
+                  </div>
                   <input
                     type="text"
-                    value={branding.social[platform.key as keyof typeof branding.social] || ''}
-                    onChange={(e) => updateSocial(platform.key, e.target.value)}
+                    value={info.social[platform.key as keyof typeof info.social] || ''}
+                    onChange={(e) => handleUpdateSocial(platform.key, e.target.value)}
                     placeholder={platform.placeholder}
                     className="flex-1 bg-white/5 text-white px-2 py-1.5 rounded-md text-xs border border-white/5 focus:border-blue-500/50 focus:outline-none"
                   />
                 </div>
               ))}
+            </div>
+
+            {/* Social Icons Layout */}
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-xs text-neutral-500 mb-2">Layout</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleUpdatePreferences({ socialLayout: 'horizontal' })}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
+                      preferences.socialLayout === 'horizontal'
+                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                    }`}
+                  >
+                    Horizontal
+                  </button>
+                  <button
+                    onClick={() => handleUpdatePreferences({ socialLayout: 'vertical' })}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
+                      preferences.socialLayout === 'vertical'
+                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                    }`}
+                  >
+                    Vertical
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-neutral-500 mb-2">
+                  Icon Size: {preferences.socialIconSize}px
+                </label>
+                <input
+                  type="range"
+                  min="14"
+                  max="32"
+                  value={preferences.socialIconSize}
+                  onChange={(e) => handleUpdatePreferences({ socialIconSize: parseInt(e.target.value) })}
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
             </div>
           </div>
 
@@ -197,8 +233,8 @@ const BrandingPanel: React.FC = () => {
             <div className="mb-4">
               <label className="block text-xs text-neutral-500 mb-2">Font</label>
               <select
-                value={branding.fontFamily}
-                onChange={(e) => updateBranding({ fontFamily: e.target.value })}
+                value={preferences.fontFamily}
+                onChange={(e) => handleUpdatePreferences({ fontFamily: e.target.value })}
                 className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
               >
                 {FONT_FAMILIES.text.map((font) => (
@@ -212,14 +248,14 @@ const BrandingPanel: React.FC = () => {
             {/* Font Size */}
             <div className="mb-4">
               <label className="block text-xs text-neutral-500 mb-2">
-                Font Size: {branding.fontSize}px
+                Font Size: {preferences.fontSize}px
               </label>
               <input
                 type="range"
                 min="10"
                 max="24"
-                value={branding.fontSize}
-                onChange={(e) => updateBranding({ fontSize: parseInt(e.target.value) })}
+                value={preferences.fontSize}
+                onChange={(e) => handleUpdatePreferences({ fontSize: parseInt(e.target.value) })}
                 className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
@@ -231,15 +267,15 @@ const BrandingPanel: React.FC = () => {
                 <div className="w-6 h-6 rounded overflow-hidden relative border border-white/10 shrink-0">
                   <input
                     type="color"
-                    value={branding.color}
-                    onChange={(e) => updateBranding({ color: e.target.value })}
+                    value={preferences.color}
+                    onChange={(e) => handleUpdatePreferences({ color: e.target.value })}
                     className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer"
                   />
                 </div>
                 <input
                   type="text"
-                  value={branding.color}
-                  onChange={(e) => updateBranding({ color: e.target.value })}
+                  value={preferences.color}
+                  onChange={(e) => handleUpdatePreferences({ color: e.target.value })}
                   className="w-full bg-transparent text-white text-xs focus:outline-none font-mono"
                 />
               </div>
@@ -248,15 +284,15 @@ const BrandingPanel: React.FC = () => {
             {/* Opacity */}
             <div className="mb-4">
               <label className="block text-xs text-neutral-500 mb-2">
-                Opacity: {Math.round(branding.opacity * 100)}%
+                Opacity: {Math.round(preferences.opacity * 100)}%
               </label>
               <input
                 type="range"
                 min="0.1"
                 max="1"
                 step="0.05"
-                value={branding.opacity}
-                onChange={(e) => updateBranding({ opacity: parseFloat(e.target.value) })}
+                value={preferences.opacity}
+                onChange={(e) => handleUpdatePreferences({ opacity: parseFloat(e.target.value) })}
                 className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
@@ -264,14 +300,14 @@ const BrandingPanel: React.FC = () => {
             {/* Padding */}
             <div>
               <label className="block text-xs text-neutral-500 mb-2">
-                Padding: {branding.padding}px
+                Padding: {preferences.padding}px
               </label>
               <input
                 type="range"
                 min="8"
                 max="48"
-                value={branding.padding}
-                onChange={(e) => updateBranding({ padding: parseInt(e.target.value) })}
+                value={preferences.padding}
+                onChange={(e) => handleUpdatePreferences({ padding: parseInt(e.target.value) })}
                 className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
