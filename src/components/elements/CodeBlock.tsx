@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Group, Rect, Text, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import type { CodeElement } from '../../types';
@@ -14,8 +15,11 @@ interface CodeBlockProps {
 const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, onChange }) => {
   const groupRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { x, y, width, height, rotation, props } = element;
   const [tokenizedLines, setTokenizedLines] = useState<LineTokens[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(props.code);
 
   useEffect(() => {
     if (isSelected && trRef.current && groupRef.current) {
@@ -44,6 +48,171 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
       trRef.current.getLayer()?.batchDraw();
     }
   }, [isSelected]);
+
+  // Sync editValue when code changes externally
+  useEffect(() => {
+    setEditValue(props.code);
+  }, [props.code]);
+
+  // Focus textarea when editing starts
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      // Move cursor to end
+      const len = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(len, len);
+    }
+  }, [isEditing]);
+
+  // State for textarea position (computed when editing starts)
+  const [textareaStyle, setTextareaStyle] = useState<React.CSSProperties>({ display: 'none' });
+
+  const handleSaveEdit = useCallback(() => {
+    setIsEditing(false);
+    setTextareaStyle({ display: 'none' });
+    onChange({
+      props: { ...props, code: editValue }
+    });
+  }, [editValue, onChange, props]);
+
+  // Close editing when deselecting
+  useEffect(() => {
+    if (!isSelected && isEditing) {
+      handleSaveEdit();
+    }
+  }, [isSelected, isEditing, handleSaveEdit]);
+
+  const handleDoubleClick = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    // Prevent event from bubbling to avoid triggering canvas click
+    e.cancelBubble = true;
+    
+    if (!element.locked && groupRef.current) {
+      const group = groupRef.current;
+      const stage = group.getStage();
+      if (!stage) return;
+
+      const stageBox = stage.container().getBoundingClientRect();
+      const scale = stage.scaleX();
+      
+      // Calculate absolute position accounting for stage position and scale
+      const textColor = isLightTheme(props.theme) ? '#1f1f1f' : '#e5e5e5';
+      const lineNumberWidth = props.lineNumbers ? 55 : 0;
+      
+      // Get group's position relative to stage
+      const absolutePos = group.getAbsolutePosition();
+
+      // Set textarea style first
+      setTextareaStyle({
+        position: 'fixed',
+        left: stageBox.left + absolutePos.x + (props.padding + lineNumberWidth) * scale,
+        top: stageBox.top + absolutePos.y + props.padding * scale,
+        width: (width - props.padding * 2 - lineNumberWidth) * scale,
+        height: (height - props.padding * 2) * scale,
+        fontSize: props.fontSize * scale,
+        fontFamily: props.fontFamily,
+        lineHeight: props.lineHeight,
+        background: 'transparent',
+        color: textColor,
+        border: 'none',
+        outline: 'none',
+        padding: '0',
+        margin: '0',
+        resize: 'none',
+        overflow: 'auto',
+        whiteSpace: 'pre',
+        zIndex: 1000,
+        transformOrigin: 'top left',
+        transform: `rotate(${rotation}deg)`,
+        tabSize: 2,
+        caretColor: textColor,
+      });
+
+      // Then enable editing
+      setIsEditing(true);
+      setEditValue(props.code);
+    }
+  }, [element.locked, props, width, height, rotation]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle Tab for indentation
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+
+      if (e.shiftKey) {
+        // Shift+Tab: Remove indentation
+        const beforeCursor = value.substring(0, start);
+        
+        // Find the start of the current line
+        const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+        const linePrefix = value.substring(lineStart, start);
+        
+        // Check if line starts with spaces or tab
+        if (linePrefix.startsWith('  ')) {
+          // Remove 2 spaces
+          const newValue = value.substring(0, lineStart) + value.substring(lineStart + 2);
+          setEditValue(newValue);
+          // Adjust cursor position
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = Math.max(lineStart, start - 2);
+          }, 0);
+        } else if (linePrefix.startsWith('\t')) {
+          // Remove tab
+          const newValue = value.substring(0, lineStart) + value.substring(lineStart + 1);
+          setEditValue(newValue);
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = Math.max(lineStart, start - 1);
+          }, 0);
+        }
+      } else {
+        // Tab: Add indentation (2 spaces)
+        const newValue = value.substring(0, start) + '  ' + value.substring(end);
+        setEditValue(newValue);
+        // Move cursor after the inserted spaces
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 2;
+        }, 0);
+      }
+    }
+    
+    // Handle Enter for auto-indentation
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      
+      // Find the current line's indentation
+      const beforeCursor = value.substring(0, start);
+      const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+      const currentLine = value.substring(lineStart, start);
+      const indentMatch = currentLine.match(/^(\s*)/);
+      const indent = indentMatch ? indentMatch[1] : '';
+      
+      // Check if the line ends with { or : (for additional indentation)
+      const trimmedLine = currentLine.trim();
+      const needsExtraIndent = trimmedLine.endsWith('{') || trimmedLine.endsWith(':') || trimmedLine.endsWith('(');
+      const extraIndent = needsExtraIndent ? '  ' : '';
+      
+      const newValue = value.substring(0, start) + '\n' + indent + extraIndent + value.substring(end);
+      setEditValue(newValue);
+      
+      // Move cursor after the newline and indentation
+      const newCursorPos = start + 1 + indent.length + extraIndent.length;
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+      }, 0);
+    }
+
+    // Handle Escape to cancel/save
+    if (e.key === 'Escape') {
+      handleSaveEdit();
+    }
+  }, [handleSaveEdit]);
 
   // Render code with syntax highlighting using tokens
   const renderCode = () => {
@@ -181,7 +350,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
         width={width}
         height={height}
         rotation={rotation}
-        draggable={!element.locked}
+        draggable={!element.locked && !isEditing}
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={handleDragEnd}
@@ -199,25 +368,31 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
           shadowColor={props.shadow.color}
         />
         
-        {/* Background */}
+        {/* Background - handles double click for inline editing */}
         <Rect
           width={width}
           height={height}
           fill={bgColor}
           cornerRadius={props.cornerRadius}
+          onDblClick={handleDoubleClick}
+          onDblTap={handleDoubleClick}
         />
         
-        {/* Code content */}
-        <Group clipFunc={(ctx) => {
-          ctx.beginPath();
-          ctx.roundRect(0, 0, width, height, props.cornerRadius);
-          ctx.closePath();
-        }}>
-          {renderCode()}
+        {/* Code content - also handles double click */}
+        <Group 
+          clipFunc={(ctx) => {
+            ctx.beginPath();
+            ctx.roundRect(0, 0, width, height, props.cornerRadius);
+            ctx.closePath();
+          }}
+          onDblClick={handleDoubleClick}
+          onDblTap={handleDoubleClick}
+        >
+          {!isEditing && renderCode()}
         </Group>
       </Group>
       
-      {isSelected && (
+      {isSelected && !isEditing && (
         <Transformer
           ref={trRef}
           flipEnabled={false}
@@ -228,6 +403,23 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
             return newBox;
           }}
         />
+      )}
+
+      {/* Inline code editor */}
+      {isEditing && createPortal(
+        <textarea
+          ref={textareaRef}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSaveEdit}
+          style={textareaStyle}
+          spellCheck={false}
+          autoCapitalize="off"
+          autoComplete="off"
+          autoCorrect="off"
+        />,
+        document.body
       )}
     </>
   );
