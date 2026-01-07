@@ -62,7 +62,7 @@ export function getThemeBackground(themeId: CodeThemeId): string {
 }
 
 export function isLightTheme(themeId: CodeThemeId): boolean {
-  const lightThemes = ['github-light', 'vitesse-light', 'catppuccin-latte', 'min-light', 'solarized-light'];
+  const lightThemes = ['github-light', 'vitesse-light', 'min-light', 'solarized-light', 'light-plus'];
   return lightThemes.includes(themeId);
 }
 
@@ -81,6 +81,22 @@ export function isHighlighterReady(): boolean {
 
 // Language detection based on common patterns
 export function detectLanguage(code: string): string {
+  // Kotlin / Jetpack Compose patterns (check first - primary language)
+  // Look for @Composable, fun, val, var, class, object, companion object, etc.
+  if (/@Composable|@Preview|@OptIn|@Suppress/.test(code)) {
+    return 'kotlin';
+  }
+  if (/^(fun|val|var|class|object|package|import|sealed|data\s+class|enum\s+class|interface)\s+/m.test(code)) {
+    // Check for Kotlin-specific syntax
+    if (/:\s*\w+(\s*[={()]|$|\s*,)/.test(code) || 
+        /\b(Unit|String|Int|Long|Boolean|Float|Double|List|Map|Set|suspend|inline|crossinline|noinline|reified)\b/.test(code) ||
+        /\bModifier\b|\bColumn\b|\bRow\b|\bBox\b|\bText\b|\bButton\b|\bScaffold\b/.test(code) ||
+        /\.copy\(|\.let\s*\{|\.apply\s*\{|\.also\s*\{|\.run\s*\{/.test(code) ||
+        /\blambda\b|->/.test(code)) {
+      return 'kotlin';
+    }
+  }
+  
   // TypeScript/JavaScript patterns
   if (/^import\s+.*from\s+['"]|^export\s+(default\s+)?|const\s+\w+:\s*\w+/m.test(code)) {
     if (/:\s*(string|number|boolean|any|void|Promise|Array)\b/.test(code)) {
@@ -89,15 +105,22 @@ export function detectLanguage(code: string): string {
     return 'javascript';
   }
   
-  // Kotlin patterns
-  if (/^(fun|val|var|class|object|package|import)\s+/m.test(code) && 
-      /:\s*\w+(\s*=|\s*\{|\s*\))/.test(code)) {
-    return 'kotlin';
+  // Java patterns (after Kotlin to avoid false positives)
+  if (/^(public|private|protected)\s+(static\s+)?(class|void|int|String)/m.test(code) &&
+      !/@Composable/.test(code)) {
+    return 'java';
   }
   
-  // Java patterns
-  if (/^(public|private|protected)\s+(static\s+)?(class|void|int|String)/m.test(code)) {
-    return 'java';
+  // Swift patterns
+  if (/^(func|var|let|class|struct|enum|protocol|import\s+\w+)\s+/m.test(code) &&
+      /@State|@Binding|@Published|@ObservedObject|some\s+View/.test(code)) {
+    return 'swift';
+  }
+  
+  // Dart/Flutter patterns  
+  if (/^(class|void|final|const|import\s+')/m.test(code) &&
+      /Widget|StatelessWidget|StatefulWidget|BuildContext|setState/.test(code)) {
+    return 'dart';
   }
   
   // Python patterns
@@ -113,6 +136,17 @@ export function detectLanguage(code: string): string {
   // Go patterns
   if (/^(func|package|import|type|var|const)\s+/m.test(code) && /:=/.test(code)) {
     return 'go';
+  }
+  
+  // Groovy/Gradle patterns
+  if (/^(plugins|dependencies|android|buildscript)\s*\{/m.test(code) ||
+      /implementation\s*\(|compile\s*\(/.test(code)) {
+    return 'groovy';
+  }
+  
+  // XML patterns (for Android layouts)
+  if (/^<\?xml|^<resources|^<layout|^<LinearLayout|^<RelativeLayout|^<ConstraintLayout|^<androidx\./m.test(code)) {
+    return 'xml';
   }
   
   // HTML patterns
@@ -135,6 +169,11 @@ export function detectLanguage(code: string): string {
     }
   }
   
+  // YAML patterns
+  if (/^[\w-]+:\s*(\n|$)|^\s+-\s+/m.test(code) && !/[{};]/.test(code)) {
+    return 'yaml';
+  }
+  
   // SQL patterns
   if (/^(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER)\s+/im.test(code)) {
     return 'sql';
@@ -145,5 +184,5 @@ export function detectLanguage(code: string): string {
     return 'bash';
   }
   
-  return 'javascript'; // Default
+  return 'kotlin'; // Default to Kotlin as primary language
 }

@@ -235,9 +235,15 @@ export const createCodeElement = (x: number, y: number): CodeElement => ({
   locked: false,
   visible: true,
   props: {
-    code: '// Your code here\nconsole.log("Hello, World!");',
-    language: 'javascript',
-    theme: 'github-dark',
+    code: `@Composable
+fun Greeting(name: String) {
+    Text(
+        text = "Hello, $name!",
+        modifier = Modifier.padding(16.dp)
+    )
+}`,
+    language: 'kotlin',
+    theme: 'dracula',
     fontFamily: 'JetBrains Mono',
     fontSize: 14,
     lineHeight: 1.5,
