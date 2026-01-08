@@ -199,7 +199,7 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-neutral-900 text-white">
+    <div className="h-screen flex flex-col bg-[#09090b] text-white">
       <FontLoader />
       <TopBar stageRef={stageRef} onGoHome={handleGoToMainScreen} />
       <div className="flex-1 flex overflow-hidden">
