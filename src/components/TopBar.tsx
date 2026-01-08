@@ -88,7 +88,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `${snap.meta.title || 'canvas'}.json`;
+    link.download = `${snap.meta.title || 'canvas'}.yvsnap`;
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
@@ -101,7 +101,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
   const handleImportJSON = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.yvsnap';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -324,7 +324,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
                       </div>
                       <div className="flex flex-col items-start gap-0.5">
                         <span className="text-sm font-medium text-neutral-200 group-hover:text-white transition-colors">Save Project</span>
-                        <span className="text-[10px] text-neutral-500">Edit later (.json)</span>
+                        <span className="text-[10px] text-neutral-500">Edit later (.yvsnap)</span>
                       </div>
                     </div>
                   </button>

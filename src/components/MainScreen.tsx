@@ -33,7 +33,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
   const handleImportFile = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.yvsnap';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -101,7 +101,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
                 <FileText className="w-6 h-6 text-neutral-400 group-hover:text-blue-400" />
               </div>
               <h3 className="font-medium mb-1">Import File</h3>
-              <p className="text-sm text-neutral-500">Open an existing .json project file</p>
+              <p className="text-sm text-neutral-500">Open an existing .yvsnap project file</p>
               <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-600 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all" />
             </button>
 

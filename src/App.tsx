@@ -38,7 +38,7 @@ function App() {
   const handleImportFile = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.yvsnap';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -64,7 +64,7 @@ function App() {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `${snap.meta.title || 'canvas'}.json`;
+    link.download = `${snap.meta.title || 'canvas'}.yvsnap`;
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
