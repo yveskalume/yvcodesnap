@@ -7,9 +7,10 @@ import RecentSnapsDropdown from './RecentSnapsDropdown';
 
 interface TopBarProps {
   stageRef: React.RefObject<Konva.Stage | null>;
+  onGoHome?: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
+const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
   const [showRecentSnaps, setShowRecentSnaps] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const recentButtonRef = useRef<HTMLButtonElement>(null);
@@ -138,11 +139,15 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
         {/* Left section: Logo & Actions */}
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-3 pr-5 border-r border-white/[0.08]">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-500/20 flex items-center justify-center">
+            <button
+              onClick={onGoHome}
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-500/20 flex items-center justify-center hover:from-blue-500 hover:to-blue-600 transition-all"
+              title="Go to Home"
+            >
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-            </div>
+            </button>
             <span className="font-bold text-base tracking-tight text-white">
               YvCode
             </span>

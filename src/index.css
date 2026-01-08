@@ -6,7 +6,8 @@
 html, body, #root {
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body {
@@ -37,6 +38,7 @@ body {
 /* Color picker styling */
 input[type="color"] {
   -webkit-appearance: none;
+  appearance: none;
   border: none;
   padding: 0;
 }

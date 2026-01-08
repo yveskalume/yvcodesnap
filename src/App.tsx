@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import type Konva from 'konva';
 import Canvas from './components/Canvas';
 import TopBar from './components/TopBar';
@@ -6,10 +6,12 @@ import Toolbar from './components/Toolbar';
 import Inspector from './components/Inspector';
 import LayersPanel from './components/LayersPanel';
 import FontLoader from './components/FontLoader';
+import MainScreen from './components/MainScreen';
 import { useCanvasStore } from './store/canvasStore';
 import { useRecentSnapsStore } from './store/recentSnapsStore';
 
 function App() {
+  const [showMainScreen, setShowMainScreen] = useState(true);
   const stageRef = useRef<Konva.Stage>(null);
   const { 
     snap,
@@ -78,6 +80,14 @@ function App() {
       newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
     }
   }, [snap, addRecentSnap, newSnap]);
+
+  // Handle going back to main screen
+  const handleGoToMainScreen = useCallback(() => {
+    if (snap.elements.length > 0) {
+      addRecentSnap(snap);
+    }
+    setShowMainScreen(true);
+  }, [snap, addRecentSnap]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -178,10 +188,20 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedElementId, deleteElement, duplicateElement, undo, redo, zoom, setZoom, showGrid, setShowGrid, setTool, selectElement, handleNewSnap, handleImportFile, handleExportFile]);
 
+  // Show main screen
+  if (showMainScreen) {
+    return (
+      <>
+        <FontLoader />
+        <MainScreen onOpenEditor={() => setShowMainScreen(false)} />
+      </>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-neutral-900 text-white">
       <FontLoader />
-      <TopBar stageRef={stageRef} />
+      <TopBar stageRef={stageRef} onGoHome={handleGoToMainScreen} />
       <div className="flex-1 flex overflow-hidden">
         <LayersPanel />
         <Toolbar />
