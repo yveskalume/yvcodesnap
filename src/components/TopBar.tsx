@@ -152,7 +152,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="font-bold text-base tracking-tight text-white">
+            <span className="font-bold text-sm tracking-tight text-white">
               YvCode
             </span>
           </div>
@@ -207,7 +207,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
             type="text"
             value={snap.meta.title}
             onChange={(e) => updateMeta({ title: e.target.value })}
-            className="bg-transparent text-sm font-medium text-center text-neutral-200 focus:text-white px-3 py-1.5 outline-none rounded-md hover:bg-white/5 focus:bg-white/10 transition-colors placeholder-neutral-600 w-48 border border-transparent focus:border-white/10"
+            className="bg-transparent text-xs font-medium text-center text-neutral-200 focus:text-white px-3 py-1.5 outline-none rounded-md hover:bg-white/5 focus:bg-white/10 transition-colors placeholder-neutral-600 w-48 border border-transparent focus:border-white/10"
             placeholder="Untitled Project"
           />
           <div className="h-4 w-px bg-white/10" />
@@ -257,7 +257,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
             <button
               ref={exportButtonRef}
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className={`flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border group ${
+              className={`flex items-center gap-3 px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 border group ${
                 showExportMenu
                   ? 'bg-blue-600/10 text-blue-400 border-blue-500/50 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
                   : 'bg-white/5 text-neutral-300 hover:text-white hover:bg-white/10 border-white/5 hover:border-white/10'

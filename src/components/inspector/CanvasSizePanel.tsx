@@ -95,7 +95,7 @@ const CanvasSizePanel: React.FC = () => {
             value={draft.width}
             onChange={(e) => updateWidth(e.target.value)}
             onBlur={() => handleBlur('width')}
-            className="w-full max-w-[140px] bg-transparent text-sm text-neutral-100 focus:outline-none"
+            className="w-full text-[11px] max-w-[140px] bg-transparent text-sm text-neutral-100 focus:outline-none"
           />
           <span className="text-neutral-500 text-xs">px</span>
         </div>
@@ -108,7 +108,7 @@ const CanvasSizePanel: React.FC = () => {
             value={draft.height}
             onChange={(e) => updateHeight(e.target.value)}
             onBlur={() => handleBlur('height')}
-            className="w-full max-w-[140px] bg-transparent text-sm text-neutral-100 focus:outline-none"
+            className="w-full text-[11px] max-w-[140px] bg-transparent text-sm text-neutral-100 focus:outline-none"
           />
           <span className="text-neutral-500 text-xs">px</span>
         </div>
