@@ -22,6 +22,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const [stagePos, setStagePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
+  const [showResizeHandles, setShowResizeHandles] = useState(false);
   const [resizeState, setResizeState] = useState<{
     edge: ResizeEdge;
     startMouse: { x: number; y: number };
@@ -64,6 +65,20 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  // Hide resize handles when clicking outside the canvas container
+  useEffect(() => {
+    const handleDocMouseDown = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const target = e.target as Node | null;
+      if (target && !containerRef.current.contains(target)) {
+        setShowResizeHandles(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocMouseDown);
+    return () => document.removeEventListener('mousedown', handleDocMouseDown);
   }, []);
 
   // Keep stage centered initially and when viewport/layout changes (unless user already interacted)
@@ -579,6 +594,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     panStartRef.current = null;
   };
 
+  const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    setShowResizeHandles(true);
+    handleMouseDown(e);
+  };
+
   const handleResizeStart = (
     edge: ResizeEdge,
     e: React.MouseEvent
@@ -616,7 +636,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         height={dimensions.height}
         onClick={handleStageClick}
         onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
+        onMouseDown={handleStageMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
@@ -673,26 +693,28 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       </Stage>
 
       {/* Resize handles overlay */}
-      <div className="pointer-events-none absolute inset-0">
-        {[
-          { edge: 'top-left', x: stageRect.left, y: stageRect.top, cursor: 'nwse-resize' },
-          { edge: 'top', x: stageRect.left + stageRect.width / 2, y: stageRect.top, cursor: 'ns-resize' },
-          { edge: 'top-right', x: stageRect.left + stageRect.width, y: stageRect.top, cursor: 'nesw-resize' },
-          { edge: 'right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
-          { edge: 'bottom-right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height, cursor: 'nwse-resize' },
-          { edge: 'bottom', x: stageRect.left + stageRect.width / 2, y: stageRect.top + stageRect.height, cursor: 'ns-resize' },
-          { edge: 'bottom-left', x: stageRect.left, y: stageRect.top + stageRect.height, cursor: 'nesw-resize' },
-          { edge: 'left', x: stageRect.left, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
-        ].map((h) => (
-          <button
-            key={h.edge}
-            className="pointer-events-auto absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded shadow-md border border-neutral-400"
-            style={{ left: h.x, top: h.y, cursor: h.cursor }}
-            onMouseDown={(e) => handleResizeStart(h.edge as ResizeEdge, e)}
-            aria-label={`Resize ${h.edge}`}
-          />
-        ))}
-      </div>
+      {showResizeHandles && (
+        <div className="pointer-events-none absolute inset-0">
+          {[
+            { edge: 'top-left', x: stageRect.left, y: stageRect.top, cursor: 'nwse-resize' },
+            { edge: 'top', x: stageRect.left + stageRect.width / 2, y: stageRect.top, cursor: 'ns-resize' },
+            { edge: 'top-right', x: stageRect.left + stageRect.width, y: stageRect.top, cursor: 'nesw-resize' },
+            { edge: 'right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
+            { edge: 'bottom-right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height, cursor: 'nwse-resize' },
+            { edge: 'bottom', x: stageRect.left + stageRect.width / 2, y: stageRect.top + stageRect.height, cursor: 'ns-resize' },
+            { edge: 'bottom-left', x: stageRect.left, y: stageRect.top + stageRect.height, cursor: 'nesw-resize' },
+            { edge: 'left', x: stageRect.left, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
+          ].map((h) => (
+            <button
+              key={h.edge}
+              className="pointer-events-auto absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded shadow-md border border-neutral-400"
+              style={{ left: h.x, top: h.y, cursor: h.cursor }}
+              onMouseDown={(e) => handleResizeStart(h.edge as ResizeEdge, e)}
+              aria-label={`Resize ${h.edge}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
