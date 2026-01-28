@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, memo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import { useRecentSnapsStore } from '../store/recentSnapsStore';
 import { ASPECT_RATIOS } from '../types';
@@ -29,6 +29,14 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
   
   const { addRecentSnap } = useRecentSnapsStore();
 
+  const aspectOptions = useMemo(() => {
+    const names = ASPECT_RATIOS.map((r) => r.name);
+    if (!names.includes(snap.meta.aspect)) {
+      return [...ASPECT_RATIOS, { name: snap.meta.aspect, width: snap.meta.width, height: snap.meta.height }];
+    }
+    return ASPECT_RATIOS;
+  }, [snap.meta.aspect, snap.meta.width, snap.meta.height]);
+
   const handleNewSnap = useCallback(() => {
     if (confirm('Create a new canvas? Unsaved changes will be lost.')) {
       // Save current snap to recent before creating new
@@ -40,7 +48,8 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
   }, [snap, addRecentSnap, newSnap]);
 
   const handleAspectChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const ratio = ASPECT_RATIOS.find(r => r.name === e.target.value);
+    const value = e.target.value;
+    const ratio = aspectOptions.find(r => r.name === value);
     if (ratio) {
       updateMeta({
         aspect: ratio.name,
@@ -48,7 +57,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
         height: ratio.height,
       });
     }
-  }, [updateMeta]);
+  }, [updateMeta, aspectOptions]);
 
   const handleExportImage = useCallback(async (format: 'png' | 'jpeg', scale: number = 2) => {
     const stage = stageRef.current;
@@ -204,16 +213,16 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
           <div className="h-4 w-px bg-white/10" />
            <div className="relative group/aspect">
              <select
-              value={snap.meta.aspect}
-              onChange={handleAspectChange}
-              className="bg-transparent text-xs font-medium text-neutral-400 hover:text-white px-2 py-1 outline-none cursor-pointer appearance-none text-center transition-colors"
-            >
-              {ASPECT_RATIOS.map((ratio) => (
-                <option key={ratio.name} value={ratio.name}>
-                  {ratio.name}
-                </option>
-              ))}
-            </select>
+                value={snap.meta.aspect}
+                onChange={handleAspectChange}
+                className="bg-transparent text-xs font-medium text-neutral-400 hover:text-white px-2 py-1 outline-none cursor-pointer appearance-none text-center transition-colors"
+              >
+                {aspectOptions.map((ratio) => (
+                  <option key={ratio.name} value={ratio.name}>
+                    {ratio.name}
+                  </option>
+                ))}
+              </select>
           </div>
         </div>
 

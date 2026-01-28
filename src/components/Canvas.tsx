@@ -8,6 +8,10 @@ import Arrow from './elements/Arrow';
 import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
 import type { CodeElement, TextElement, ArrowElement } from '../types';
 
+const MIN_CANVAS = 320;
+const MAX_CANVAS = 10000;
+type ResizeEdge = 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
 interface CanvasProps {
   stageRef: React.RefObject<Konva.Stage | null>;
 }
@@ -18,6 +22,13 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const [stagePos, setStagePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
+  const [resizeState, setResizeState] = useState<{
+    edge: ResizeEdge;
+    startMouse: { x: number; y: number };
+    startSize: { w: number; h: number };
+    startPos: { x: number; y: number };
+    startZoom: number;
+  } | null>(null);
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
   const hasInteractedRef = useRef(false);
   const spacePressedRef = useRef(false);
@@ -26,6 +37,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     snap, 
     zoom, 
     setZoom,
+    updateMeta,
     showGrid, 
     tool, 
     selectedElementId,
@@ -89,6 +101,61 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     };
   }, []);
 
+  // Handle canvas resize via drag handles
+  useEffect(() => {
+    if (!resizeState) return;
+
+    const handleMove = (ev: MouseEvent) => {
+      const { edge, startMouse, startSize, startPos, startZoom } = resizeState;
+      const deltaScreenX = ev.clientX - startMouse.x;
+      const deltaScreenY = ev.clientY - startMouse.y;
+      const deltaCanvasX = deltaScreenX / startZoom;
+      const deltaCanvasY = deltaScreenY / startZoom;
+
+      let nextWidth = startSize.w;
+      let nextHeight = startSize.h;
+      let nextPosX = startPos.x;
+      let nextPosY = startPos.y;
+
+      // Horizontal resize
+      if (edge.includes('right')) {
+        nextWidth = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(startSize.w + deltaCanvasX)));
+      }
+      if (edge.includes('left')) {
+        const tentative = startSize.w - deltaCanvasX;
+        nextWidth = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(tentative)));
+        const appliedDelta = startSize.w - nextWidth; // canvas space
+        nextPosX = startPos.x + appliedDelta * startZoom;
+      }
+
+      // Vertical resize
+      if (edge.includes('bottom')) {
+        nextHeight = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(startSize.h + deltaCanvasY)));
+      }
+      if (edge.includes('top')) {
+        const tentative = startSize.h - deltaCanvasY;
+        nextHeight = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(tentative)));
+        const appliedDelta = startSize.h - nextHeight; // canvas space
+        nextPosY = startPos.y + appliedDelta * startZoom;
+      }
+
+      setStagePos({ x: nextPosX, y: nextPosY });
+      updateMeta({ width: nextWidth, height: nextHeight });
+    };
+
+    const handleUp = () => {
+      cancelClickRef.current = true;
+      setResizeState(null);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [resizeState, updateMeta]);
+
   useEffect(() => {
     const url = background.branding?.avatarUrl || '';
     if (!url) {
@@ -109,7 +176,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   }, [background.branding?.avatarUrl]);
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (isPanning || cancelClickRef.current) {
+    if (isPanning || cancelClickRef.current || resizeState) {
       cancelClickRef.current = false;
       return;
     }
@@ -512,6 +579,31 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     panStartRef.current = null;
   };
 
+  const handleResizeStart = (
+    edge: ResizeEdge,
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hasInteractedRef.current = true;
+    cancelClickRef.current = true;
+    setIsPanning(false);
+    setResizeState({
+      edge,
+      startMouse: { x: e.clientX, y: e.clientY },
+      startSize: { w: width, h: height },
+      startPos: { x: stagePos.x, y: stagePos.y },
+      startZoom: zoom,
+    });
+  };
+
+  const stageRect = useMemo(() => ({
+    left: stagePos.x,
+    top: stagePos.y,
+    width: width * zoom,
+    height: height * zoom,
+  }), [stagePos.x, stagePos.y, width, height, zoom]);
+
   return (
     <div 
       ref={containerRef}
@@ -579,6 +671,28 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           })}
         </Layer>
       </Stage>
+
+      {/* Resize handles overlay */}
+      <div className="pointer-events-none absolute inset-0">
+        {[
+          { edge: 'top-left', x: stageRect.left, y: stageRect.top, cursor: 'nwse-resize' },
+          { edge: 'top', x: stageRect.left + stageRect.width / 2, y: stageRect.top, cursor: 'ns-resize' },
+          { edge: 'top-right', x: stageRect.left + stageRect.width, y: stageRect.top, cursor: 'nesw-resize' },
+          { edge: 'right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
+          { edge: 'bottom-right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height, cursor: 'nwse-resize' },
+          { edge: 'bottom', x: stageRect.left + stageRect.width / 2, y: stageRect.top + stageRect.height, cursor: 'ns-resize' },
+          { edge: 'bottom-left', x: stageRect.left, y: stageRect.top + stageRect.height, cursor: 'nesw-resize' },
+          { edge: 'left', x: stageRect.left, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
+        ].map((h) => (
+          <button
+            key={h.edge}
+            className="pointer-events-auto absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded shadow-md border border-neutral-400"
+            style={{ left: h.x, top: h.y, cursor: h.cursor }}
+            onMouseDown={(e) => handleResizeStart(h.edge as ResizeEdge, e)}
+            aria-label={`Resize ${h.edge}`}
+          />
+        ))}
+      </div>
     </div>
   );
 };
