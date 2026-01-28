@@ -81,12 +81,12 @@ const CanvasSizePanel: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Canvas Size</label>
       </div>
 
-      <div className="flex items-center gap-3 bg-white/5 px-3 py-2 rounded-lg border border-white/10">
-        <div className="flex items-center gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white/5 px-3 py-3 rounded-lg border border-white/10">
+        <div className="flex items-center gap-3">
           <label className="text-[11px] uppercase tracking-wide text-neutral-500">W</label>
           <input
             type="number"
@@ -95,12 +95,11 @@ const CanvasSizePanel: React.FC = () => {
             value={draft.width}
             onChange={(e) => updateWidth(e.target.value)}
             onBlur={() => handleBlur('width')}
-            className="w-16 bg-transparent text-sm text-neutral-100 focus:outline-none"
+            className="w-full max-w-[140px] bg-transparent text-sm text-neutral-100 focus:outline-none"
           />
           <span className="text-neutral-500 text-xs">px</span>
         </div>
-        <div className="h-5 w-px bg-white/10" />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <label className="text-[11px] uppercase tracking-wide text-neutral-500">H</label>
           <input
             type="number"
@@ -109,7 +108,7 @@ const CanvasSizePanel: React.FC = () => {
             value={draft.height}
             onChange={(e) => updateHeight(e.target.value)}
             onBlur={() => handleBlur('height')}
-            className="w-16 bg-transparent text-sm text-neutral-100 focus:outline-none"
+            className="w-full max-w-[140px] bg-transparent text-sm text-neutral-100 focus:outline-none"
           />
           <span className="text-neutral-500 text-xs">px</span>
         </div>
