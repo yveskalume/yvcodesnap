@@ -4,6 +4,7 @@ import { useRecentSnapsStore } from '../store/recentSnapsStore';
 import { ASPECT_RATIOS } from '../types';
 import type Konva from 'konva';
 import RecentSnapsDropdown from './RecentSnapsDropdown';
+import { toast } from 'sonner';
 
 interface TopBarProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -44,6 +45,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
         addRecentSnap(snap);
       }
       newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
+      toast.success('New canvas created');
     }
   }, [snap, addRecentSnap, newSnap]);
 
@@ -61,7 +63,10 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
 
   const handleExportImage = useCallback(async (format: 'png' | 'jpeg', scale: number = 2) => {
     const stage = stageRef.current;
-    if (!stage) return;
+    if (!stage) {
+      toast.error('Canvas not ready to export');
+      return;
+    }
 
     // Temporarily set scale for export
     const oldScale = stage.scaleX();
@@ -89,21 +94,27 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
     link.click();
     setShowExportMenu(false);
     addRecentSnap(snap);
+    toast.success(`Exported as ${format.toUpperCase()}`);
   }, [stageRef, snap, addRecentSnap]);
 
   const handleExportJSON = useCallback(() => {
-    const json = exportSnap();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = `${snap.meta.title || 'canvas'}.json`;
-    link.href = url;
-    link.click();
-    URL.revokeObjectURL(url);
-    
-    setShowExportMenu(false);
-    // Save to recent snaps when exporting
-    addRecentSnap(snap);
+    try {
+      const json = exportSnap();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `${snap.meta.title || 'canvas'}.json`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      setShowExportMenu(false);
+      addRecentSnap(snap);
+      toast.success('Project exported (.json)');
+    } catch (error) {
+      console.error(error);
+      toast.error('Export failed');
+    }
   }, [exportSnap, snap, addRecentSnap]);
 
   const handleImportJSON = useCallback(() => {
@@ -113,16 +124,22 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        // Save current snap to recent before importing
         if (snap.elements.length > 0) {
           addRecentSnap(snap);
         }
         saveToHistory();
         const reader = new FileReader();
         reader.onload = (e) => {
-          const json = e.target?.result as string;
-          importSnap(json);
+          try {
+            const json = e.target?.result as string;
+            importSnap(json);
+            toast.success('Project imported');
+          } catch (err) {
+            console.error(err);
+            toast.error('Import failed');
+          }
         };
+        reader.onerror = () => toast.error('Unable to read file');
         reader.readAsText(file);
       }
     };
