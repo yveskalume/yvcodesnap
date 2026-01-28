@@ -4,10 +4,23 @@ import { useCanvasStore } from '../store/canvasStore';
 const Toolbar: React.FC = () => {
   const { tool, setTool, showGrid, setShowGrid, zoom, setZoom } = useCanvasStore();
 
+  const Tooltip: React.FC<{ label: string; shortcut?: string }> = ({ label, shortcut }) => (
+    <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 -top-[2.4rem] sm:-top-[2.8rem]">
+      <div className="relative">
+        <div className="bg-neutral-900 text-white text-[10px] sm:text-[11px] px-2.5 sm:px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 sm:gap-2 max-w-[220px] text-center leading-tight">
+          <span className="leading-tight break-keep">{label}</span>
+          {shortcut && <span className="text-[10px] sm:text-xs font-semibold text-white/70 whitespace-nowrap">{shortcut}</span>}
+        </div>
+        <div className="absolute left-1/2 -translate-x-1/2 top-full w-2 h-2 rotate-45 bg-neutral-900" />
+      </div>
+    </div>
+  );
+
   const tools = [
     { 
       id: 'select', 
-      label: 'Select (V)',
+      label: 'Select',
+      shortcut: 'V',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
@@ -16,7 +29,8 @@ const Toolbar: React.FC = () => {
     },
     { 
       id: 'code', 
-      label: 'Code Block (C)',
+      label: 'Code Block',
+      shortcut: 'C',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -25,7 +39,8 @@ const Toolbar: React.FC = () => {
     },
     { 
       id: 'text', 
-      label: 'Text (T)',
+      label: 'Text',
+      shortcut: 'T',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
@@ -34,7 +49,8 @@ const Toolbar: React.FC = () => {
     },
     { 
       id: 'arrow', 
-      label: 'Arrow (A)',
+      label: 'Arrow',
+      shortcut: 'A',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -44,65 +60,68 @@ const Toolbar: React.FC = () => {
   ] as const;
 
   return (
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 rounded-2xl bg-neutral-900/90 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 z-50">
-      
+    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-white text-neutral-900 shadow-[0_10px_28px_rgba(0,0,0,0.22)] border border-black/5 z-50">
       {/* Tools Group */}
       <div className="flex items-center gap-1">
-        {tools.map(({ id, icon, label }) => (
+        {tools.map(({ id, icon, label, shortcut }) => (
           <button
             key={id}
             onClick={() => setTool(id)}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+            className={`group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 border ${
               tool === id
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 scale-100 ring-1 ring-blue-500/50'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5 active:scale-95'
+                ? 'bg-[#2d7df4] text-white border-transparent shadow-[0_8px_20px_rgba(45,125,244,0.32)] scale-100'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
             }`}
-            title={label}
+            aria-label={label}
           >
-            {icon}
+            {React.cloneElement(icon as React.ReactElement, { className: 'w-4.5 h-4.5' })}
+            <Tooltip label={label} shortcut={shortcut} />
           </button>
         ))}
       </div>
 
-      <div className="w-px h-6 bg-white/10 mx-2" />
+      <div className="w-px h-7 bg-neutral-200 mx-1.5" />
 
       {/* Grid Toggle */}
       <button
         onClick={() => setShowGrid(!showGrid)}
-        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+        className={`group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 border ${
           showGrid
-            ? 'bg-white/10 text-white ring-1 ring-white/20'
-            : 'text-neutral-400 hover:text-white hover:bg-white/5 active:scale-95'
+            ? 'bg-neutral-900 text-white border-neutral-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)]'
+            : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
         }`}
-        title="Toggle Grid (⌘;)"
+        aria-label="Toggle Grid"
       >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM9 4v16M15 4v16M4 9h16M4 15h16" />
         </svg>
+        <Tooltip label="Grille" shortcut="⌘ ;" />
       </button>
 
       {/* Zoom Controls */}
-      <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 ml-1">
+      <div className="flex items-center gap-0.5 bg-neutral-100 rounded-xl px-1 py-0.5 ml-1 border border-neutral-200">
         <button
           onClick={() => setZoom(zoom - 0.1)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
-          title="Zoom Out (⌘-)"
+          className="group relative w-7 h-7 rounded-lg flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-white transition-colors"
+          aria-label="Zoom Out"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
           </svg>
+          <Tooltip label="Zoom Out" shortcut="⌘ -" />
         </button>
-        <div className="w-12 text-xs font-medium text-neutral-300 text-center select-none tabular-nums">
+        <div className="w-11 text-[11px] font-semibold text-neutral-800 text-center select-none tabular-nums">
           {Math.round(zoom * 100)}%
         </div>
         <button
           onClick={() => setZoom(zoom + 0.1)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
-          title="Zoom In (⌘+)"
+          className="group relative w-7 h-7 rounded-lg flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-white transition-colors"
+          aria-label="Zoom In"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
+          <Tooltip label="Zoom In" shortcut="⌘ +" />
         </button>
       </div>
     </div>

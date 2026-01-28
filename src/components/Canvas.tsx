@@ -542,7 +542,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
 
     const scaleBy = 1.05;
     const direction = e.evt.deltaY > 0 ? -1 : 1;
-    const newZoom = Math.max(0.25, Math.min(4, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
+    const newZoom = Math.max(0.25, Math.min(256, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
 
     const mousePointTo = {
       x: (pointer.x - stagePos.x) / zoom,
