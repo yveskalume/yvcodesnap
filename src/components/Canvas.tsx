@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
 import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
@@ -15,9 +15,17 @@ interface CanvasProps {
 const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight - 120 });
+  const [stagePos, setStagePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
+  const panStartRef = useRef<{ x: number; y: number } | null>(null);
+  const hasInteractedRef = useRef(false);
+  const spacePressedRef = useRef(false);
+  const cancelClickRef = useRef(false);
   const { 
     snap, 
     zoom, 
+    setZoom,
     showGrid, 
     tool, 
     selectedElementId,
@@ -46,6 +54,41 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
+  // Keep stage centered initially and when viewport/layout changes (unless user already interacted)
+  useEffect(() => {
+    if (hasInteractedRef.current) return;
+    const scaledWidth = width * zoom;
+    const scaledHeight = height * zoom;
+    setStagePos({
+      x: Math.max(20, (dimensions.width - scaledWidth) / 2),
+      y: Math.max(20, (dimensions.height - scaledHeight) / 2),
+    });
+  }, [dimensions, width, height, zoom]);
+
+  // Track spacebar for panning with left click
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        spacePressedRef.current = true;
+        setSpaceHeld(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        spacePressedRef.current = false;
+        setSpaceHeld(false);
+        setIsPanning(false);
+        panStartRef.current = null;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
   useEffect(() => {
     const url = background.branding?.avatarUrl || '';
     if (!url) {
@@ -65,17 +108,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     };
   }, [background.branding?.avatarUrl]);
 
-  // Calculate stage position to center the canvas
-  const getStagePosition = useCallback(() => {
-    const scaledWidth = width * zoom;
-    const scaledHeight = height * zoom;
-    return {
-      x: Math.max(20, (dimensions.width - scaledWidth) / 2),
-      y: Math.max(20, (dimensions.height - scaledHeight) / 2),
-    };
-  }, [width, height, zoom, dimensions]);
-
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (isPanning || cancelClickRef.current) {
+      cancelClickRef.current = false;
+      return;
+    }
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
     
     if (clickedOnEmpty) {
@@ -86,7 +123,6 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       if (!pos) return;
       
       // Convert screen position to canvas position
-      const stagePos = getStagePosition();
       const canvasX = (pos.x - stagePos.x) / zoom;
       const canvasY = (pos.y - stagePos.y) / zoom;
       
@@ -414,21 +450,86 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     );
   }, [background.branding, width, height, brandingAvatar]);
 
-  const stagePosition = useMemo(() => getStagePosition(), [getStagePosition]);
+  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const scaleBy = 1.05;
+    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const newZoom = Math.max(0.25, Math.min(4, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
+
+    const mousePointTo = {
+      x: (pointer.x - stagePos.x) / zoom,
+      y: (pointer.y - stagePos.y) / zoom,
+    };
+
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newZoom,
+      y: pointer.y - mousePointTo.y * newZoom,
+    };
+
+    hasInteractedRef.current = true;
+    setZoom(newZoom);
+    setStagePos(newPos);
+  };
+
+  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const isMiddleClick = e.evt.button === 1;
+    const isSpaceDrag = e.evt.button === 0 && spacePressedRef.current;
+    const isLeftClick = e.evt.button === 0;
+    const isBackground = e.target === e.target.getStage() || e.target.name() === 'background';
+    const isBackgroundDrag = isLeftClick && isBackground && tool === 'select' && !spacePressedRef.current;
+    if (!isMiddleClick && !isSpaceDrag && !isBackgroundDrag) return;
+
+    e.evt.preventDefault();
+    hasInteractedRef.current = true;
+    setIsPanning(true);
+    cancelClickRef.current = false;
+    panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
+  };
+
+  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (!isPanning || !panStartRef.current) return;
+    e.evt.preventDefault();
+
+    const dx = e.evt.clientX - panStartRef.current.x;
+    const dy = e.evt.clientY - panStartRef.current.y;
+
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+      cancelClickRef.current = true;
+    }
+
+    setStagePos((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+    panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+    panStartRef.current = null;
+  };
 
   return (
     <div 
       ref={containerRef}
       className="flex-1 bg-neutral-900 overflow-hidden relative"
-      style={{ cursor: tool !== 'select' ? 'crosshair' : 'default' }}
+      style={{ cursor: isPanning ? 'grabbing' : tool !== 'select' ? 'crosshair' : spaceHeld ? 'grab' : 'grab' }}
     >
       <Stage
         ref={stageRef}
         width={dimensions.width}
         height={dimensions.height}
         onClick={handleStageClick}
-        x={stagePosition.x}
-        y={stagePosition.y}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        x={stagePos.x}
+        y={stagePos.y}
         scaleX={zoom}
         scaleY={zoom}
       >
