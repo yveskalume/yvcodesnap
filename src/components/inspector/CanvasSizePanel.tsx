@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
-import { ASPECT_RATIOS } from '../../types';
 
 const MIN_CANVAS = 320;
 const MAX_CANVAS = 10000;
@@ -12,14 +11,6 @@ const CanvasSizePanel: React.FC = () => {
   useEffect(() => {
     setDraft({ width: String(snap.meta.width), height: String(snap.meta.height) });
   }, [snap.meta.width, snap.meta.height]);
-
-  const aspectOptions = useMemo(() => {
-    const names = ASPECT_RATIOS.map((r) => r.name);
-    if (!names.includes(snap.meta.aspect)) {
-      return [...ASPECT_RATIOS, { name: snap.meta.aspect, width: snap.meta.width, height: snap.meta.height }];
-    }
-    return ASPECT_RATIOS;
-  }, [snap.meta.aspect, snap.meta.width, snap.meta.height]);
 
   const clamp = (value: number, fallback: number) =>
     Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(value) || fallback));
@@ -36,17 +27,6 @@ const CanvasSizePanel: React.FC = () => {
     },
     [updateMeta, snap.meta.width, snap.meta.height]
   );
-
-  const handleAspectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    const ratio = aspectOptions.find((r) => r.name === value);
-    if (!ratio) return;
-    updateMeta({
-      aspect: ratio.name,
-      width: ratio.width,
-      height: ratio.height,
-    });
-  };
 
   const updateWidth = (value: string) => {
     setDraft((s) => ({ ...s, width: value }));

@@ -2,10 +2,19 @@ import React from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { useCanvasStore } from '../store/canvasStore';
 
+type ToolId = 'select' | 'code' | 'text' | 'arrow';
+
+interface ToolConfig {
+  id: ToolId;
+  label: string;
+  shortcut?: string;
+  icon: React.ReactElement<React.SVGProps<SVGSVGElement>>;
+}
+
 const Toolbar: React.FC = () => {
   const { tool, setTool, showGrid, setShowGrid, zoom, setZoom } = useCanvasStore();
 
-  const tools = [
+  const tools: ToolConfig[] = [
     { 
       id: 'select', 
       label: 'Select',
@@ -14,7 +23,7 @@ const Toolbar: React.FC = () => {
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
         </svg>
-      )
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
     { 
       id: 'code', 
@@ -24,7 +33,7 @@ const Toolbar: React.FC = () => {
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
         </svg>
-      )
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
     { 
       id: 'text', 
@@ -34,7 +43,7 @@ const Toolbar: React.FC = () => {
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
         </svg>
-      )
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
     { 
       id: 'arrow', 
@@ -44,9 +53,9 @@ const Toolbar: React.FC = () => {
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
         </svg>
-      )
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
-  ] as const;
+  ];
 
   const renderTooltip = (label: string, shortcut?: string) => (
     <TooltipPrimitive.Portal>
@@ -80,7 +89,7 @@ const Toolbar: React.FC = () => {
                   }`}
                   aria-label={label}
                 >
-                  {React.cloneElement(icon as React.ReactElement, { className: 'w-4.5 h-4.5' })}
+                  {React.cloneElement<React.SVGProps<SVGSVGElement>>(icon, { className: 'w-4.5 h-4.5' })}
                 </button>
               </TooltipPrimitive.Trigger>
               {renderTooltip(label, shortcut)}
