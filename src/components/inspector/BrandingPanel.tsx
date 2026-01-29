@@ -3,6 +3,8 @@ import { useCanvasStore } from '../../store/canvasStore';
 import { useBrandingStore } from '../../store/brandingStore';
 import { FONT_FAMILIES } from '../../types';
 import { SocialIcon } from '../elements/SocialIcons';
+import * as Select from '@radix-ui/react-select';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 const POSITION_OPTIONS = [
   { value: 'top-left', label: 'Top Left' },
@@ -402,17 +404,49 @@ const BrandingPanel: React.FC = () => {
             {/* Font Family */}
             <div className="mb-4">
               <label className="block text-xs text-neutral-500 mb-2">Font</label>
-              <select
+              <Select.Root
                 value={preferences.fontFamily}
-                onChange={(e) => handleUpdatePreferences({ fontFamily: e.target.value })}
-                className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+                onValueChange={(value) => handleUpdatePreferences({ fontFamily: value })}
               >
-                {FONT_FAMILIES.text.map((font) => (
-                  <option key={font} value={font} style={{ fontFamily: font }}>
-                    {font}
-                  </option>
-                ))}
-              </select>
+                <Select.Trigger
+                  className="w-full inline-flex items-center justify-between gap-2 bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition"
+                  aria-label="Font family"
+                >
+                  <Select.Value />
+                  <Select.Icon>
+                    <ChevronDown className="w-4 h-4 text-neutral-400" />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content
+                    className="overflow-hidden rounded-lg border border-white/10 bg-[#0f1117] shadow-xl shadow-black/40 z-50"
+                    position="popper"
+                    sideOffset={6}
+                  >
+                    <Select.ScrollUpButton className="flex items-center justify-center py-1 text-neutral-400">
+                      <ChevronUp className="w-4 h-4" />
+                    </Select.ScrollUpButton>
+                    <Select.Viewport className="p-1">
+                      {FONT_FAMILIES.text.map((font) => (
+                        <Select.Item
+                          key={font}
+                          value={font}
+                          className="text-sm text-neutral-200 rounded-md px-3 py-2 cursor-pointer select-none flex items-center justify-between gap-3 hover:bg-white/5 data-[state=checked]:bg-blue-600/20 data-[state=checked]:text-blue-200 focus:outline-none"
+                          style={{ fontFamily: font }}
+                        >
+                          <Select.ItemText>{font}</Select.ItemText>
+                          <Select.ItemIndicator>
+                            <Check className="w-4 h-4 text-blue-400" />
+                          </Select.ItemIndicator>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                    <Select.ScrollDownButton className="flex items-center justify-center py-1 text-neutral-400">
+                      <ChevronDown className="w-4 h-4" />
+                    </Select.ScrollDownButton>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
             </div>
 
             {/* Font Size */}

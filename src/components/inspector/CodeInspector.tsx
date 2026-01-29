@@ -5,6 +5,8 @@ import { LANGUAGES, FONT_FAMILIES, CODE_THEMES } from '../../types';
 import { detectLanguage } from '../../utils/highlighter';
 import { loadFont } from '../../utils/fontLoader';
 import CodeEditor from './CodeEditor';
+import SelectField from '../ui/SelectField';
+import NumberField from '../ui/NumberField';
 
 interface CodeInspectorProps {
   element: CodeElement;
@@ -79,17 +81,11 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             Auto-detect
           </button>
         </div>
-        <select
+        <SelectField
           value={element.props.language}
-          onChange={(e) => updateProps({ language: e.target.value })}
-          className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
-        >
-          {LANGUAGES.map((lang) => (
-            <option key={lang} value={lang}>
-              {lang}
-            </option>
-          ))}
-        </select>
+          onValueChange={(v) => updateProps({ language: v })}
+          options={LANGUAGES.map((lang) => ({ value: lang, label: lang }))}
+        />
       </div>
 
       {/* Theme */}
@@ -148,22 +144,19 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Size</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.fontSize}
-            onChange={(e) => updateProps({ fontSize: parseInt(e.target.value) || 14 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ fontSize: typeof v === 'number' ? v : 14 })}
             min={10}
             max={32}
+            step={1}
           />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Line Height</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.lineHeight}
-            onChange={(e) => updateProps({ lineHeight: parseFloat(e.target.value) || 1.5 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ lineHeight: typeof v === 'number' ? v : 1.5 })}
             min={1}
             max={3}
             step={0.1}
@@ -192,24 +185,22 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Padding</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.padding}
-            onChange={(e) => updateProps({ padding: parseInt(e.target.value) || 0 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ padding: typeof v === 'number' ? v : 0 })}
             min={0}
             max={64}
+            step={2}
           />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Radius</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.cornerRadius}
-            onChange={(e) => updateProps({ cornerRadius: parseInt(e.target.value) || 0 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ cornerRadius: typeof v === 'number' ? v : 0 })}
             min={0}
             max={32}
+            step={1}
           />
         </div>
       </div>
@@ -271,33 +262,34 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         {/* Add new highlight */}
         <div className="space-y-2">
           <div className="flex gap-2">
-            <input
-              type="number"
+            <NumberField
+              value={highlightFrom === '' ? '' : Number(highlightFrom)}
+              onChange={(v) => setHighlightFrom(v === '' ? '' : String(v))}
+              min={1}
+              max={totalLines}
+              step={1}
               placeholder="From"
-              value={highlightFrom}
-              onChange={(e) => setHighlightFrom(e.target.value)}
-              className="w-20 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
+              className="w-24"
+            />
+            <NumberField
+              value={highlightTo === '' ? '' : Number(highlightTo)}
+              onChange={(v) => setHighlightTo(v === '' ? '' : String(v))}
               min={1}
               max={totalLines}
-            />
-            <input
-              type="number"
+              step={1}
               placeholder="To"
-              value={highlightTo}
-              onChange={(e) => setHighlightTo(e.target.value)}
-              className="w-20 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
-              min={1}
-              max={totalLines}
+              className="w-24"
             />
-            <select
+            <SelectField
               value={highlightStyle}
-              onChange={(e) => setHighlightStyle(e.target.value as 'focus' | 'added' | 'removed')}
-              className="flex-1 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
-            >
-              <option value="focus">Focus</option>
-              <option value="added">Added</option>
-              <option value="removed">Removed</option>
-            </select>
+              onValueChange={(v) => setHighlightStyle(v as 'focus' | 'added' | 'removed')}
+              options={[
+                { value: 'focus', label: 'Focus' },
+                { value: 'added', label: 'Added' },
+                { value: 'removed', label: 'Removed' },
+              ]}
+              triggerClassName="bg-neutral-700 border-neutral-600 text-white px-2 py-1.5 rounded text-sm"
+            />
           </div>
           <button
             onClick={addHighlight}

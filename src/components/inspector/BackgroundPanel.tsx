@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { FONT_FAMILIES } from '../../types';
+import SelectField from '../ui/SelectField';
 
 const GRADIENT_PRESETS = [
   { from: '#101022', to: '#1f1f3a', name: 'Midnight' },
@@ -291,19 +292,16 @@ const BackgroundPanel: React.FC = () => {
             {/* Font Family */}
             <div>
               <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Font</label>
-              <select
+              <SelectField
                 value={background.brandStrip.fontFamily || 'Inter'}
-                onChange={(e) => setBackground({
-                  brandStrip: { ...background.brandStrip, fontFamily: e.target.value }
+                onValueChange={(v) => setBackground({
+                  brandStrip: { ...background.brandStrip, fontFamily: v }
                 })}
-                className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
-              >
-                {FONT_FAMILIES.brand.map((font) => (
-                  <option key={font} value={font} style={{ fontFamily: font }}>
-                    {font}
-                  </option>
-                ))}
-              </select>
+                options={FONT_FAMILIES.brand.map((font) => ({
+                  value: font,
+                  label: <span style={{ fontFamily: font }}>{font}</span>,
+                }))}
+              />
             </div>
 
             {/* Font Size */}

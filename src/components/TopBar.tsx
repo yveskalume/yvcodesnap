@@ -5,6 +5,7 @@ import { ASPECT_RATIOS } from '../types';
 import type Konva from 'konva';
 import RecentSnapsDropdown from './RecentSnapsDropdown';
 import { toast } from 'sonner';
+import SelectField from './ui/SelectField';
 
 interface TopBarProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -50,8 +51,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
     }
   }, [snap, addRecentSnap, newSnap]);
 
-  const handleAspectChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+  const handleAspectChange = useCallback((value: string) => {
     const ratio = aspectOptions.find(r => r.name === value);
     if (ratio) {
       updateMeta({
@@ -233,18 +233,13 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
             placeholder="Untitled Project"
           />
           <div className="h-4 w-px bg-white/10" />
-           <div className="relative group/aspect">
-             <select
-                value={snap.meta.aspect}
-                onChange={handleAspectChange}
-                className="bg-transparent text-xs font-medium text-neutral-400 hover:text-white px-2 py-1 outline-none cursor-pointer appearance-none text-center transition-colors"
-              >
-                {aspectOptions.map((ratio) => (
-                  <option key={ratio.name} value={ratio.name}>
-                    {ratio.name}
-                  </option>
-                ))}
-              </select>
+          <div className="min-w-[150px]">
+            <SelectField
+              value={snap.meta.aspect}
+              onValueChange={handleAspectChange}
+              options={aspectOptions.map((ratio) => ({ value: ratio.name, label: ratio.name }))}
+              triggerClassName="bg-transparent border-transparent text-xs font-medium text-neutral-300 hover:text-white px-2 py-1"
+            />
           </div>
         </div>
 
