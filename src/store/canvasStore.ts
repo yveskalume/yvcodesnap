@@ -164,7 +164,7 @@ export const useCanvasStore = create<CanvasState>()(
       }),
       
       setZoom: (zoom) => set((state) => {
-        state.zoom = Math.max(0.25, Math.min(4, zoom));
+        state.zoom = Math.max(0.25, Math.min(256, zoom));
       }),
       
       setShowGrid: (show) => set((state) => {

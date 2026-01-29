@@ -9,6 +9,7 @@ import FontLoader from './components/FontLoader';
 import MainScreen from './components/MainScreen';
 import { useCanvasStore } from './store/canvasStore';
 import { useRecentSnapsStore } from './store/recentSnapsStore';
+import { Toaster } from 'sonner';
 
 function App() {
   const [showMainScreen, setShowMainScreen] = useState(true);
@@ -201,6 +202,7 @@ function App() {
   return (
     <div className="h-screen flex flex-col bg-[#09090b] text-white">
       <FontLoader />
+      <Toaster theme="dark" position="top-center" toastOptions={{ duration: 2600 }} />
       <TopBar stageRef={stageRef} onGoHome={handleGoToMainScreen} />
       <div className="flex-1 flex overflow-hidden">
         <LayersPanel />
