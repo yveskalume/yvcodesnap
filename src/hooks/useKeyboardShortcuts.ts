@@ -60,7 +60,7 @@ export function useKeyboardShortcuts() {
       // Zoom In: Cmd+Plus or Cmd+=
       if (isMeta && (e.key === '+' || e.key === '=')) {
         e.preventDefault();
-        setZoom(Math.min(4, zoom + 0.1));
+        setZoom(Math.min(256, zoom + 0.1));
         return;
       }
 

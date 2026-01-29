@@ -8,6 +8,7 @@ import LayersPanel from './components/LayersPanel';
 import FontLoader from './components/FontLoader';
 import { useCanvasStore } from './store/canvasStore';
 import { useRecentSnapsStore } from './store/recentSnapsStore';
+import { Toaster } from 'sonner';
 
 function App() {
   const stageRef = useRef<Konva.Stage>(null);
@@ -181,6 +182,7 @@ function App() {
   return (
     <div className="h-screen flex flex-col bg-neutral-900 text-white">
       <FontLoader />
+      <Toaster theme="dark" position="top-center" toastOptions={{ duration: 2600 }} />
       <TopBar stageRef={stageRef} />
       <div className="flex-1 flex overflow-hidden">
         <LayersPanel />

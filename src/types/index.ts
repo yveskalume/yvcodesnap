@@ -223,6 +223,7 @@ export const LANGUAGES = [
   'bash',
   'sql',
   'groovy',
+  'php',
 ] as const;
 
 export const FONT_FAMILIES = {

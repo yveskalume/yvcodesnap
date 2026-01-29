@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback, memo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import { useRecentSnapsStore } from '../store/recentSnapsStore';
 import { ASPECT_RATIOS } from '../types';
 import type Konva from 'konva';
 import RecentSnapsDropdown from './RecentSnapsDropdown';
+import { toast } from 'sonner';
 
 interface TopBarProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -29,6 +30,14 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
   
   const { addRecentSnap } = useRecentSnapsStore();
 
+  const aspectOptions = useMemo(() => {
+    const names = ASPECT_RATIOS.map((r) => r.name);
+    if (!names.includes(snap.meta.aspect)) {
+      return [...ASPECT_RATIOS, { name: snap.meta.aspect, width: snap.meta.width, height: snap.meta.height }];
+    }
+    return ASPECT_RATIOS;
+  }, [snap.meta.aspect, snap.meta.width, snap.meta.height]);
+
   const handleNewSnap = useCallback(() => {
     if (confirm('Create a new canvas? Unsaved changes will be lost.')) {
       // Save current snap to recent before creating new
@@ -36,11 +45,13 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
         addRecentSnap(snap);
       }
       newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
+      toast.success('New canvas created');
     }
   }, [snap, addRecentSnap, newSnap]);
 
   const handleAspectChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const ratio = ASPECT_RATIOS.find(r => r.name === e.target.value);
+    const value = e.target.value;
+    const ratio = aspectOptions.find(r => r.name === value);
     if (ratio) {
       updateMeta({
         aspect: ratio.name,
@@ -48,11 +59,14 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
         height: ratio.height,
       });
     }
-  }, [updateMeta]);
+  }, [updateMeta, aspectOptions]);
 
   const handleExportImage = useCallback(async (format: 'png' | 'jpeg', scale: number = 2) => {
     const stage = stageRef.current;
-    if (!stage) return;
+    if (!stage) {
+      toast.error('Canvas not ready to export');
+      return;
+    }
 
     // Temporarily set scale for export
     const oldScale = stage.scaleX();
@@ -80,21 +94,27 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
     link.click();
     setShowExportMenu(false);
     addRecentSnap(snap);
+    toast.success(`Exported as ${format.toUpperCase()}`);
   }, [stageRef, snap, addRecentSnap]);
 
   const handleExportJSON = useCallback(() => {
-    const json = exportSnap();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = `${snap.meta.title || 'canvas'}.json`;
-    link.href = url;
-    link.click();
-    URL.revokeObjectURL(url);
-    
-    setShowExportMenu(false);
-    // Save to recent snaps when exporting
-    addRecentSnap(snap);
+    try {
+      const json = exportSnap();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `${snap.meta.title || 'canvas'}.json`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      setShowExportMenu(false);
+      addRecentSnap(snap);
+      toast.success('Project exported (.json)');
+    } catch (error) {
+      console.error(error);
+      toast.error('Export failed');
+    }
   }, [exportSnap, snap, addRecentSnap]);
 
   const handleImportJSON = useCallback(() => {
@@ -104,16 +124,22 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        // Save current snap to recent before importing
         if (snap.elements.length > 0) {
           addRecentSnap(snap);
         }
         saveToHistory();
         const reader = new FileReader();
         reader.onload = (e) => {
-          const json = e.target?.result as string;
-          importSnap(json);
+          try {
+            const json = e.target?.result as string;
+            importSnap(json);
+            toast.success('Project imported');
+          } catch (err) {
+            console.error(err);
+            toast.error('Import failed');
+          }
         };
+        reader.onerror = () => toast.error('Unable to read file');
         reader.readAsText(file);
       }
     };
@@ -143,7 +169,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="font-bold text-base tracking-tight text-white">
+            <span className="font-bold text-sm tracking-tight text-white">
               YvCode
             </span>
           </div>
@@ -198,22 +224,22 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
             type="text"
             value={snap.meta.title}
             onChange={(e) => updateMeta({ title: e.target.value })}
-            className="bg-transparent text-sm font-medium text-center text-neutral-200 focus:text-white px-3 py-1.5 outline-none rounded-md hover:bg-white/5 focus:bg-white/10 transition-colors placeholder-neutral-600 w-48 border border-transparent focus:border-white/10"
+            className="bg-transparent text-xs font-medium text-center text-neutral-200 focus:text-white px-3 py-1.5 outline-none rounded-md hover:bg-white/5 focus:bg-white/10 transition-colors placeholder-neutral-600 w-48 border border-transparent focus:border-white/10"
             placeholder="Untitled Project"
           />
           <div className="h-4 w-px bg-white/10" />
            <div className="relative group/aspect">
              <select
-              value={snap.meta.aspect}
-              onChange={handleAspectChange}
-              className="bg-transparent text-xs font-medium text-neutral-400 hover:text-white px-2 py-1 outline-none cursor-pointer appearance-none text-center transition-colors"
-            >
-              {ASPECT_RATIOS.map((ratio) => (
-                <option key={ratio.name} value={ratio.name}>
-                  {ratio.name}
-                </option>
-              ))}
-            </select>
+                value={snap.meta.aspect}
+                onChange={handleAspectChange}
+                className="bg-transparent text-xs font-medium text-neutral-400 hover:text-white px-2 py-1 outline-none cursor-pointer appearance-none text-center transition-colors"
+              >
+                {aspectOptions.map((ratio) => (
+                  <option key={ratio.name} value={ratio.name}>
+                    {ratio.name}
+                  </option>
+                ))}
+              </select>
           </div>
         </div>
 
@@ -248,7 +274,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef }) => {
             <button
               ref={exportButtonRef}
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className={`flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border group ${
+              className={`flex items-center gap-3 px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 border group ${
                 showExportMenu
                   ? 'bg-blue-600/10 text-blue-400 border-blue-500/50 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
                   : 'bg-white/5 text-neutral-300 hover:text-white hover:bg-white/10 border-white/5 hover:border-white/10'

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
 import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
@@ -8,6 +8,10 @@ import Arrow from './elements/Arrow';
 import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
 import type { CodeElement, TextElement, ArrowElement } from '../types';
 
+const MIN_CANVAS = 320;
+const MAX_CANVAS = 10000;
+type ResizeEdge = 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
 interface CanvasProps {
   stageRef: React.RefObject<Konva.Stage | null>;
 }
@@ -15,9 +19,26 @@ interface CanvasProps {
 const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight - 120 });
+  const [stagePos, setStagePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
+  const [showResizeHandles, setShowResizeHandles] = useState(false);
+  const [resizeState, setResizeState] = useState<{
+    edge: ResizeEdge;
+    startMouse: { x: number; y: number };
+    startSize: { w: number; h: number };
+    startPos: { x: number; y: number };
+    startZoom: number;
+  } | null>(null);
+  const panStartRef = useRef<{ x: number; y: number } | null>(null);
+  const hasInteractedRef = useRef(false);
+  const spacePressedRef = useRef(false);
+  const cancelClickRef = useRef(false);
   const { 
     snap, 
     zoom, 
+    setZoom,
+    updateMeta,
     showGrid, 
     tool, 
     selectedElementId,
@@ -46,6 +67,110 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
+  // Hide resize handles when clicking outside the canvas container
+  useEffect(() => {
+    const handleDocMouseDown = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const target = e.target as Node | null;
+      if (target && !containerRef.current.contains(target)) {
+        setShowResizeHandles(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocMouseDown);
+    return () => document.removeEventListener('mousedown', handleDocMouseDown);
+  }, []);
+
+  // Keep stage centered initially and when viewport/layout changes (unless user already interacted)
+  useEffect(() => {
+    if (hasInteractedRef.current) return;
+    const scaledWidth = width * zoom;
+    const scaledHeight = height * zoom;
+    setStagePos({
+      x: Math.max(20, (dimensions.width - scaledWidth) / 2),
+      y: Math.max(20, (dimensions.height - scaledHeight) / 2),
+    });
+  }, [dimensions, width, height, zoom]);
+
+  // Track spacebar for panning with left click
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        spacePressedRef.current = true;
+        setSpaceHeld(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        spacePressedRef.current = false;
+        setSpaceHeld(false);
+        setIsPanning(false);
+        panStartRef.current = null;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  // Handle canvas resize via drag handles
+  useEffect(() => {
+    if (!resizeState) return;
+
+    const handleMove = (ev: MouseEvent) => {
+      const { edge, startMouse, startSize, startPos, startZoom } = resizeState;
+      const deltaScreenX = ev.clientX - startMouse.x;
+      const deltaScreenY = ev.clientY - startMouse.y;
+      const deltaCanvasX = deltaScreenX / startZoom;
+      const deltaCanvasY = deltaScreenY / startZoom;
+
+      let nextWidth = startSize.w;
+      let nextHeight = startSize.h;
+      let nextPosX = startPos.x;
+      let nextPosY = startPos.y;
+
+      // Horizontal resize
+      if (edge.includes('right')) {
+        nextWidth = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(startSize.w + deltaCanvasX)));
+      }
+      if (edge.includes('left')) {
+        const tentative = startSize.w - deltaCanvasX;
+        nextWidth = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(tentative)));
+        const appliedDelta = startSize.w - nextWidth; // canvas space
+        nextPosX = startPos.x + appliedDelta * startZoom;
+      }
+
+      // Vertical resize
+      if (edge.includes('bottom')) {
+        nextHeight = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(startSize.h + deltaCanvasY)));
+      }
+      if (edge.includes('top')) {
+        const tentative = startSize.h - deltaCanvasY;
+        nextHeight = Math.min(MAX_CANVAS, Math.max(MIN_CANVAS, Math.round(tentative)));
+        const appliedDelta = startSize.h - nextHeight; // canvas space
+        nextPosY = startPos.y + appliedDelta * startZoom;
+      }
+
+      setStagePos({ x: nextPosX, y: nextPosY });
+      updateMeta({ width: nextWidth, height: nextHeight });
+    };
+
+    const handleUp = () => {
+      cancelClickRef.current = true;
+      setResizeState(null);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [resizeState, updateMeta]);
+
   useEffect(() => {
     const url = background.branding?.avatarUrl || '';
     if (!url) {
@@ -65,17 +190,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     };
   }, [background.branding?.avatarUrl]);
 
-  // Calculate stage position to center the canvas
-  const getStagePosition = useCallback(() => {
-    const scaledWidth = width * zoom;
-    const scaledHeight = height * zoom;
-    return {
-      x: Math.max(20, (dimensions.width - scaledWidth) / 2),
-      y: Math.max(20, (dimensions.height - scaledHeight) / 2),
-    };
-  }, [width, height, zoom, dimensions]);
-
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (isPanning || cancelClickRef.current || resizeState) {
+      cancelClickRef.current = false;
+      return;
+    }
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
     
     if (clickedOnEmpty) {
@@ -86,7 +205,6 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       if (!pos) return;
       
       // Convert screen position to canvas position
-      const stagePos = getStagePosition();
       const canvasX = (pos.x - stagePos.x) / zoom;
       const canvasY = (pos.y - stagePos.y) / zoom;
       
@@ -414,21 +532,116 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     );
   }, [background.branding, width, height, brandingAvatar]);
 
-  const stagePosition = useMemo(() => getStagePosition(), [getStagePosition]);
+  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const scaleBy = 1.05;
+    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const newZoom = Math.max(0.25, Math.min(256, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
+
+    const mousePointTo = {
+      x: (pointer.x - stagePos.x) / zoom,
+      y: (pointer.y - stagePos.y) / zoom,
+    };
+
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newZoom,
+      y: pointer.y - mousePointTo.y * newZoom,
+    };
+
+    hasInteractedRef.current = true;
+    setZoom(newZoom);
+    setStagePos(newPos);
+  };
+
+  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const isMiddleClick = e.evt.button === 1;
+    const isSpaceDrag = e.evt.button === 0 && spacePressedRef.current;
+    const isLeftClick = e.evt.button === 0;
+    const isBackground = e.target === e.target.getStage() || e.target.name() === 'background';
+    const isBackgroundDrag = isLeftClick && isBackground && tool === 'select' && !spacePressedRef.current;
+    if (!isMiddleClick && !isSpaceDrag && !isBackgroundDrag) return;
+
+    e.evt.preventDefault();
+    hasInteractedRef.current = true;
+    setIsPanning(true);
+    cancelClickRef.current = false;
+    panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
+  };
+
+  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (!isPanning || !panStartRef.current) return;
+    e.evt.preventDefault();
+
+    const dx = e.evt.clientX - panStartRef.current.x;
+    const dy = e.evt.clientY - panStartRef.current.y;
+
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+      cancelClickRef.current = true;
+    }
+
+    setStagePos((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+    panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+    panStartRef.current = null;
+  };
+
+  const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    setShowResizeHandles(true);
+    handleMouseDown(e);
+  };
+
+  const handleResizeStart = (
+    edge: ResizeEdge,
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hasInteractedRef.current = true;
+    cancelClickRef.current = true;
+    setIsPanning(false);
+    setResizeState({
+      edge,
+      startMouse: { x: e.clientX, y: e.clientY },
+      startSize: { w: width, h: height },
+      startPos: { x: stagePos.x, y: stagePos.y },
+      startZoom: zoom,
+    });
+  };
+
+  const stageRect = useMemo(() => ({
+    left: stagePos.x,
+    top: stagePos.y,
+    width: width * zoom,
+    height: height * zoom,
+  }), [stagePos.x, stagePos.y, width, height, zoom]);
 
   return (
     <div 
       ref={containerRef}
       className="flex-1 bg-neutral-900 overflow-hidden relative"
-      style={{ cursor: tool !== 'select' ? 'crosshair' : 'default' }}
+      style={{ cursor: isPanning ? 'grabbing' : tool !== 'select' ? 'crosshair' : spaceHeld ? 'grab' : 'grab' }}
     >
       <Stage
         ref={stageRef}
         width={dimensions.width}
         height={dimensions.height}
         onClick={handleStageClick}
-        x={stagePosition.x}
-        y={stagePosition.y}
+        onWheel={handleWheel}
+        onMouseDown={handleStageMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        x={stagePos.x}
+        y={stagePos.y}
         scaleX={zoom}
         scaleY={zoom}
       >
@@ -478,6 +691,30 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           })}
         </Layer>
       </Stage>
+
+      {/* Resize handles overlay */}
+      {showResizeHandles && (
+        <div className="pointer-events-none absolute inset-0">
+          {[
+            { edge: 'top-left', x: stageRect.left, y: stageRect.top, cursor: 'nwse-resize' },
+            { edge: 'top', x: stageRect.left + stageRect.width / 2, y: stageRect.top, cursor: 'ns-resize' },
+            { edge: 'top-right', x: stageRect.left + stageRect.width, y: stageRect.top, cursor: 'nesw-resize' },
+            { edge: 'right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
+            { edge: 'bottom-right', x: stageRect.left + stageRect.width, y: stageRect.top + stageRect.height, cursor: 'nwse-resize' },
+            { edge: 'bottom', x: stageRect.left + stageRect.width / 2, y: stageRect.top + stageRect.height, cursor: 'ns-resize' },
+            { edge: 'bottom-left', x: stageRect.left, y: stageRect.top + stageRect.height, cursor: 'nesw-resize' },
+            { edge: 'left', x: stageRect.left, y: stageRect.top + stageRect.height / 2, cursor: 'ew-resize' },
+          ].map((h) => (
+            <button
+              key={h.edge}
+              className="pointer-events-auto absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded shadow-md border border-neutral-400"
+              style={{ left: h.x, top: h.y, cursor: h.cursor }}
+              onMouseDown={(e) => handleResizeStart(h.edge as ResizeEdge, e)}
+              aria-label={`Resize ${h.edge}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

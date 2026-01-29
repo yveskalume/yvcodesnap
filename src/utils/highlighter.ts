@@ -191,6 +191,16 @@ export function detectLanguage(code: string): string {
   if (/^#!\/bin\/(bash|sh)|^\$\s+|^echo\s+|^export\s+/m.test(code)) {
     return 'bash';
   }
+
+  // PHP patterns
+  if (
+    /^<\?php|<\?=/m.test(code) ||
+    (/\$[A-Za-z_]\w*/.test(code) && /(->|::)/.test(code) && /(function|class)\s+\w+/.test(code)) ||
+    /\bnamespace\s+[\w\\]+;/.test(code) ||
+    /\buse\s+[\w\\]+;/.test(code)
+  ) {
+    return 'php';
+  }
   
   return 'kotlin'; // Default to Kotlin as primary language
 }
