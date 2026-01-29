@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
+import React, {useRef, useState, useEffect, useMemo, memo, useCallback} from 'react';
 import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
@@ -19,6 +19,7 @@ interface CanvasProps {
 const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight - 120 });
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [stagePos, setStagePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
@@ -34,12 +35,12 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const hasInteractedRef = useRef(false);
   const spacePressedRef = useRef(false);
   const cancelClickRef = useRef(false);
-  const { 
+  const {
     snap, 
     zoom, 
     setZoom,
     updateMeta,
-    showGrid, 
+    showGrid,
     tool, 
     selectedElementId,
     selectElement, 
@@ -189,6 +190,21 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       img.onerror = null;
     };
   }, [background.branding?.avatarUrl]);
+
+  // Calculate stage position to center the canvas
+  const getStagePosition = useCallback(() => {
+    const scaledWidth = width * zoom;
+    const scaledHeight = height * zoom;
+    return {
+      x: Math.max(20, (dimensions.width - scaledWidth) / 2) + panOffset.x,
+      y: Math.max(20, (dimensions.height - scaledHeight) / 2) + panOffset.y,
+    };
+  }, [width, height, zoom, dimensions, panOffset]);
+
+  // Reset pan offset when zoom changes significantly or canvas is re-centered
+  const resetPan = useCallback(() => {
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (isPanning || cancelClickRef.current || resizeState) {
@@ -624,11 +640,66 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     height: height * zoom,
   }), [stagePos.x, stagePos.y, width, height, zoom]);
 
+  // Handle wheel/pinch zoom and pan on canvas
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    // Check if it's a pinch zoom gesture (ctrlKey is true for pinch-to-zoom)
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const scaleBy = 1.05;
+      const minZoom = 0.1;
+      const maxZoom = 3;
+
+      // Determine zoom direction
+      const direction = e.deltaY > 0 ? -1 : 1;
+      const newZoom = direction > 0 ? zoom * scaleBy : zoom / scaleBy;
+
+      // Clamp zoom between min and max
+      const clampedZoom = Math.min(Math.max(newZoom, minZoom), maxZoom);
+      setZoom(clampedZoom);
+    } else {
+      // Two-finger scroll for panning
+      e.preventDefault();
+      e.stopPropagation();
+
+      setPanOffset(prev => ({
+        x: prev.x - e.deltaX,
+        y: prev.y - e.deltaY,
+      }));
+    }
+  }, [zoom, setZoom]);
+
+  // Prevent default browser zoom behavior on the container
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const preventDefaultZoom = (e: WheelEvent) => {
+      // Prevent default for both zoom (ctrl/meta) and pan (regular scroll)
+      e.preventDefault();
+    };
+
+    // Use passive: false to allow preventDefault
+    container.addEventListener('wheel', preventDefaultZoom, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', preventDefaultZoom);
+    };
+  }, []);
+
   return (
     <div 
       ref={containerRef}
       className="flex-1 bg-neutral-900 overflow-hidden relative"
       style={{ cursor: isPanning ? 'grabbing' : tool !== 'select' ? 'crosshair' : spaceHeld ? 'grab' : 'grab' }}
+      onWheel={handleWheel}
+      onDoubleClick={(e) => {
+        // Double-click on empty area to reset pan
+        if (e.target === containerRef.current) {
+          resetPan();
+        }
+      }}
     >
       <Stage
         ref={stageRef}

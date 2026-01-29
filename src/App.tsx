@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import type Konva from 'konva';
 import Canvas from './components/Canvas';
 import TopBar from './components/TopBar';
@@ -6,11 +6,13 @@ import Toolbar from './components/Toolbar';
 import Inspector from './components/Inspector';
 import LayersPanel from './components/LayersPanel';
 import FontLoader from './components/FontLoader';
+import MainScreen from './components/MainScreen';
 import { useCanvasStore } from './store/canvasStore';
 import { useRecentSnapsStore } from './store/recentSnapsStore';
 import { Toaster } from 'sonner';
 
 function App() {
+  const [showMainScreen, setShowMainScreen] = useState(true);
   const stageRef = useRef<Konva.Stage>(null);
   const { 
     snap,
@@ -37,7 +39,7 @@ function App() {
   const handleImportFile = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.yvsnap';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
@@ -63,7 +65,7 @@ function App() {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `${snap.meta.title || 'canvas'}.json`;
+    link.download = `${snap.meta.title || 'canvas'}.yvsnap`;
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
@@ -79,6 +81,14 @@ function App() {
       newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
     }
   }, [snap, addRecentSnap, newSnap]);
+
+  // Handle going back to main screen
+  const handleGoToMainScreen = useCallback(() => {
+    if (snap.elements.length > 0) {
+      addRecentSnap(snap);
+    }
+    setShowMainScreen(true);
+  }, [snap, addRecentSnap]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -179,11 +189,21 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedElementId, deleteElement, duplicateElement, undo, redo, zoom, setZoom, showGrid, setShowGrid, setTool, selectElement, handleNewSnap, handleImportFile, handleExportFile]);
 
+  // Show main screen
+  if (showMainScreen) {
+    return (
+      <>
+        <FontLoader />
+        <MainScreen onOpenEditor={() => setShowMainScreen(false)} />
+      </>
+    );
+  }
+
   return (
-    <div className="h-screen flex flex-col bg-neutral-900 text-white">
+    <div className="h-screen flex flex-col bg-[#09090b] text-white">
       <FontLoader />
       <Toaster theme="dark" position="top-center" toastOptions={{ duration: 2600 }} />
-      <TopBar stageRef={stageRef} />
+      <TopBar stageRef={stageRef} onGoHome={handleGoToMainScreen} />
       <div className="flex-1 flex overflow-hidden">
         <LayersPanel />
         <Toolbar />
