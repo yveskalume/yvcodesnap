@@ -74,12 +74,13 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       const target = e.target as Node | null;
       if (target && !containerRef.current.contains(target)) {
         setShowResizeHandles(false);
+        selectElement(null);
       }
     };
 
     document.addEventListener('mousedown', handleDocMouseDown);
     return () => document.removeEventListener('mousedown', handleDocMouseDown);
-  }, []);
+  }, [selectElement]);
 
   // Keep stage centered initially and when viewport/layout changes (unless user already interacted)
   useEffect(() => {
