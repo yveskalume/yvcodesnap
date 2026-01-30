@@ -6,28 +6,27 @@ import { templates, type Template } from '../data/templates';
 import SnapPreview from './SnapPreview';
 import type { Snap } from '../types';
 
-interface MainScreenProps {
-  onOpenEditor: () => void;
-}
+import { useNavigate } from 'react-router-dom';
 
-export default function MainScreen({ onOpenEditor }: MainScreenProps) {
+export default function MainScreen() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'recent' | 'templates'>('recent');
   const { recentSnaps, removeRecentSnap, clearRecentSnaps } = useRecentSnapsStore();
   const { setSnap, newSnap } = useCanvasStore();
 
   const handleNewSnap = () => {
     newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
-    onOpenEditor();
+    navigate('/editor');
   };
 
   const handleOpenRecent = (snap: Snap) => {
     setSnap(snap);
-    onOpenEditor();
+    navigate('/editor');
   };
 
   const handleUseTemplate = (template: Template) => {
     setSnap(template.snap);
-    onOpenEditor();
+    navigate('/editor');
   };
 
   const handleImportFile = () => {
@@ -43,7 +42,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
             const json = evt.target?.result as string;
             const snap = JSON.parse(json) as Snap;
             setSnap(snap);
-            onOpenEditor();
+            navigate('/editor');
           } catch {
             alert('Invalid file format');
           }
@@ -168,8 +167,8 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
             <button
               onClick={() => setActiveTab('recent')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'recent'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
             >
               <Clock className="w-4 h-4" />
@@ -178,8 +177,8 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
             <button
               onClick={() => setActiveTab('templates')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'templates'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
                 }`}
             >
               <Sparkles className="w-4 h-4" />
