@@ -6,7 +6,7 @@ import type { ArrowElement } from '../../types';
 interface ArrowProps {
   element: ArrowElement;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e?: any) => void;
   onChange: (updates: Partial<ArrowElement>) => void;
 }
 
@@ -166,6 +166,13 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
   return (
     <Group
       draggable={!element.locked}
+      onContextMenu={(e) => {
+        e.evt.preventDefault();
+        e.cancelBubble = true;
+        onSelect();
+      }}
+      onClick={onSelect}
+      onTap={onSelect}
       onDragEnd={(e) => {
         if (e.target !== e.currentTarget) return;
 
@@ -231,24 +238,24 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
         />
       ) : (
         !isDegenerate && (
-        <KonvaArrow
-          ref={arrowRef}
-          points={flatPoints}
-          stroke={props.color}
-          strokeWidth={props.thickness}
-          fill={props.head === 'filled' ? props.color : 'transparent'}
-          pointerLength={pointerLength}
-          pointerWidth={pointerWidth}
-          lineCap="round"
-          lineJoin="round"
-          shadowColor={props.color}
-          shadowBlur={8}
-          shadowOpacity={0.2}
-          shadowOffset={{ x: 0, y: 0 }}
-          onClick={onSelect}
-          onTap={onSelect}
-          hitStrokeWidth={20}
-        />
+          <KonvaArrow
+            ref={arrowRef}
+            points={flatPoints}
+            stroke={props.color}
+            strokeWidth={props.thickness}
+            fill={props.head === 'filled' ? props.color : 'transparent'}
+            pointerLength={pointerLength}
+            pointerWidth={pointerWidth}
+            lineCap="round"
+            lineJoin="round"
+            shadowColor={props.color}
+            shadowBlur={8}
+            shadowOpacity={0.2}
+            shadowOffset={{ x: 0, y: 0 }}
+            onClick={onSelect}
+            onTap={onSelect}
+            hitStrokeWidth={20}
+          />
         )
       )}
 
@@ -284,7 +291,7 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
           offsetX={props.label.length * 3.5}
         />
       )}
-      
+
       {/* Control points when selected (for curved arrows) */}
       {isSelected && props.style === 'curved' && (
         <>

@@ -1,14 +1,46 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
-import type { CanvasElement } from '../types';
+import type { CanvasElement, ShapeElement } from '../types';
+
+// Shared label helper so both layer items and footer rename can use it
+const getElementLabel = (element: CanvasElement): string => {
+  if (element.name && element.name.trim()) return element.name.trim();
+  switch (element.type) {
+    case 'code':
+      return 'Code Block';
+    case 'text':
+      return element.props.text.slice(0, 20) + (element.props.text.length > 20 ? '...' : '');
+    case 'arrow':
+      return 'Arrow';
+    case 'shape': {
+      const kind = (element as ShapeElement).props.kind;
+      switch (kind) {
+        case 'rectangle':
+          return 'Rectangle';
+        case 'ellipse':
+          return 'Ellipse';
+        case 'line':
+          return 'Line';
+        case 'polygon':
+          return 'Polygon';
+        case 'star':
+          return 'Star';
+        default:
+          return 'Shape';
+      }
+    }
+    default:
+      return 'Element';
+  }
+};
 
 // Memoized layer item component for performance
-const LayerItem = memo(({ 
-  element, 
-  isSelected, 
-  onSelect, 
-  onToggleLock, 
-  onToggleVisibility 
+const LayerItem = memo(({
+  element,
+  isSelected,
+  onSelect,
+  onToggleLock,
+  onToggleVisibility
 }: {
   element: CanvasElement;
   isSelected: boolean;
@@ -16,8 +48,8 @@ const LayerItem = memo(({
   onToggleLock: () => void;
   onToggleVisibility: () => void;
 }) => {
-  const getElementIcon = (type: CanvasElement['type']) => {
-    switch (type) {
+  const getElementIcon = (element: CanvasElement) => {
+    switch (element.type) {
       case 'code':
         return (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,38 +68,64 @@ const LayerItem = memo(({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
         );
-    }
-  };
-
-  const getElementLabel = (element: CanvasElement) => {
-    switch (element.type) {
-      case 'code':
-        return `Code Block`;
-      case 'text':
-        return element.props.text.slice(0, 20) + (element.props.text.length > 20 ? '...' : '');
-      case 'arrow':
-        return `Arrow`;
+      case 'shape': {
+        const kind = (element as ShapeElement).props.kind;
+        switch (kind) {
+          case 'rectangle':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="4" y="6" width="16" height="12" rx="2" />
+              </svg>
+            );
+          case 'ellipse':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <ellipse cx="12" cy="12" rx="8" ry="6" />
+              </svg>
+            );
+          case 'line':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 19 19 5" strokeLinecap="round" />
+              </svg>
+            );
+          case 'polygon':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 3 21 9v6l-9 6-9-6V9z" />
+              </svg>
+            );
+          case 'star':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m12 3 2.6 6h6.4l-5.2 4.1 2 6.1L12 16.5l-5.8 2.7 2-6.1L3 9h6.4Z" />
+              </svg>
+            );
+          default:
+            return null;
+        }
+      }
+      default:
+        return null;
     }
   };
 
   return (
     <div
       onClick={onSelect}
-      className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
-        isSelected
-          ? 'bg-blue-600/20 border border-blue-500/50'
-          : 'hover:bg-white/5 border border-transparent'
-      }`}
+      className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${isSelected
+        ? 'bg-blue-600/20 border border-blue-500/50'
+        : 'hover:bg-white/5 border border-transparent'
+        }`}
     >
       {/* Element type icon */}
       <div className={`shrink-0 ${isSelected ? 'text-blue-400' : 'text-neutral-400'}`}>
-        {getElementIcon(element.type)}
+        {getElementIcon(element)}
       </div>
 
       {/* Element name */}
-      <span className={`flex-1 text-sm truncate ${
-        isSelected ? 'text-white' : 'text-neutral-300'
-      } ${!element.visible ? 'opacity-50' : ''}`}>
+      <span className={`flex-1 text-sm truncate ${isSelected ? 'text-white' : 'text-neutral-300'
+        } ${!element.visible ? 'opacity-50' : ''}`}>
         {getElementLabel(element)}
       </span>
 
@@ -79,9 +137,8 @@ const LayerItem = memo(({
             e.stopPropagation();
             onToggleLock();
           }}
-          className={`p-1 rounded hover:bg-white/10 transition-colors ${
-            element.locked ? 'text-yellow-400' : 'text-neutral-500 hover:text-neutral-300'
-          }`}
+          className={`p-1 rounded hover:bg-white/10 transition-colors ${element.locked ? 'text-yellow-400' : 'text-neutral-500 hover:text-neutral-300'
+            }`}
           title={element.locked ? 'Unlock' : 'Lock'}
         >
           {element.locked ? (
@@ -101,9 +158,8 @@ const LayerItem = memo(({
             e.stopPropagation();
             onToggleVisibility();
           }}
-          className={`p-1 rounded hover:bg-white/10 transition-colors ${
-            element.visible ? 'text-neutral-500 hover:text-neutral-300' : 'text-red-400'
-          }`}
+          className={`p-1 rounded hover:bg-white/10 transition-colors ${element.visible ? 'text-neutral-500 hover:text-neutral-300' : 'text-red-400'
+            }`}
           title={element.visible ? 'Hide' : 'Show'}
         >
           {element.visible ? (
@@ -127,8 +183,9 @@ LayerItem.displayName = 'LayerItem';
 const LayersPanel: React.FC = () => {
   const {
     snap,
-    selectedElementId,
+    selectedElementIds,
     selectElement,
+    setTool,
     updateElement,
     moveElementUp,
     moveElementDown,
@@ -146,23 +203,30 @@ const LayersPanel: React.FC = () => {
   }, [updateElement]);
 
   const handleMoveUp = useCallback(() => {
-    if (selectedElementId) moveElementUp(selectedElementId);
-  }, [selectedElementId, moveElementUp]);
+    selectedElementIds.forEach(id => moveElementUp(id));
+  }, [selectedElementIds, moveElementUp]);
 
   const handleMoveDown = useCallback(() => {
-    if (selectedElementId) moveElementDown(selectedElementId);
-  }, [selectedElementId, moveElementDown]);
+    selectedElementIds.forEach(id => moveElementDown(id));
+  }, [selectedElementIds, moveElementDown]);
 
   const handleDelete = useCallback(() => {
-    if (selectedElementId) deleteElement(selectedElementId);
-  }, [selectedElementId, deleteElement]);
+    if (selectedElementIds.length > 0) {
+      deleteElement();
+    }
+  }, [selectedElementIds, deleteElement]);
+
+  const selectedElement = useMemo(
+    () => (selectedElementIds.length === 1 ? snap.elements.find((el) => el.id === selectedElementIds[0]) : null),
+    [snap.elements, selectedElementIds]
+  );
 
   return (
     <div className="w-56 bg-[#09090b] border-r border-white/5 flex flex-col h-full">
       <div className="p-4 border-b border-white/5">
         <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Layers</h3>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-2">
         {elements.length === 0 ? (
           <div className="text-neutral-500 text-xs text-center py-8">
@@ -176,8 +240,11 @@ const LayersPanel: React.FC = () => {
               <LayerItem
                 key={element.id}
                 element={element}
-                isSelected={selectedElementId === element.id}
-                onSelect={() => selectElement(element.id)}
+                isSelected={selectedElementIds.includes(element.id)}
+                onSelect={() => {
+                  setTool('select');
+                  selectElement(element.id, false); // Single select by default here, could add modifier key logic
+                }}
                 onToggleLock={() => handleToggleLock(element.id, element.locked)}
                 onToggleVisibility={() => handleToggleVisibility(element.id, element.visible)}
               />
@@ -187,8 +254,15 @@ const LayersPanel: React.FC = () => {
       </div>
 
       {/* Layer actions footer */}
-      {selectedElementId && (
-        <div className="p-3 border-t border-white/5">
+      {selectedElement && (
+        <div className="p-3 border-t border-white/5 space-y-3">
+          <input
+            type="text"
+            value={selectedElement.name ?? getElementLabel(selectedElement)}
+            onChange={(e) => updateElement(selectedElement.id, { name: e.target.value })}
+            className="w-full px-2.5 py-2 rounded-md bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-blue-500/60"
+            placeholder="Layer name"
+          />
           <div className="flex items-center justify-between gap-2">
             <div className="flex gap-1">
               <button

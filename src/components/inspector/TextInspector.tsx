@@ -3,6 +3,8 @@ import { useCanvasStore } from '../../store/canvasStore';
 import type { TextElement } from '../../types';
 import { FONT_FAMILIES } from '../../types';
 import { loadFont } from '../../utils/fontLoader';
+import SliderField from '../ui/SliderField';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 interface TextInspectorProps {
   element: TextElement;
@@ -67,13 +69,13 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
         <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
           Size: {element.props.fontSize}px
         </label>
-        <input
-          type="range"
-          value={element.props.fontSize}
-          onChange={(e) => updateProps({ fontSize: parseInt(e.target.value) })}
-          className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        <SliderField
           min={12}
           max={96}
+          step={1}
+          value={element.props.fontSize}
+          onValueChange={(v) => updateProps({ fontSize: v })}
+          ariaLabel="Text size"
         />
       </div>
 
@@ -182,22 +184,15 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Background</label>
-          <button
-            onClick={() => updateProps({ 
-              background: element.props.background 
-                ? null 
-                : { color: 'rgba(0,0,0,0.5)' }
-            })}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-              element.props.background ? 'bg-blue-600' : 'bg-white/10'
-            }`}
-          >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                element.props.background ? 'translate-x-4' : 'translate-x-1'
-              }`}
-            />
-          </button>
+          <ToggleSwitch
+            checked={!!element.props.background}
+            onCheckedChange={(checked) =>
+              updateProps({
+                background: checked ? { color: element.props.background?.color || 'rgba(0,0,0,0.5)' } : null,
+              })
+            }
+            ariaLabel="Toggle text background"
+          />
         </div>
         {element.props.background && (
           <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">

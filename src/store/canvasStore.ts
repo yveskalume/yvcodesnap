@@ -10,6 +10,10 @@ import type {
   ArrowElement,
   Background,
   CanvasMeta,
+  ShapeElement,
+  ShapeKind,
+  ImageElement,
+  GroupElement,
 } from '../types';
 
 interface HistoryState {
@@ -17,39 +21,47 @@ interface HistoryState {
   future: Snap[];
 }
 
+export type ToolId = 'select' | 'code' | 'text' | 'image' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+
 interface CanvasState {
   snap: Snap;
-  selectedElementId: string | null;
+  selectedElementIds: string[];
   zoom: number;
   showGrid: boolean;
-  tool: 'select' | 'code' | 'text' | 'arrow';
+  tool: ToolId;
+  clipboard: CanvasElement[] | null;
   history: HistoryState;
-  
+
   // Actions
   setSnap: (snap: Snap) => void;
   updateMeta: (meta: Partial<CanvasMeta>) => void;
   setBackground: (background: Partial<Background>) => void;
-  
+
   addElement: (element: CanvasElement) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
-  deleteElement: (id: string) => void;
-  duplicateElement: (id: string) => void;
-  
-  selectElement: (id: string | null) => void;
+  deleteElement: (id?: string) => void;
+  duplicateElement: (id?: string) => void;
+
+  selectElement: (id: string | null, multi?: boolean) => void;
+  selectAll: () => void;
   setZoom: (zoom: number) => void;
   setShowGrid: (show: boolean) => void;
-  setTool: (tool: 'select' | 'code' | 'text' | 'arrow') => void;
-  
+  setTool: (tool: ToolId) => void;
+
   moveElementUp: (id: string) => void;
   moveElementDown: (id: string) => void;
-  
+
   undo: () => void;
   redo: () => void;
   saveToHistory: () => void;
-  
+  copyToClipboard: () => void;
+  pasteFromClipboard: () => void;
+
   newSnap: (meta: CanvasMeta) => void;
   exportSnap: () => string;
   importSnap: (json: string) => void;
+  groupSelection: () => void;
+  ungroupSelection: () => void;
 }
 
 const MAX_PERSISTED_AVATAR_LENGTH = 350000;
@@ -104,80 +116,117 @@ export const useCanvasStore = create<CanvasState>()(
   persist(
     immer((set, get) => ({
       snap: defaultSnap,
-      selectedElementId: null,
+      selectedElementIds: [],
       zoom: 0.5,
       showGrid: false,
       tool: 'select',
+      clipboard: null,
       history: { past: [], future: [] },
-      
+
       setSnap: (snap) => set((state) => {
         state.snap = snap;
       }),
-      
+
       updateMeta: (meta) => set((state) => {
         state.snap.meta = { ...state.snap.meta, ...meta };
       }),
-      
+
       setBackground: (background) => set((state) => {
         state.snap.background = { ...state.snap.background, ...background };
       }),
-      
+
       addElement: (element) => set((state) => {
         get().saveToHistory();
         state.snap.elements.push(element);
-        state.selectedElementId = element.id;
-        state.tool = 'select';
+        state.selectedElementIds = [element.id];
       }),
-      
+
       updateElement: (id, updates) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index !== -1) {
+          // record history before mutating
+          state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
+          state.history.future = [];
+          if (state.history.past.length > 50) state.history.past.shift();
+
           state.snap.elements[index] = { ...state.snap.elements[index], ...updates } as CanvasElement;
         }
       }),
-      
+
       deleteElement: (id) => set((state) => {
         get().saveToHistory();
-        state.snap.elements = state.snap.elements.filter((el) => el.id !== id);
-        if (state.selectedElementId === id) {
-          state.selectedElementId = null;
-        }
+        const idsToDelete = id ? [id] : state.selectedElementIds;
+        state.snap.elements = state.snap.elements.filter((el) => !idsToDelete.includes(el.id));
+        state.selectedElementIds = state.selectedElementIds.filter((selId) => !idsToDelete.includes(selId));
       }),
-      
+
       duplicateElement: (id) => set((state) => {
-        const element = state.snap.elements.find((el) => el.id === id);
-        if (element) {
-          get().saveToHistory();
-          const newElement = {
-            ...JSON.parse(JSON.stringify(element)),
-            id: uuidv4(),
-            x: element.x + 20,
-            y: element.y + 20,
-          };
-          state.snap.elements.push(newElement);
-          state.selectedElementId = newElement.id;
+        const idsToDuplicate = id ? [id] : state.selectedElementIds;
+        if (idsToDuplicate.length === 0) return;
+
+        get().saveToHistory();
+        const newIds: string[] = [];
+
+        idsToDuplicate.forEach((targetId) => {
+          const element = state.snap.elements.find((el) => el.id === targetId);
+          if (element) {
+            const newElement = {
+              ...JSON.parse(JSON.stringify(element)),
+              id: uuidv4(),
+              x: element.x + 20,
+              y: element.y + 20,
+            };
+
+            // Ensure width and height are present for text elements, if they were somehow missing
+            if (newElement.type === 'text') {
+              newElement.width = (newElement as TextElement).width || 200; // Default width for text
+              newElement.height = (newElement as TextElement).height || 40; // Default height for text
+            }
+
+            state.snap.elements.push(newElement);
+            newIds.push(newElement.id);
+          }
+        });
+
+        state.selectedElementIds = newIds;
+      }),
+
+      selectElement: (id, multi = false) => set((state) => {
+        if (id === null) {
+          if (!multi) state.selectedElementIds = [];
+          return;
+        }
+
+        if (multi) {
+          if (state.selectedElementIds.includes(id)) {
+            state.selectedElementIds = state.selectedElementIds.filter((selId) => selId !== id);
+          } else {
+            state.selectedElementIds.push(id);
+          }
+        } else {
+          state.selectedElementIds = [id];
         }
       }),
-      
-      selectElement: (id) => set((state) => {
-        state.selectedElementId = id;
+
+      selectAll: () => set((state) => {
+        state.selectedElementIds = state.snap.elements.map((el) => el.id);
       }),
-      
+
       setZoom: (zoom) => set((state) => {
         state.zoom = Math.max(0.25, Math.min(256, zoom));
       }),
-      
+
       setShowGrid: (show) => set((state) => {
         state.showGrid = show;
       }),
-      
+
       setTool: (tool) => set((state) => {
         state.tool = tool;
         if (tool !== 'select') {
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
-      
+
       moveElementUp: (id) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index < state.snap.elements.length - 1) {
@@ -186,7 +235,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.snap.elements[index + 1] = temp;
         }
       }),
-      
+
       moveElementDown: (id) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index > 0) {
@@ -195,7 +244,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.snap.elements[index - 1] = temp;
         }
       }),
-      
+
       saveToHistory: () => set((state) => {
         state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
         state.history.future = [];
@@ -203,50 +252,199 @@ export const useCanvasStore = create<CanvasState>()(
           state.history.past.shift();
         }
       }),
-      
+
       undo: () => set((state) => {
         if (state.history.past.length > 0) {
           const previous = state.history.past.pop()!;
           state.history.future.push(JSON.parse(JSON.stringify(state.snap)));
           state.snap = previous;
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
-      
+
       redo: () => set((state) => {
         if (state.history.future.length > 0) {
           const next = state.history.future.pop()!;
           state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
           state.snap = next;
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
-      
+
+      copyToClipboard: () => set((state) => {
+        if (state.selectedElementIds.length > 0) {
+          state.clipboard = state.snap.elements.filter((el) => state.selectedElementIds.includes(el.id));
+        }
+      }),
+
+      pasteFromClipboard: () => set((state) => {
+        if (state.clipboard && state.clipboard.length > 0) {
+          get().saveToHistory();
+          const newIds: string[] = [];
+
+          state.clipboard.forEach((clipElement) => {
+            const newElement = {
+              ...JSON.parse(JSON.stringify(clipElement)),
+              id: uuidv4(),
+              x: clipElement.x + 20,
+              y: clipElement.y + 20,
+            };
+
+            // Handle shape points if necessary (e.g. arrows, lines)
+            if (newElement.type === 'arrow' || (newElement.type === 'shape' && newElement.points)) {
+              // For elements with relative points, we just update x/y offset
+              // The points themselves are relative to (0,0) so they don't need shifting
+            }
+
+            state.snap.elements.push(newElement);
+            newIds.push(newElement.id);
+          });
+
+          state.selectedElementIds = newIds;
+        }
+      }),
+
       newSnap: (meta) => set((state) => {
         state.snap = {
           ...defaultSnap,
           meta: { ...defaultSnap.meta, ...meta },
         };
-        state.selectedElementId = null;
+        state.selectedElementIds = [];
         state.history = { past: [], future: [] };
       }),
-      
+
       exportSnap: () => {
         return JSON.stringify(get().snap, null, 2);
       },
-      
+
       importSnap: (json) => {
         try {
           const snap = JSON.parse(json) as Snap;
           set((state) => {
             state.snap = snap;
-            state.selectedElementId = null;
+            state.selectedElementIds = [];
             state.history = { past: [], future: [] };
           });
         } catch (e) {
           console.error('Failed to import snap:', e);
         }
       },
+
+      groupSelection: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length < 2) return;
+
+        get().saveToHistory();
+
+        // Find elements to group
+        const groupElements = state.snap.elements.filter((el) => selectedIds.includes(el.id));
+
+        // Remove from main list
+        state.snap.elements = state.snap.elements.filter((el) => !selectedIds.includes(el.id));
+
+        // Calculate bounding box of the selection
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        groupElements.forEach(el => {
+          let elWidth = 0;
+          let elHeight = 0;
+
+          if (el.type === 'code' || el.type === 'image' || el.type === 'group') {
+            elWidth = (el as any).width || 0;
+            elHeight = (el as any).height || 0;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          } else if (el.type === 'text') {
+            elWidth = (el as any).width || 200;
+            elHeight = (el as any).height || 40;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          } else if (el.type === 'arrow' || (el.type === 'shape' && el.points)) {
+            const points = el.points || [];
+            points.forEach(p => {
+              minX = Math.min(minX, p.x);
+              minY = Math.min(minY, p.y);
+              maxX = Math.max(maxX, p.x);
+              maxY = Math.max(maxY, p.y);
+            });
+          } else if (el.type === 'shape') {
+            elWidth = (el as any).width || 100;
+            elHeight = (el as any).height || 100;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          }
+        });
+
+        // Handle case where no elements were found or dimensions are invalid
+        if (minX === Infinity) return;
+
+        // Make coordinates relative to the group origin (minX, minY)
+        const adjustedElements = groupElements.map(el => {
+          const cloned = JSON.parse(JSON.stringify(el));
+          cloned.x -= minX;
+          cloned.y -= minY;
+          if (cloned.points) {
+            cloned.points = cloned.points.map((p: any) => ({
+              x: p.x - minX,
+              y: p.y - minY
+            }));
+          }
+          return cloned;
+        });
+
+        const newGroup: GroupElement = {
+          id: uuidv4(),
+          type: 'group',
+          x: minX,
+          y: minY,
+          width: maxX - minX,
+          height: maxY - minY,
+          rotation: 0,
+          locked: false,
+          visible: true,
+          elements: adjustedElements
+        };
+
+        state.snap.elements.push(newGroup);
+        state.selectedElementIds = [newGroup.id];
+      }),
+
+      ungroupSelection: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        const groupsToUngroup = state.snap.elements.filter(el =>
+          el.type === 'group' && selectedIds.includes(el.id)
+        ) as GroupElement[];
+
+        if (groupsToUngroup.length === 0) return;
+
+        get().saveToHistory();
+
+        groupsToUngroup.forEach(group => {
+          // Remove group
+          state.snap.elements = state.snap.elements.filter(el => el.id !== group.id);
+
+          // Add children back with adjusted coordinates
+          group.elements.forEach(el => {
+            const restored = JSON.parse(JSON.stringify(el));
+            restored.x += group.x;
+            restored.y += group.y;
+            if (restored.points) {
+              restored.points = restored.points.map((p: any) => ({
+                x: p.x + group.x,
+                y: p.y + group.y
+              }));
+            }
+            state.snap.elements.push(restored);
+          });
+        });
+
+        state.selectedElementIds = [];
+      }),
     })),
     {
       name: 'code-canvas-storage',
@@ -254,8 +452,8 @@ export const useCanvasStore = create<CanvasState>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
 
@@ -321,6 +519,8 @@ export const createTextElement = (x: number, y: number): TextElement => ({
   x,
   y,
   rotation: 0,
+  width: 200,
+  height: 40,
   locked: false,
   visible: true,
   props: {
@@ -355,5 +555,47 @@ export const createArrowElement = (x: number, y: number): ArrowElement => ({
     color: '#60a5fa',
     thickness: 3,
     head: 'filled',
+  },
+});
+
+export const createShapeElement = (kind: ShapeKind, x: number, y: number): ShapeElement => ({
+  id: uuidv4(),
+  type: 'shape',
+  x: 0,
+  y: 0,
+  rotation: 0,
+  locked: false,
+  visible: true,
+  width: 0,
+  height: 0,
+  points: kind === 'line' ? [{ x, y }, { x, y }] : undefined,
+  props: {
+    kind,
+    stroke: '#60a5fa',
+    strokeWidth: 3,
+    fill: kind === 'rectangle' || kind === 'ellipse' ? '#60a5f4' : 'transparent',
+    sides: kind === 'polygon' ? 5 : kind === 'star' ? 5 : undefined,
+  },
+});
+
+export const createImageElement = (x: number, y: number, src: string, width: number, height: number): ImageElement => ({
+  id: uuidv4(),
+  type: 'image',
+  x,
+  y,
+  rotation: 0,
+  locked: false,
+  visible: true,
+  width,
+  height,
+  props: {
+    src,
+    width,
+    height,
+    opacity: 1,
+    cornerRadius: 0,
+    shadow: { blur: 0, spread: 0, color: 'rgba(0,0,0,0.4)' },
+    rotate: 0,
+    fit: 'contain',
   },
 });

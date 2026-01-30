@@ -3,6 +3,9 @@ import { useCanvasStore } from '../../store/canvasStore';
 import { useBrandingStore } from '../../store/brandingStore';
 import { FONT_FAMILIES } from '../../types';
 import { SocialIcon } from '../elements/SocialIcons';
+import SelectField from '../ui/SelectField';
+import ToggleSwitch from '../ui/ToggleSwitch';
+import SliderField from '../ui/SliderField';
 
 const POSITION_OPTIONS = [
   { value: 'top-left', label: 'Top Left' },
@@ -154,21 +157,18 @@ const BrandingPanel: React.FC = () => {
     <div className="space-y-6">
       {/* Enable Branding */}
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+        <label
+          className="block text-xs font-medium text-neutral-500 uppercase tracking-wider"
+          htmlFor="branding-watermark-toggle"
+        >
           Branding Watermark
         </label>
-        <button
-          onClick={() => handleUpdatePreferences({ enabled: !preferences.enabled })}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-            preferences.enabled ? 'bg-blue-600' : 'bg-white/10'
-          }`}
-        >
-          <span
-            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-              preferences.enabled ? 'translate-x-4' : 'translate-x-1'
-            }`}
-          />
-        </button>
+        <ToggleSwitch
+          id="branding-watermark-toggle"
+          checked={preferences.enabled}
+          onCheckedChange={(checked) => handleUpdatePreferences({ enabled: checked })}
+          ariaLabel="Toggle branding watermark"
+        />
       </div>
 
       {preferences.enabled && (
@@ -251,13 +251,13 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Size: {preferences.avatarSize}px
                 </label>
-                <input
-                  type="range"
+                <SliderField
                   min={32}
                   max={120}
+                  step={1}
                   value={preferences.avatarSize}
-                  onChange={(e) => handleUpdatePreferences({ avatarSize: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  onValueChange={(v) => handleUpdatePreferences({ avatarSize: v })}
+                  ariaLabel="Avatar size"
                 />
               </div>
             )}
@@ -381,13 +381,13 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Icon Size: {preferences.socialIconSize}px
                 </label>
-                <input
-                  type="range"
-                  min="14"
-                  max="32"
+                <SliderField
+                  min={14}
+                  max={32}
+                  step={1}
                   value={preferences.socialIconSize}
-                  onChange={(e) => handleUpdatePreferences({ socialIconSize: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  onValueChange={(v) => handleUpdatePreferences({ socialIconSize: v })}
+                  ariaLabel="Social icon size"
                 />
               </div>
             </div>
@@ -402,17 +402,14 @@ const BrandingPanel: React.FC = () => {
             {/* Font Family */}
             <div className="mb-4">
               <label className="block text-xs text-neutral-500 mb-2">Font</label>
-              <select
+              <SelectField
                 value={preferences.fontFamily}
-                onChange={(e) => handleUpdatePreferences({ fontFamily: e.target.value })}
-                className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
-              >
-                {FONT_FAMILIES.text.map((font) => (
-                  <option key={font} value={font} style={{ fontFamily: font }}>
-                    {font}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(value) => handleUpdatePreferences({ fontFamily: value })}
+                options={FONT_FAMILIES.text.map((font) => ({
+                  value: font,
+                  label: <span style={{ fontFamily: font }}>{font}</span>,
+                }))}
+              />
             </div>
 
             {/* Font Size */}
@@ -420,13 +417,13 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Font Size: {preferences.fontSize}px
               </label>
-              <input
-                type="range"
-                min="10"
-                max="24"
+              <SliderField
+                min={10}
+                max={24}
+                step={1}
                 value={preferences.fontSize}
-                onChange={(e) => handleUpdatePreferences({ fontSize: parseInt(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) => handleUpdatePreferences({ fontSize: v })}
+                ariaLabel="Font size"
               />
             </div>
 
@@ -456,14 +453,13 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Opacity: {Math.round(preferences.opacity * 100)}%
               </label>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.05"
+              <SliderField
+                min={0.1}
+                max={1}
+                step={0.05}
                 value={preferences.opacity}
-                onChange={(e) => handleUpdatePreferences({ opacity: parseFloat(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) => handleUpdatePreferences({ opacity: v })}
+                ariaLabel="Opacity"
               />
             </div>
 
@@ -472,13 +468,13 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Padding: {preferences.padding}px
               </label>
-              <input
-                type="range"
-                min="8"
-                max="48"
+              <SliderField
+                min={8}
+                max={48}
+                step={1}
                 value={preferences.padding}
-                onChange={(e) => handleUpdatePreferences({ padding: parseInt(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) => handleUpdatePreferences({ padding: v })}
+                ariaLabel="Padding"
               />
             </div>
           </div>
