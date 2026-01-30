@@ -2,6 +2,8 @@ import React from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import { FONT_FAMILIES } from '../../types';
 import SelectField from '../ui/SelectField';
+import ToggleSwitch from '../ui/ToggleSwitch';
+import SliderField from '../ui/SliderField';
 
 const GRADIENT_PRESETS = [
   { from: '#101022', to: '#1f1f3a', name: 'Midnight' },
@@ -141,15 +143,17 @@ const BackgroundPanel: React.FC = () => {
 
           <div>
             <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Angle: {background.gradient.angle}°</label>
-            <input
-              type="range"
-              min="0"
-              max="360"
+            <SliderField
+              min={0}
+              max={360}
+              step={1}
               value={background.gradient.angle}
-              onChange={(e) => setBackground({
-                gradient: { ...background.gradient, angle: parseInt(e.target.value) }
-              })}
-              className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              onValueChange={(v) =>
+                setBackground({
+                  gradient: { ...background.gradient, angle: v },
+                })
+              }
+              ariaLabel="Gradient angle"
             />
           </div>
         </>
@@ -158,21 +162,22 @@ const BackgroundPanel: React.FC = () => {
       {/* Brand Strip Section */}
       <div className="pt-4 border-t border-white/5">
         <div className="flex items-center justify-between mb-3">
-          <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">Brand Strip</label>
-          <button
-            onClick={() => setBackground({
-              brandStrip: { ...background.brandStrip, enabled: !background.brandStrip?.enabled }
-            })}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-              background.brandStrip?.enabled ? 'bg-blue-600' : 'bg-white/10'
-            }`}
+          <label
+            className="block text-xs font-medium text-neutral-500 uppercase tracking-wider"
+            htmlFor="brand-strip-toggle"
           >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                background.brandStrip?.enabled ? 'translate-x-4' : 'translate-x-1'
-              }`}
-            />
-          </button>
+            Brand Strip
+          </label>
+          <ToggleSwitch
+            id="brand-strip-toggle"
+            checked={!!background.brandStrip?.enabled}
+            onCheckedChange={(checked) =>
+              setBackground({
+                brandStrip: { ...background.brandStrip, enabled: checked },
+              })
+            }
+            ariaLabel="Toggle brand strip"
+          />
         </div>
 
         {background.brandStrip?.enabled && (
@@ -213,15 +218,17 @@ const BackgroundPanel: React.FC = () => {
               <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
                 Height: {background.brandStrip.height || 60}px
               </label>
-              <input
-                type="range"
-                min="30"
-                max="120"
+              <SliderField
+                min={30}
+                max={120}
+                step={1}
                 value={background.brandStrip.height || 60}
-                onChange={(e) => setBackground({
-                  brandStrip: { ...background.brandStrip, height: parseInt(e.target.value) }
-                })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) =>
+                  setBackground({
+                    brandStrip: { ...background.brandStrip, height: v },
+                  })
+                }
+                ariaLabel="Brand strip height"
               />
             </div>
 
@@ -309,15 +316,17 @@ const BackgroundPanel: React.FC = () => {
               <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
                 Font Size: {background.brandStrip.fontSize || 16}px
               </label>
-              <input
-                type="range"
-                min="12"
-                max="32"
+              <SliderField
+                min={12}
+                max={32}
+                step={1}
                 value={background.brandStrip.fontSize || 16}
-                onChange={(e) => setBackground({
-                  brandStrip: { ...background.brandStrip, fontSize: parseInt(e.target.value) }
-                })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) =>
+                  setBackground({
+                    brandStrip: { ...background.brandStrip, fontSize: v },
+                  })
+                }
+                ariaLabel="Brand strip font size"
               />
             </div>
           </div>

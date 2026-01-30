@@ -4,7 +4,8 @@ import { useBrandingStore } from '../../store/brandingStore';
 import { FONT_FAMILIES } from '../../types';
 import { SocialIcon } from '../elements/SocialIcons';
 import SelectField from '../ui/SelectField';
-import * as Slider from '@radix-ui/react-slider';
+import ToggleSwitch from '../ui/ToggleSwitch';
+import SliderField from '../ui/SliderField';
 
 const POSITION_OPTIONS = [
   { value: 'top-left', label: 'Top Left' },
@@ -156,21 +157,18 @@ const BrandingPanel: React.FC = () => {
     <div className="space-y-6">
       {/* Enable Branding */}
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+        <label
+          className="block text-xs font-medium text-neutral-500 uppercase tracking-wider"
+          htmlFor="branding-watermark-toggle"
+        >
           Branding Watermark
         </label>
-        <button
-          onClick={() => handleUpdatePreferences({ enabled: !preferences.enabled })}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-            preferences.enabled ? 'bg-blue-600' : 'bg-white/10'
-          }`}
-        >
-          <span
-            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-              preferences.enabled ? 'translate-x-4' : 'translate-x-1'
-            }`}
-          />
-        </button>
+        <ToggleSwitch
+          id="branding-watermark-toggle"
+          checked={preferences.enabled}
+          onCheckedChange={(checked) => handleUpdatePreferences({ enabled: checked })}
+          ariaLabel="Toggle branding watermark"
+        />
       </div>
 
       {preferences.enabled && (
@@ -253,20 +251,14 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Size: {preferences.avatarSize}px
                 </label>
-                <Slider.Root
-                  className={sliderRoot}
+                <SliderField
                   min={32}
                   max={120}
                   step={1}
-                  value={[preferences.avatarSize]}
-                  onValueChange={([v]) => handleUpdatePreferences({ avatarSize: v })}
-                  aria-label="Avatar size"
-                >
-                  <Slider.Track className={sliderTrack}>
-                    <Slider.Range className={sliderRange} />
-                  </Slider.Track>
-                  <Slider.Thumb className={sliderThumb} />
-                </Slider.Root>
+                  value={preferences.avatarSize}
+                  onValueChange={(v) => handleUpdatePreferences({ avatarSize: v })}
+                  ariaLabel="Avatar size"
+                />
               </div>
             )}
           </div>
@@ -389,20 +381,14 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Icon Size: {preferences.socialIconSize}px
                 </label>
-                <Slider.Root
-                  className={sliderRoot}
+                <SliderField
                   min={14}
                   max={32}
                   step={1}
-                  value={[preferences.socialIconSize]}
-                  onValueChange={([v]) => handleUpdatePreferences({ socialIconSize: v })}
-                  aria-label="Social icon size"
-                >
-                  <Slider.Track className={sliderTrack}>
-                    <Slider.Range className={sliderRange} />
-                  </Slider.Track>
-                  <Slider.Thumb className={sliderThumb} />
-                </Slider.Root>
+                  value={preferences.socialIconSize}
+                  onValueChange={(v) => handleUpdatePreferences({ socialIconSize: v })}
+                  ariaLabel="Social icon size"
+                />
               </div>
             </div>
           </div>
@@ -431,20 +417,14 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Font Size: {preferences.fontSize}px
               </label>
-              <Slider.Root
-                className={sliderRoot}
+              <SliderField
                 min={10}
                 max={24}
                 step={1}
-                value={[preferences.fontSize]}
-                onValueChange={([v]) => handleUpdatePreferences({ fontSize: v })}
-                aria-label="Font size"
-              >
-                <Slider.Track className={sliderTrack}>
-                  <Slider.Range className={sliderRange} />
-                </Slider.Track>
-                <Slider.Thumb className={sliderThumb} />
-              </Slider.Root>
+                value={preferences.fontSize}
+                onValueChange={(v) => handleUpdatePreferences({ fontSize: v })}
+                ariaLabel="Font size"
+              />
             </div>
 
             {/* Color */}
@@ -473,20 +453,14 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Opacity: {Math.round(preferences.opacity * 100)}%
               </label>
-              <Slider.Root
-                className={sliderRoot}
+              <SliderField
                 min={0.1}
                 max={1}
                 step={0.05}
-                value={[preferences.opacity]}
-                onValueChange={([v]) => handleUpdatePreferences({ opacity: v })}
-                aria-label="Opacity"
-              >
-                <Slider.Track className={sliderTrack}>
-                  <Slider.Range className={sliderRange} />
-                </Slider.Track>
-                <Slider.Thumb className={sliderThumb} />
-              </Slider.Root>
+                value={preferences.opacity}
+                onValueChange={(v) => handleUpdatePreferences({ opacity: v })}
+                ariaLabel="Opacity"
+              />
             </div>
 
             {/* Padding */}
@@ -494,20 +468,14 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Padding: {preferences.padding}px
               </label>
-              <Slider.Root
-                className={sliderRoot}
+              <SliderField
                 min={8}
                 max={48}
                 step={1}
-                value={[preferences.padding]}
-                onValueChange={([v]) => handleUpdatePreferences({ padding: v })}
-                aria-label="Padding"
-              >
-                <Slider.Track className={sliderTrack}>
-                  <Slider.Range className={sliderRange} />
-                </Slider.Track>
-                <Slider.Thumb className={sliderThumb} />
-              </Slider.Root>
+                value={preferences.padding}
+                onValueChange={(v) => handleUpdatePreferences({ padding: v })}
+                ariaLabel="Padding"
+              />
             </div>
           </div>
         </div>
@@ -517,8 +485,3 @@ const BrandingPanel: React.FC = () => {
 };
 
 export default BrandingPanel;
-const sliderRoot = 'group relative flex h-7 w-full select-none items-center';
-const sliderTrack = 'relative h-1.5 w-full rounded-full bg-white/10';
-const sliderRange = 'absolute h-full rounded-full bg-blue-500/80';
-const sliderThumb =
-  'block h-4 w-4 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 transition-transform data-[state=active]:scale-105';

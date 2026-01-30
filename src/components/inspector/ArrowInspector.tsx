@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCanvasStore } from '../../store/canvasStore';
 import type { ArrowElement } from '../../types';
+import SliderField from '../ui/SliderField';
 
 interface ArrowInspectorProps {
   element: ArrowElement;
@@ -150,13 +151,13 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
         <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
           Thickness: {element.props.thickness}px
         </label>
-        <input
-          type="range"
-          value={element.props.thickness}
-          onChange={(e) => updateProps({ thickness: parseInt(e.target.value) })}
-          className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        <SliderField
           min={1}
           max={12}
+          step={1}
+          value={element.props.thickness}
+          onValueChange={(v) => updateProps({ thickness: v })}
+          ariaLabel="Arrow thickness"
         />
       </div>
 
@@ -215,13 +216,13 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
           <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
             Label Position: {Math.round((element.props.labelPosition || 0.5) * 100)}%
           </label>
-          <input
-            type="range"
-            value={(element.props.labelPosition || 0.5) * 100}
-            onChange={(e) => updateProps({ labelPosition: parseInt(e.target.value) / 100 })}
-            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+          <SliderField
             min={0}
             max={100}
+            step={1}
+            value={(element.props.labelPosition || 0.5) * 100}
+            onValueChange={(v) => updateProps({ labelPosition: v / 100 })}
+            ariaLabel="Label position"
           />
         </div>
       )}

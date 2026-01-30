@@ -7,6 +7,8 @@ import { loadFont } from '../../utils/fontLoader';
 import CodeEditor from './CodeEditor';
 import SelectField from '../ui/SelectField';
 import NumberField from '../ui/NumberField';
+import SliderField from '../ui/SliderField';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 interface CodeInspectorProps {
   element: CodeElement;
@@ -167,18 +169,11 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
       {/* Line numbers */}
       <div className="flex items-center justify-between">
         <label className="text-sm text-neutral-400">Line Numbers</label>
-        <button
-          onClick={() => updateProps({ lineNumbers: !element.props.lineNumbers })}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            element.props.lineNumbers ? 'bg-blue-600' : 'bg-neutral-600'
-          }`}
-        >
-          <div
-            className={`w-5 h-5 bg-white rounded-full transition-transform ${
-              element.props.lineNumbers ? 'translate-x-6' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
+        <ToggleSwitch
+          checked={element.props.lineNumbers}
+          onCheckedChange={(checked) => updateProps({ lineNumbers: checked })}
+          ariaLabel="Toggle line numbers"
+        />
       </div>
 
       {/* Padding & Corner radius */}
@@ -210,15 +205,15 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         <label className="block text-sm text-neutral-400 mb-2">
           Shadow Blur: {element.props.shadow.blur}
         </label>
-        <input
-          type="range"
-          value={element.props.shadow.blur}
-          onChange={(e) => updateProps({
-            shadow: { ...element.props.shadow, blur: parseInt(e.target.value) }
-          })}
-          className="w-full"
+        <SliderField
           min={0}
           max={64}
+          step={1}
+          value={element.props.shadow.blur}
+          onValueChange={(v) =>
+            updateProps({ shadow: { ...element.props.shadow, blur: v } })
+          }
+          ariaLabel="Shadow blur"
         />
       </div>
 
