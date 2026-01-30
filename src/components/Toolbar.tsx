@@ -18,8 +18,8 @@ const Toolbar: React.FC = () => {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const tools: ToolConfig[] = [
-    { 
-      id: 'select', 
+    {
+      id: 'select',
       label: 'Select',
       shortcut: 'V',
       icon: (
@@ -28,8 +28,8 @@ const Toolbar: React.FC = () => {
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
-    { 
-      id: 'code', 
+    {
+      id: 'code',
       label: 'Code Block',
       shortcut: 'C',
       icon: (
@@ -38,8 +38,8 @@ const Toolbar: React.FC = () => {
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
-    { 
-      id: 'text', 
+    {
+      id: 'text',
       label: 'Text',
       shortcut: 'T',
       icon: (
@@ -159,11 +159,10 @@ const Toolbar: React.FC = () => {
               <TooltipPrimitive.Trigger asChild>
                 <button
                   onClick={() => setTool(id)}
-                  className={`group relative size-8 rounded-lg space-x-4 flex items-center justify-center transition-all duration-150 border ${
-                    tool === id
-                      ? 'bg-[#2d7df4] text-white border-transparent scale-100'
-                      : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
-                  }`}
+                  className={`relative size-8 rounded-lg space-x-4 flex items-center justify-center transition-all duration-150 border ${tool === id
+                    ? 'bg-[#2d7df4] text-white border-transparent scale-100'
+                    : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
+                    }`}
                   aria-label={label}
                 >
                   {React.cloneElement<React.SVGProps<SVGSVGElement>>(icon, { className: 'size-5' })}
@@ -173,21 +172,33 @@ const Toolbar: React.FC = () => {
             </TooltipPrimitive.Root>
           ))}
 
-          {/* Shape/Arrow picker */}
-          <div className="relative">
+          {/* Shape/Arrow picker - Split Button like Figma */}
+          <div className="relative flex items-center gap-0.5">
+            {/* Main button - activates current tool */}
             <button
-              ref={triggerRef}
-              onClick={() => setMenuOpen((o) => !o)}
-              className={`group relative size-8 rounded-lg space-x-4 flex items-center justify-center transition-all duration-150 border ${
-                menuOpen || shapeTools.some((t) => t.id === tool)
-                  ? 'bg-[#2d7df4] text-white border-transparent'
-                  : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
-              }`}
-              aria-label="Shapes"
+              onClick={() => setTool(activeDrawingTool.id)}
+              className={`relative h-8 px-1.5 rounded-lg flex items-center justify-center transition-all duration-150 border ${tool === activeDrawingTool.id
+                ? 'bg-[#2d7df4] text-white border-transparent'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
+                }`}
+              aria-label={activeDrawingTool.label}
             >
               {React.cloneElement<React.SVGProps<SVGSVGElement>>(activeDrawingTool.icon, { className: 'size-5' })}
-              <svg className="absolute right-1.5 bottom-1.5 w-2.5 h-2.5 text-current opacity-80" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 8l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+            </button>
+
+            {/* Chevron button - opens dropdown, always transparent */}
+            <button
+              ref={triggerRef}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((o) => !o);
+              }}
+              className={`relative h-8 w-5 flex items-center justify-center transition-all duration-150 ${shapeTools.some((t) => t.id === tool) ? 'text-neutral-700' : 'text-neutral-500'
+                }`}
+              aria-label="Select shape"
+            >
+              <svg className="size-5 text-current" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M6 8L3 5h6z" />
               </svg>
             </button>
 
@@ -205,9 +216,8 @@ const Toolbar: React.FC = () => {
                         setTool(id);
                         setMenuOpen(false);
                       }}
-                      className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
-                        isActive ? 'bg-white/10 text-white' : 'text-neutral-200 hover:bg-white/6'
-                      }`}
+                      className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-neutral-200 hover:bg-white/6'
+                        }`}
                     >
                       <span className="w-4 h-4 flex items-center justify-center text-blue-400">
                         {isActive && (
@@ -234,11 +244,10 @@ const Toolbar: React.FC = () => {
           <TooltipPrimitive.Trigger asChild>
             <button
               onClick={() => setShowGrid(!showGrid)}
-              className={`group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 border ${
-                showGrid
-                  ? 'bg-neutral-900 text-white border-neutral-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)]'
-                  : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
-              }`}
+              className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 border ${showGrid
+                ? 'bg-neutral-900 text-white border-neutral-800 shadow-[0_8px_20px_rgba(0,0,0,0.2)]'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
+                }`}
               aria-label="Toggle Grid"
             >
               <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -255,7 +264,7 @@ const Toolbar: React.FC = () => {
             <TooltipPrimitive.Trigger asChild>
               <button
                 onClick={() => setZoom(zoom - 0.1)}
-                className="group relative w-7 h-7 rounded-lg flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-white transition-colors"
+                className="relative w-7 h-7 rounded-lg flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-white transition-colors"
                 aria-label="Zoom Out"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -272,7 +281,7 @@ const Toolbar: React.FC = () => {
             <TooltipPrimitive.Trigger asChild>
               <button
                 onClick={() => setZoom(zoom + 0.1)}
-                className="group relative w-7 h-7 rounded-lg flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-white transition-colors"
+                className="relative w-7 h-7 rounded-lg flex items-center justify-center text-neutral-600 hover:text-neutral-900 hover:bg-white transition-colors"
                 aria-label="Zoom In"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -284,7 +293,7 @@ const Toolbar: React.FC = () => {
           </TooltipPrimitive.Root>
         </div>
       </div>
-    </TooltipPrimitive.Provider>
+    </TooltipPrimitive.Provider >
   );
 };
 
