@@ -771,7 +771,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           ].map((h) => (
             <button
               key={h.edge}
-              className="pointer-events-auto absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded shadow-md border border-neutral-400"
+              className="pointer-events-auto absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded-[2px] shadow-sm border border-blue-400 hover:shadow hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
               style={{ left: h.x, top: h.y, cursor: h.cursor }}
               onMouseDown={(e) => handleResizeStart(h.edge as ResizeEdge, e)}
               aria-label={`Resize ${h.edge}`}
