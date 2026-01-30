@@ -63,6 +63,11 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     listening: true,
     onClick: onSelect,
     onTap: onSelect,
+    onContextMenu: (e: any) => {
+      e.evt?.preventDefault?.();
+      e.cancelBubble = true;
+      onSelect();
+    },
     draggable: !element.locked,
     onDragEnd: handleDragEnd,
     onDragMove: handleDragMove,

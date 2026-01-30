@@ -353,6 +353,11 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
         draggable={!element.locked && !isEditing}
         onClick={onSelect}
         onTap={onSelect}
+        onContextMenu={(e) => {
+          e.evt.preventDefault();
+          e.cancelBubble = true;
+          onSelect();
+        }}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >

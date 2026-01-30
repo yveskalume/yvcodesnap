@@ -2,6 +2,38 @@ import React, { memo, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import type { CanvasElement, ShapeElement } from '../types';
 
+// Shared label helper so both layer items and footer rename can use it
+const getElementLabel = (element: CanvasElement): string => {
+  if (element.name && element.name.trim()) return element.name.trim();
+  switch (element.type) {
+    case 'code':
+      return 'Code Block';
+    case 'text':
+      return element.props.text.slice(0, 20) + (element.props.text.length > 20 ? '...' : '');
+    case 'arrow':
+      return 'Arrow';
+    case 'shape': {
+      const kind = (element as ShapeElement).props.kind;
+      switch (kind) {
+        case 'rectangle':
+          return 'Rectangle';
+        case 'ellipse':
+          return 'Ellipse';
+        case 'line':
+          return 'Line';
+        case 'polygon':
+          return 'Polygon';
+        case 'star':
+          return 'Star';
+        default:
+          return 'Shape';
+      }
+    }
+    default:
+      return 'Element';
+  }
+};
+
 // Memoized layer item component for performance
 const LayerItem = memo(({ 
   element, 
@@ -75,36 +107,6 @@ const LayerItem = memo(({
       }
       default:
         return null;
-    }
-  };
-
-  const getElementLabel = (element: CanvasElement) => {
-    switch (element.type) {
-      case 'code':
-        return `Code Block`;
-      case 'text':
-        return element.props.text.slice(0, 20) + (element.props.text.length > 20 ? '...' : '');
-      case 'arrow':
-        return `Arrow`;
-      case 'shape': {
-        const kind = (element as ShapeElement).props.kind;
-        switch (kind) {
-          case 'rectangle':
-            return 'Rectangle';
-          case 'ellipse':
-            return 'Ellipse';
-          case 'line':
-            return 'Line';
-          case 'polygon':
-            return 'Polygon';
-          case 'star':
-            return 'Star';
-          default:
-            return 'Shape';
-        }
-      }
-      default:
-        return 'Element';
     }
   };
 
@@ -216,6 +218,11 @@ const LayersPanel: React.FC = () => {
     if (selectedElementId) deleteElement(selectedElementId);
   }, [selectedElementId, deleteElement]);
 
+  const selectedElement = useMemo(
+    () => snap.elements.find((el) => el.id === selectedElementId) || null,
+    [snap.elements, selectedElementId]
+  );
+
   return (
     <div className="w-56 bg-[#09090b] border-r border-white/5 flex flex-col h-full">
       <div className="p-4 border-b border-white/5">
@@ -249,8 +256,15 @@ const LayersPanel: React.FC = () => {
       </div>
 
       {/* Layer actions footer */}
-      {selectedElementId && (
-        <div className="p-3 border-t border-white/5">
+      {selectedElement && (
+        <div className="p-3 border-t border-white/5 space-y-3">
+          <input
+            type="text"
+            value={selectedElement.name ?? getElementLabel(selectedElement)}
+            onChange={(e) => updateElement(selectedElement.id, { name: e.target.value })}
+            className="w-full px-2.5 py-2 rounded-md bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-blue-500/60"
+            placeholder="Layer name"
+          />
           <div className="flex items-center justify-between gap-2">
             <div className="flex gap-1">
               <button

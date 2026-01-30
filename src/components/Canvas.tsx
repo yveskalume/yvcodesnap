@@ -44,6 +44,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     snap, 
     zoom, 
     setZoom,
+    setSnap,
     updateMeta,
     showGrid,
     tool, 
@@ -934,14 +935,18 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         height={dimensions.height}
         onClick={handleStageClick}
         onMouseDown={handleStageMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        x={stagePos.x}
-        y={stagePos.y}
-        scaleX={zoom}
-        scaleY={zoom}
-      >
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onContextMenu={(e) => {
+        e.evt.preventDefault();
+        e.evt.stopPropagation();
+      }}
+      x={stagePos.x}
+      y={stagePos.y}
+      scaleX={zoom}
+      scaleY={zoom}
+    >
         <Layer>
           {renderBackground()}
           {brandStripElement}

@@ -166,6 +166,13 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
   return (
     <Group
       draggable={!element.locked}
+      onContextMenu={(e) => {
+        e.evt.preventDefault();
+        e.cancelBubble = true;
+        onSelect();
+      }}
+      onClick={onSelect}
+      onTap={onSelect}
       onDragEnd={(e) => {
         if (e.target !== e.currentTarget) return;
 

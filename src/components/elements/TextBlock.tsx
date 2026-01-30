@@ -163,6 +163,11 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
         draggable={!element.locked && !isEditing}
         onClick={onSelect}
         onTap={onSelect}
+        onContextMenu={(e) => {
+          e.evt.preventDefault();
+          e.cancelBubble = true;
+          onSelect();
+        }}
         onDblClick={handleDoubleClick}
         onDblTap={handleDoubleClick}
         onDragEnd={handleDragEnd}

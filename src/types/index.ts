@@ -121,6 +121,7 @@ export interface BaseElement {
   rotation: number;
   locked: boolean;
   visible: boolean;
+  name?: string;
 }
 
 export interface CodeElement extends BaseElement {
