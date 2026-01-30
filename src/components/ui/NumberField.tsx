@@ -37,14 +37,6 @@ const NumberField: React.FC<Props> = ({
     onChange(n);
   };
 
-  const bump = (delta: number) => {
-    const current = typeof numeric === 'number' ? numeric : 0;
-    let next = current + delta;
-    if (typeof min === 'number') next = Math.max(min, next);
-    if (typeof max === 'number') next = Math.min(max, next);
-    onChange(Number.isFinite(next) ? Number(next.toFixed(3)) : current);
-  };
-
   return (
     <div className={clsx(base, className)}>
       <input
@@ -57,24 +49,6 @@ const NumberField: React.FC<Props> = ({
         placeholder={placeholder}
         className="flex-1 bg-transparent outline-none text-white placeholder:text-neutral-500"
       />
-      <div className="ml-2 flex flex-col gap-[2px] text-neutral-400">
-        <button
-          type="button"
-          onClick={() => bump(step)}
-          className="w-6 h-4 flex items-center justify-center rounded hover:bg-white/10 active:bg-white/15 transition"
-          aria-label="Increase"
-        >
-          <ChevronUp className="w-3 h-3" />
-        </button>
-        <button
-          type="button"
-          onClick={() => bump(-step)}
-          className="w-6 h-4 flex items-center justify-center rounded hover:bg-white/10 active:bg-white/15 transition"
-          aria-label="Decrease"
-        >
-          <ChevronDown className="w-3 h-3" />
-        </button>
-      </div>
     </div>
   );
 };

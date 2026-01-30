@@ -36,14 +36,14 @@ const SelectField: React.FC<SelectFieldProps> = ({
           placeholder={placeholder}
           className="flex-1 text-left truncate data-[placeholder]:text-neutral-500"
         />
-        <Select.Icon className="ml-2 shrink-0 text-neutral-400">
+        <Select.Icon className="ml-2 shrink-0 text-neutral-400 transition-transform duration-150 data-[state=open]:rotate-180">
           <ChevronDown className="w-4 h-4" />
         </Select.Icon>
       </Select.Trigger>
 
       <Select.Portal>
         <Select.Content
-          className="z-50 min-w-[var(--radix-select-trigger-width)] max-h-72 overflow-hidden rounded-xl border border-white/10 bg-[#0f1117] shadow-[0_16px_40px_rgba(0,0,0,0.5)]"
+          className="z-50 min-w-[var(--radix-select-trigger-width)] max-h-72 overflow-hidden rounded-xl border border-white/10 bg-[#0f1117] shadow-[0_16px_40px_rgba(0,0,0,0.5)] origin-[var(--radix-select-content-transform-origin)] transition-[opacity,transform] duration-160 ease-out data-[state=open]:opacity-100 data-[state=open]:translate-y-0 data-[state=open]:scale-100 data-[state=closed]:opacity-0 data-[state=closed]:translate-y-1 data-[state=closed]:scale-95"
           position="item-aligned"
           sideOffset={4}
         >
