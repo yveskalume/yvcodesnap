@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
-import type { CanvasElement } from '../types';
+import type { CanvasElement, ShapeElement } from '../types';
 
 // Memoized layer item component for performance
 const LayerItem = memo(({ 
@@ -16,8 +16,8 @@ const LayerItem = memo(({
   onToggleLock: () => void;
   onToggleVisibility: () => void;
 }) => {
-  const getElementIcon = (type: CanvasElement['type']) => {
-    switch (type) {
+  const getElementIcon = (element: CanvasElement) => {
+    switch (element.type) {
       case 'code':
         return (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,6 +36,45 @@ const LayerItem = memo(({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
         );
+      case 'shape': {
+        const kind = (element as ShapeElement).props.kind;
+        switch (kind) {
+          case 'rectangle':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="4" y="6" width="16" height="12" rx="2" />
+              </svg>
+            );
+          case 'ellipse':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <ellipse cx="12" cy="12" rx="8" ry="6" />
+              </svg>
+            );
+          case 'line':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 19 19 5" strokeLinecap="round" />
+              </svg>
+            );
+          case 'polygon':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 3 21 9v6l-9 6-9-6V9z" />
+              </svg>
+            );
+          case 'star':
+            return (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m12 3 2.6 6h6.4l-5.2 4.1 2 6.1L12 16.5l-5.8 2.7 2-6.1L3 9h6.4Z" />
+              </svg>
+            );
+          default:
+            return null;
+        }
+      }
+      default:
+        return null;
     }
   };
 
@@ -47,6 +86,25 @@ const LayerItem = memo(({
         return element.props.text.slice(0, 20) + (element.props.text.length > 20 ? '...' : '');
       case 'arrow':
         return `Arrow`;
+      case 'shape': {
+        const kind = (element as ShapeElement).props.kind;
+        switch (kind) {
+          case 'rectangle':
+            return 'Rectangle';
+          case 'ellipse':
+            return 'Ellipse';
+          case 'line':
+            return 'Line';
+          case 'polygon':
+            return 'Polygon';
+          case 'star':
+            return 'Star';
+          default:
+            return 'Shape';
+        }
+      }
+      default:
+        return 'Element';
     }
   };
 
@@ -61,7 +119,7 @@ const LayerItem = memo(({
     >
       {/* Element type icon */}
       <div className={`shrink-0 ${isSelected ? 'text-blue-400' : 'text-neutral-400'}`}>
-        {getElementIcon(element.type)}
+        {getElementIcon(element)}
       </div>
 
       {/* Element name */}
@@ -129,6 +187,7 @@ const LayersPanel: React.FC = () => {
     snap,
     selectedElementId,
     selectElement,
+    setTool,
     updateElement,
     moveElementUp,
     moveElementDown,
@@ -177,7 +236,10 @@ const LayersPanel: React.FC = () => {
                 key={element.id}
                 element={element}
                 isSelected={selectedElementId === element.id}
-                onSelect={() => selectElement(element.id)}
+                onSelect={() => {
+                  setTool('select');
+                  selectElement(element.id);
+                }}
                 onToggleLock={() => handleToggleLock(element.id, element.locked)}
                 onToggleVisibility={() => handleToggleVisibility(element.id, element.visible)}
               />

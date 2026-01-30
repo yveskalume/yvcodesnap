@@ -108,3 +108,6 @@ Hors périmètre MVP: collaboration temps réel, auto-layout avancé, thèmes mu
 - S2: guides/grille + groupes/verrouillage + shortcuts.
 - S3: connecteurs magnétiques + auto-routage simple + export SVG.
 - S4: bibliothèque de gabarits + QA, perf, migrations JSON.
+
+
+sur le canva on doit avoir la posibiliter de selectionner un ou plusieurs elements sur figma lorsqu'il y a seulement un element sur le cas on ne peut plus deplacer le canva le deplacer s'effectue que quand on clique sur les extremité du canva, j'aimerais le meme comportement cette fois quand on effectue un click droit on a la possibiliter de selectionner les elements qui sont sur le canva

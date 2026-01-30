@@ -1,16 +1,18 @@
 import React, {useRef, useState, useEffect, useMemo, memo, useCallback} from 'react';
 import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
 import type Konva from 'konva';
-import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
+import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
 import TextBlock from './elements/TextBlock';
 import Arrow from './elements/Arrow';
+import Shape from './elements/Shape';
 import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
-import type { CodeElement, TextElement, ArrowElement } from '../types';
+import type { CodeElement, TextElement, ArrowElement, ShapeElement, ShapeKind } from '../types';
 
 const MIN_CANVAS = 320;
 const MAX_CANVAS = 10000;
 type ResizeEdge = 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+const shapeTools: ShapeKind[] = ['rectangle', 'ellipse', 'line', 'polygon', 'star'];
 
 interface CanvasProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -25,6 +27,8 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const [showResizeHandles, setShowResizeHandles] = useState(false);
   const [drawingArrowId, setDrawingArrowId] = useState<string | null>(null);
   const arrowStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [drawingShapeId, setDrawingShapeId] = useState<string | null>(null);
+  const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [resizeState, setResizeState] = useState<{
     edge: ResizeEdge;
     startMouse: { x: number; y: number };
@@ -53,6 +57,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const { width, height } = snap.meta;
   const { background } = snap;
   const [brandingAvatar, setBrandingAvatar] = useState<HTMLImageElement | null>(null);
+  const findElement = useCallback(
+    (id: string | null) => snap.elements.find((el) => el.id === id),
+    [snap.elements]
+  );
 
   // Handle resize
   useEffect(() => {
@@ -225,8 +233,6 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         addElement(createCodeElement(canvasX - 300, canvasY - 150));
       } else if (tool === 'text') {
         addElement(createTextElement(canvasX, canvasY));
-      } else if (tool === 'arrow') {
-        addElement(createArrowElement(canvasX, canvasY));
       } else {
         selectElement(null);
       }
@@ -604,6 +610,32 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       }
       return;
     }
+    if (drawingShapeId && shapeStartRef.current) {
+      e.evt.preventDefault();
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (stage && pointer) {
+        const canvasX = (pointer.x - stagePos.x) / zoom;
+        const canvasY = (pointer.y - stagePos.y) / zoom;
+        const start = shapeStartRef.current!;
+        if (shapeTools.includes(tool as ShapeKind) && (tool as ShapeKind) === 'line') {
+          updateElement(drawingShapeId, {
+            points: [
+              { x: start.x, y: start.y },
+              { x: canvasX, y: canvasY },
+            ],
+          } as Partial<ShapeElement>);
+        } else {
+          updateElement(drawingShapeId, {
+            x: Math.min(start.x, canvasX),
+            y: Math.min(start.y, canvasY),
+            width: Math.abs(canvasX - start.x),
+            height: Math.abs(canvasY - start.y),
+          } as Partial<ShapeElement>);
+        }
+      }
+      return;
+    }
 
     if (!isPanning || !panStartRef.current) return;
     e.evt.preventDefault();
@@ -620,13 +652,67 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   };
 
   const handleMouseUp = () => {
-    if (drawingArrowId && arrowStartRef.current) {
-      const stage = stageRef.current?.getStage();
-      const pointer = stage?.getPointerPosition();
-      if (stage && pointer) {
-        const endX = (pointer.x - stagePos.x) / zoom;
-        const endY = (pointer.y - stagePos.y) / zoom;
-        const start = arrowStartRef.current;
+    setIsPanning(false);
+    panStartRef.current = null;
+  };
+
+  // Global listeners to keep arrow preview visible even when cursor leaves stage
+  useEffect(() => {
+    if ((!drawingArrowId || !arrowStartRef.current) && (!drawingShapeId || !shapeStartRef.current)) return;
+
+    const handleMove = (ev: MouseEvent) => {
+      const stage = stageRef.current;
+      if (!stage) return;
+      // Update internal pointer position for Konva so getPointerPosition works
+      stage.setPointersPositions(ev as any);
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      const canvasX = (pointer.x - stagePos.x) / zoom;
+      const canvasY = (pointer.y - stagePos.y) / zoom;
+      if (drawingArrowId && arrowStartRef.current) {
+        updateElement(drawingArrowId, {
+          points: [
+            { x: arrowStartRef.current!.x, y: arrowStartRef.current!.y },
+            { x: canvasX, y: canvasY },
+          ],
+        });
+      } else if (drawingShapeId && shapeStartRef.current) {
+        const start = shapeStartRef.current!;
+        const current = findElement(drawingShapeId) as ShapeElement | undefined;
+        if (current?.props.kind === 'line') {
+          updateElement(drawingShapeId, {
+            points: [
+              { x: start.x, y: start.y },
+              { x: canvasX, y: canvasY },
+            ],
+          });
+        } else {
+          updateElement(drawingShapeId, {
+            x: Math.min(start.x, canvasX),
+            y: Math.min(start.y, canvasY),
+            width: Math.abs(canvasX - start.x),
+            height: Math.abs(canvasY - start.y),
+          } as any);
+        }
+      }
+    };
+
+    const handleUp = (ev: MouseEvent) => {
+      const stage = stageRef.current;
+      if (!stage) return;
+      stage.setPointersPositions(ev as any);
+      const pointer = stage.getPointerPosition();
+      if (!pointer) {
+        setDrawingArrowId(null);
+        arrowStartRef.current = null;
+        setDrawingShapeId(null);
+        shapeStartRef.current = null;
+        return;
+      }
+      const endX = (pointer.x - stagePos.x) / zoom;
+      const endY = (pointer.y - stagePos.y) / zoom;
+      if (drawingArrowId && arrowStartRef.current) {
+        const start = arrowStartRef.current!;
         const length = Math.hypot(endX - start.x, endY - start.y);
         if (length < 4) {
           deleteElement(drawingArrowId);
@@ -640,65 +726,37 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           });
           selectElement(drawingArrowId);
         }
-      }
-      setDrawingArrowId(null);
-      arrowStartRef.current = null;
-      cancelClickRef.current = true;
-    }
-
-    setIsPanning(false);
-    panStartRef.current = null;
-  };
-
-  // Global listeners to keep arrow preview visible even when cursor leaves stage
-  useEffect(() => {
-    if (!drawingArrowId || !arrowStartRef.current) return;
-
-    const handleMove = (ev: MouseEvent) => {
-      const stage = stageRef.current;
-      if (!stage) return;
-      // Update internal pointer position for Konva so getPointerPosition works
-      stage.setPointersPositions(ev as any);
-      const pointer = stage.getPointerPosition();
-      if (!pointer) return;
-      const canvasX = (pointer.x - stagePos.x) / zoom;
-      const canvasY = (pointer.y - stagePos.y) / zoom;
-      updateElement(drawingArrowId, {
-        points: [
-          { x: arrowStartRef.current!.x, y: arrowStartRef.current!.y },
-          { x: canvasX, y: canvasY },
-        ],
-      });
-    };
-
-    const handleUp = (ev: MouseEvent) => {
-      const stage = stageRef.current;
-      if (!stage) return;
-      stage.setPointersPositions(ev as any);
-      const pointer = stage.getPointerPosition();
-      if (!pointer) {
         setDrawingArrowId(null);
         arrowStartRef.current = null;
-        return;
+      } else if (drawingShapeId && shapeStartRef.current) {
+        const start = shapeStartRef.current!;
+        const w = Math.abs(endX - start.x);
+        const h = Math.abs(endY - start.y);
+        const length = Math.hypot(endX - start.x, endY - start.y);
+        const current = findElement(drawingShapeId) as ShapeElement | undefined;
+        if (w < 2 && h < 2 && length < 4) {
+          deleteElement(drawingShapeId);
+          selectElement(null);
+        } else if (current?.props.kind === 'line') {
+          updateElement(drawingShapeId, {
+            points: [
+              { x: start.x, y: start.y },
+              { x: endX, y: endY },
+            ],
+          });
+          selectElement(drawingShapeId);
+        } else {
+          updateElement(drawingShapeId, {
+            x: Math.min(start.x, endX),
+            y: Math.min(start.y, endY),
+            width: w,
+            height: h,
+          } as any);
+          selectElement(drawingShapeId);
+        }
+        setDrawingShapeId(null);
+        shapeStartRef.current = null;
       }
-      const endX = (pointer.x - stagePos.x) / zoom;
-      const endY = (pointer.y - stagePos.y) / zoom;
-      const start = arrowStartRef.current!;
-      const length = Math.hypot(endX - start.x, endY - start.y);
-      if (length < 4) {
-        deleteElement(drawingArrowId);
-        selectElement(null);
-      } else {
-        updateElement(drawingArrowId, {
-          points: [
-            { x: start.x, y: start.y },
-            { x: endX, y: endY },
-          ],
-        });
-        selectElement(drawingArrowId);
-      }
-      setDrawingArrowId(null);
-      arrowStartRef.current = null;
       cancelClickRef.current = true;
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
@@ -711,9 +769,29 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [drawingArrowId, stagePos.x, stagePos.y, zoom, updateElement, deleteElement, selectElement]);
+  }, [drawingArrowId, drawingShapeId, stagePos.x, stagePos.y, zoom, updateElement, deleteElement, selectElement, findElement]);
 
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (shapeTools.includes(tool as ShapeKind) && e.evt.button === 0 && !spacePressedRef.current) {
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (!stage || !pointer) return;
+      const canvasX = (pointer.x - stagePos.x) / zoom;
+      const canvasY = (pointer.y - stagePos.y) / zoom;
+      const shape = createShapeElement(tool as ShapeKind, canvasX, canvasY);
+      if (shape.props.kind !== 'line') {
+        shape.x = canvasX;
+        shape.y = canvasY;
+      }
+      addElement(shape);
+      selectElement(shape.id);
+      setDrawingShapeId(shape.id);
+      shapeStartRef.current = { x: canvasX, y: canvasY };
+      cancelClickRef.current = true;
+      setShowResizeHandles(false);
+      return;
+    }
+
     if (tool === 'arrow' && e.evt.button === 0 && !spacePressedRef.current) {
       const stage = e.target.getStage();
       const pointer = stage?.getPointerPosition();
@@ -877,6 +955,15 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
                     isSelected={selectedElementId === element.id}
                     onSelect={() => selectElement(element.id)}
                     onChange={(updates: Partial<ArrowElement>) => updateElement(element.id, updates)}
+                  />
+                );
+              case 'shape':
+                return (
+                  <Shape
+                    key={element.id}
+                    element={element as ShapeElement}
+                    isSelected={selectedElementId === element.id}
+                    onSelect={() => selectElement(element.id)}
                   />
                 );
               default:

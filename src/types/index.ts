@@ -109,7 +109,9 @@ export interface ArrowProps {
   labelPosition?: number; // 0-1, position along the arrow
 }
 
-export type ElementType = 'code' | 'text' | 'arrow';
+export type ShapeKind = 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+
+export type ElementType = 'code' | 'text' | 'arrow' | 'shape';
 
 export interface BaseElement {
   id: string;
@@ -139,7 +141,23 @@ export interface ArrowElement extends BaseElement {
   props: ArrowProps;
 }
 
-export type CanvasElement = CodeElement | TextElement | ArrowElement;
+export interface ShapeProps {
+  kind: ShapeKind;
+  stroke: string;
+  strokeWidth: number;
+  fill?: string;
+  sides?: number; // for polygon/star
+}
+
+export interface ShapeElement extends BaseElement {
+  type: 'shape';
+  width: number;
+  height: number;
+  props: ShapeProps;
+  points?: { x: number; y: number }[]; // for line
+}
+
+export type CanvasElement = CodeElement | TextElement | ArrowElement | ShapeElement;
 
 export interface AspectRatio {
   name: string;

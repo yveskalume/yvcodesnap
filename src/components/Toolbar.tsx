@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { useCanvasStore } from '../store/canvasStore';
 
-type ToolId = 'select' | 'code' | 'text' | 'arrow';
+type ToolId = 'select' | 'code' | 'text' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
 
 interface ToolConfig {
   id: ToolId;
@@ -13,6 +13,9 @@ interface ToolConfig {
 
 const Toolbar: React.FC = () => {
   const { tool, setTool, showGrid, setShowGrid, zoom, setZoom } = useCanvasStore();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const tools: ToolConfig[] = [
     { 
@@ -45,17 +48,91 @@ const Toolbar: React.FC = () => {
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
-    { 
-      id: 'arrow', 
-      label: 'Arrow',
-      shortcut: 'A',
+  ];
+
+  const shapeTools: ToolConfig[] = [
+    {
+      id: 'rectangle',
+      label: 'Rectangle',
+      shortcut: 'R',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+        </svg>
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
+    },
+    {
+      id: 'line',
+      label: 'Line',
+      shortcut: 'L',
+      icon: (
+        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M5 19 19 5" strokeLinecap="round" />
+        </svg>
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
+    },
+    {
+      id: 'arrow',
+      label: 'Arrow',
+      shortcut: 'Shift+L',
+      icon: (
+        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M5 19 19 5m0 0h-6m6 0v6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
+    },
+    {
+      id: 'ellipse',
+      label: 'Ellipse',
+      shortcut: 'O',
+      icon: (
+        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <ellipse cx="12" cy="12" rx="7" ry="9" />
+        </svg>
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
+    },
+    {
+      id: 'polygon',
+      label: 'Polygon',
+      shortcut: 'Shift+O',
+      icon: (
+        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 3 20 8v8l-8 5-8-5V8z" />
+        </svg>
+      ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
+    },
+    {
+      id: 'star',
+      label: 'Star',
+      shortcut: '',
+      icon: (
+        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="m12 3 2.6 5.9 6.4.6-4.8 4.2 1.4 6.3L12 17.5 6.4 20l1.4-6.3L3 9.5l6.4-.6Z" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
     },
   ];
+
+  const activeDrawingTool = useMemo(() => {
+    const found = shapeTools.find((t) => t.id === tool);
+    return found || shapeTools[0];
+  }, [tool]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!menuOpen) return;
+      if (
+        menuRef.current &&
+        triggerRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   const renderTooltip = (label: string, shortcut?: string) => (
     <TooltipPrimitive.Portal>
@@ -95,6 +172,59 @@ const Toolbar: React.FC = () => {
               {renderTooltip(label, shortcut)}
             </TooltipPrimitive.Root>
           ))}
+
+          {/* Shape/Arrow picker */}
+          <div className="relative">
+            <button
+              ref={triggerRef}
+              onClick={() => setMenuOpen((o) => !o)}
+              className={`group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 border ${
+                menuOpen || shapeTools.some((t) => t.id === tool)
+                  ? 'bg-[#2d7df4] text-white border-transparent shadow-[0_8px_20px_rgba(45,125,244,0.32)]'
+                  : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
+              }`}
+              aria-label="Shapes"
+            >
+              {React.cloneElement<React.SVGProps<SVGSVGElement>>(activeDrawingTool.icon, { className: 'w-4.5 h-4.5' })}
+              <svg className="absolute right-1.5 bottom-1.5 w-2.5 h-2.5 text-current opacity-80" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 8l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {menuOpen && (
+              <div
+                ref={menuRef}
+                className="absolute bottom-12 left-1/2 -translate-x-1/2 min-w-[200px] rounded-2xl border border-white/10 bg-[#0f1117] text-white shadow-[0_16px_40px_rgba(0,0,0,0.45)] py-1.5 px-1 z-50"
+              >
+                {shapeTools.map(({ id, icon, label, shortcut }) => {
+                  const isActive = tool === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => {
+                        setTool(id);
+                        setMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
+                        isActive ? 'bg-white/10 text-white' : 'text-neutral-200 hover:bg-white/6'
+                      }`}
+                    >
+                      <span className="w-4 h-4 flex items-center justify-center text-blue-400">
+                        {isActive && (
+                          <svg className="w-3 h-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 10.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      {React.cloneElement<React.SVGProps<SVGSVGElement>>(icon, { className: 'w-4.5 h-4.5' })}
+                      <span className="flex-1 text-left">{label}</span>
+                      {shortcut && <span className="text-[11px] text-neutral-400">{shortcut}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="w-px h-7 bg-neutral-200 mx-1.5" />

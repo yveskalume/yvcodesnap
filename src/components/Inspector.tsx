@@ -1,12 +1,13 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
-import type { CodeElement, TextElement, ArrowElement } from '../types';
+import type { CodeElement, TextElement, ArrowElement, ShapeElement } from '../types';
 import BackgroundPanel from './inspector/BackgroundPanel';
 import CanvasSizePanel from './inspector/CanvasSizePanel';
 import BrandingPanel from './inspector/BrandingPanel';
 import CodeInspector from './inspector/CodeInspector';
 import TextInspector from './inspector/TextInspector';
 import ArrowInspector from './inspector/ArrowInspector';
+import ShapeInspector from './inspector/ShapeInspector';
 
 const DEFAULT_WIDTH = 320;
 const MIN_WIDTH = 260;
@@ -122,7 +123,9 @@ const Inspector: React.FC = () => {
             {/* Header with Title and Element Actions */}
             <div className="flex items-center justify-between">
               <h3 className="text-white font-semibold text-sm uppercase tracking-wider">
-                {selectedElement.type}
+                {selectedElement.type === 'shape'
+                  ? (selectedElement as ShapeElement).props.kind
+                  : selectedElement.type}
               </h3>
               <div className="flex items-center gap-1">
                 <button
@@ -181,6 +184,9 @@ const Inspector: React.FC = () => {
               )}
               {selectedElement.type === 'arrow' && (
                 <ArrowInspector element={selectedElement as ArrowElement} />
+              )}
+              {selectedElement.type === 'shape' && (
+                <ShapeInspector element={selectedElement as ShapeElement} />
               )}
             </div>
           </div>

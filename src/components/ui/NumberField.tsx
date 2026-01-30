@@ -1,5 +1,3 @@
-import React from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 
 type Props = {
@@ -26,7 +24,7 @@ const NumberField: React.FC<Props> = ({
 }) => {
   const numeric = typeof value === 'number' ? value : value === '' ? '' : Number(value);
 
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInput = (e: { target: { value: string } }) => {
     const raw = e.target.value;
     if (raw === '') {
       onChange('');

@@ -10,6 +10,8 @@ import type {
   ArrowElement,
   Background,
   CanvasMeta,
+  ShapeElement,
+  ShapeKind,
 } from '../types';
 
 interface HistoryState {
@@ -17,12 +19,14 @@ interface HistoryState {
   future: Snap[];
 }
 
+type ToolId = 'select' | 'code' | 'text' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+
 interface CanvasState {
   snap: Snap;
   selectedElementId: string | null;
   zoom: number;
   showGrid: boolean;
-  tool: 'select' | 'code' | 'text' | 'arrow';
+  tool: ToolId;
   history: HistoryState;
   
   // Actions
@@ -38,7 +42,7 @@ interface CanvasState {
   selectElement: (id: string | null) => void;
   setZoom: (zoom: number) => void;
   setShowGrid: (show: boolean) => void;
-  setTool: (tool: 'select' | 'code' | 'text' | 'arrow') => void;
+  setTool: (tool: ToolId) => void;
   
   moveElementUp: (id: string) => void;
   moveElementDown: (id: string) => void;
@@ -126,7 +130,6 @@ export const useCanvasStore = create<CanvasState>()(
         get().saveToHistory();
         state.snap.elements.push(element);
         state.selectedElementId = element.id;
-        state.tool = 'select';
       }),
       
       updateElement: (id, updates) => set((state) => {
@@ -355,5 +358,25 @@ export const createArrowElement = (x: number, y: number): ArrowElement => ({
     color: '#60a5fa',
     thickness: 3,
     head: 'filled',
+  },
+});
+
+export const createShapeElement = (kind: ShapeKind, x: number, y: number): ShapeElement => ({
+  id: uuidv4(),
+  type: 'shape',
+  x: 0,
+  y: 0,
+  rotation: 0,
+  locked: false,
+  visible: true,
+  width: 0,
+  height: 0,
+  points: kind === 'line' ? [{ x, y }, { x, y }] : undefined,
+  props: {
+    kind,
+    stroke: '#60a5fa',
+    strokeWidth: 3,
+    fill: kind === 'rectangle' || kind === 'ellipse' ? 'rgba(96,165,244,0.12)' : 'transparent',
+    sides: kind === 'polygon' ? 5 : kind === 'star' ? 5 : undefined,
   },
 });
