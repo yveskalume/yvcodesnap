@@ -551,8 +551,8 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     );
   }, [background.branding, width, height, brandingAvatar]);
 
-  const handleStageWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-    e.evt.preventDefault();
+  const handleStageWheel = useCallback((evt: WheelEvent) => {
+    evt.preventDefault();
     const stage = stageRef.current;
     if (!stage) return;
 
@@ -560,7 +560,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     if (!pointer) return;
 
     const scaleBy = 1.05;
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const direction = evt.deltaY > 0 ? -1 : 1;
     const newZoom = Math.max(0.25, Math.min(256, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
 
     const mousePointTo = {
@@ -576,7 +576,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     hasInteractedRef.current = true;
     setZoom(newZoom);
     setStagePos(newPos);
-  };
+  }, [stagePos.x, stagePos.y, zoom, setZoom]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const isMiddleClick = e.evt.button === 1;
@@ -771,6 +771,15 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     };
   }, [drawingArrowId, drawingShapeId, stagePos.x, stagePos.y, zoom, updateElement, deleteElement, selectElement, findElement]);
 
+  // Attach non-passive wheel listener to prevent scrolling warning
+  useEffect(() => {
+    const container = stageRef.current?.getStage()?.container();
+    if (!container) return;
+    const listener = (e: WheelEvent) => handleStageWheel(e);
+    container.addEventListener('wheel', listener, { passive: false });
+    return () => container.removeEventListener('wheel', listener);
+  }, [handleStageWheel]);
+
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (shapeTools.includes(tool as ShapeKind) && e.evt.button === 0 && !spacePressedRef.current) {
       const stage = e.target.getStage();
@@ -907,7 +916,6 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         width={dimensions.width}
         height={dimensions.height}
         onClick={handleStageClick}
-        onWheel={handleStageWheel}
         onMouseDown={handleStageMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -964,6 +972,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
                     element={element as ShapeElement}
                     isSelected={selectedElementId === element.id}
                     onSelect={() => selectElement(element.id)}
+                    onChange={(updates) => updateElement(element.id, updates)}
                   />
                 );
               default:

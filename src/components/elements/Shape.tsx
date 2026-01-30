@@ -6,12 +6,37 @@ interface ShapeProps {
   element: ShapeElement;
   isSelected: boolean;
   onSelect: () => void;
+  onChange: (updates: Partial<ShapeElement>) => void;
 }
 
-const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect }) => {
+const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }) => {
   const { props, width, height } = element;
   const strokeWidth = props.strokeWidth ?? 2;
   const outlineColor = '#3b82f6';
+
+  const selectedOutlineForPolyLike = (node: React.ReactNode) =>
+    isSelected ? node : null;
+
+  const handleDragEnd = (e: any) => {
+    if (element.locked) return;
+    const node = e.target;
+    const dx = node.x();
+    const dy = node.y();
+
+    if (props.kind === 'line' && element.points) {
+      const newPoints = element.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+      onChange({ points: newPoints });
+    } else {
+      onChange({
+        x: element.x + dx,
+        y: element.y + dy,
+      });
+    }
+
+    // Reset node position relative to layer
+    node.x(0);
+    node.y(0);
+  };
 
   const common = {
     stroke: props.stroke,
@@ -19,10 +44,14 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect }) => {
     listening: true,
     onClick: onSelect,
     onTap: onSelect,
+    draggable: !element.locked,
+    onDragEnd: handleDragEnd,
+    onDragMove: () => {
+      const stage = (window as any)?.stageRef?.current?.getStage?.();
+      const container = stage?.container?.();
+      if (container) container.style.cursor = element.locked ? 'default' : 'move';
+    },
   };
-
-  const selectedOutlineForPolyLike = (node: React.ReactNode) =>
-    isSelected ? node : null;
 
   if (props.kind === 'line' && element.points && element.points.length >= 2) {
     const pts = element.points.flatMap((p) => [p.x, p.y]);
