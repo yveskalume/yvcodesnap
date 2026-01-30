@@ -1,5 +1,6 @@
 import React from 'react';
-import { Rect, Ellipse, Line, RegularPolygon, Star } from 'react-konva';
+import { Group, Rect, Ellipse, Line, RegularPolygon, Star } from 'react-konva';
+import type Konva from 'konva';
 import type { ShapeElement } from '../../types';
 
 interface ShapeProps {
@@ -17,8 +18,10 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
   const selectedOutlineForPolyLike = (node: React.ReactNode) =>
     isSelected ? node : null;
 
-  const handleDragEnd = (e: any) => {
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     if (element.locked) return;
+    if (e.target !== e.currentTarget) return;
+
     const node = e.target;
     const dx = node.x();
     const dy = node.y();
@@ -33,33 +36,12 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
       });
     }
 
-    // Reset node position relative to layer
-    node.x(0);
-    node.y(0);
-  };
-
-  const handleDragMove = (e: any) => {
-    if (element.locked) return;
-    const node = e.target;
-    const dx = node.x();
-    const dy = node.y();
-
-    if (props.kind === 'line' && element.points) {
-      const newPoints = element.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
-      onChange({ points: newPoints });
-    } else {
-      onChange({
-        x: element.x + dx,
-        y: element.y + dy,
-      });
-    }
+    // Reset group position
     node.x(0);
     node.y(0);
   };
 
   const common = {
-    stroke: props.stroke,
-    strokeWidth,
     listening: true,
     onClick: onSelect,
     onTap: onSelect,
@@ -70,7 +52,6 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     },
     draggable: !element.locked,
     onDragEnd: handleDragEnd,
-    onDragMove: handleDragMove,
     onDragMoveCapture: () => {
       const stage = (window as any)?.stageRef?.current?.getStage?.();
       const container = stage?.container?.();
@@ -81,7 +62,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
   if (props.kind === 'line' && element.points && element.points.length >= 2) {
     const pts = element.points.flatMap((p) => [p.x, p.y]);
     return (
-      <>
+      <Group {...common}>
         {isSelected && (
           <Line
             points={pts}
@@ -93,8 +74,15 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
             listening={false}
           />
         )}
-        <Line points={pts} lineCap="round" lineJoin="round" {...common} />
-      </>
+        <Line
+          points={pts}
+          lineCap="round"
+          lineJoin="round"
+          stroke={props.stroke}
+          strokeWidth={strokeWidth}
+          listening={true}
+        />
+      </Group>
     );
   }
 
@@ -102,7 +90,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     const cx = element.x + width / 2;
     const cy = element.y + height / 2;
     return (
-      <>
+      <Group {...common}>
         {isSelected && (
           <Rect
             x={cx}
@@ -127,11 +115,13 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
           width={width}
           height={height}
           fill={props.fill || 'transparent'}
+          stroke={props.stroke}
+          strokeWidth={strokeWidth}
           cornerRadius={6}
           rotation={element.rotation}
-          {...common}
+          listening={true}
         />
-      </>
+      </Group>
     );
   }
 
@@ -139,7 +129,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     const cx = element.x + width / 2;
     const cy = element.y + height / 2;
     return (
-      <>
+      <Group {...common}>
         {isSelected && (
           <Ellipse
             x={cx}
@@ -158,10 +148,12 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
           radiusX={Math.abs(width) / 2}
           radiusY={Math.abs(height) / 2}
           fill={props.fill || 'transparent'}
+          stroke={props.stroke}
+          strokeWidth={strokeWidth}
           rotation={element.rotation}
-          {...common}
+          listening={true}
         />
-      </>
+      </Group>
     );
   }
 
@@ -171,7 +163,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     const cx = element.x + width / 2;
     const cy = element.y + height / 2;
     return (
-      <>
+      <Group {...common}>
         {selectedOutlineForPolyLike(
           <RegularPolygon
             x={cx}
@@ -190,10 +182,12 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
           sides={sides}
           radius={radius}
           fill={props.fill || 'transparent'}
+          stroke={props.stroke}
+          strokeWidth={strokeWidth}
           rotation={element.rotation}
-          {...common}
+          listening={true}
         />
-      </>
+      </Group>
     );
   }
 
@@ -203,7 +197,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     const cx = element.x + width / 2;
     const cy = element.y + height / 2;
     return (
-      <>
+      <Group {...common}>
         {selectedOutlineForPolyLike(
           <Star
             x={cx}
@@ -224,10 +218,12 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
           innerRadius={outerRadius / 2.2}
           outerRadius={outerRadius}
           fill={props.fill || 'transparent'}
+          stroke={props.stroke}
+          strokeWidth={strokeWidth}
           rotation={element.rotation}
-          {...common}
+          listening={true}
         />
-      </>
+      </Group>
     );
   }
 
