@@ -56,6 +56,8 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     addElement,
     updateElement,
     deleteElement,
+    copyToClipboard,
+    pasteFromClipboard,
   } = useCanvasStore();
 
   const { width, height } = snap.meta;
@@ -100,6 +102,20 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setCommandMenuOpen((prev) => !prev);
+        return;
+      }
+
+      // Copy: Cmd+C
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+        e.preventDefault();
+        copyToClipboard();
+        return;
+      }
+
+      // Paste: Cmd+V
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+        e.preventDefault();
+        pasteFromClipboard();
         return;
       }
 

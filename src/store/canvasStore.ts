@@ -27,6 +27,7 @@ interface CanvasState {
   zoom: number;
   showGrid: boolean;
   tool: ToolId;
+  clipboard: CanvasElement | null;
   history: HistoryState;
 
   // Actions
@@ -50,6 +51,8 @@ interface CanvasState {
   undo: () => void;
   redo: () => void;
   saveToHistory: () => void;
+  copyToClipboard: () => void;
+  pasteFromClipboard: () => void;
 
   newSnap: (meta: CanvasMeta) => void;
   exportSnap: () => string;
@@ -112,6 +115,7 @@ export const useCanvasStore = create<CanvasState>()(
       zoom: 0.5,
       showGrid: false,
       tool: 'select',
+      clipboard: null,
       history: { past: [], future: [] },
 
       setSnap: (snap) => set((state) => {
@@ -227,6 +231,36 @@ export const useCanvasStore = create<CanvasState>()(
           state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
           state.snap = next;
           state.selectedElementId = null;
+        }
+      }),
+
+      copyToClipboard: () => set((state) => {
+        if (state.selectedElementId) {
+          const element = state.snap.elements.find((el) => el.id === state.selectedElementId);
+          if (element) {
+            state.clipboard = JSON.parse(JSON.stringify(element));
+          }
+        }
+      }),
+
+      pasteFromClipboard: () => set((state) => {
+        if (state.clipboard) {
+          get().saveToHistory();
+          const newElement = {
+            ...JSON.parse(JSON.stringify(state.clipboard)),
+            id: uuidv4(),
+            x: state.clipboard.x + 20,
+            y: state.clipboard.y + 20,
+          };
+
+          // Handle shape points if necessary (e.g. arrows, lines)
+          if (newElement.type === 'arrow' || (newElement.type === 'shape' && newElement.points)) {
+            // For elements with relative points, we just update x/y offset
+            // The points themselves are relative to (0,0) so they don't need shifting
+          }
+
+          state.snap.elements.push(newElement);
+          state.selectedElementId = newElement.id;
         }
       }),
 

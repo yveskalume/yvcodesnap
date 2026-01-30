@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { ToolId } from '../store/canvasStore';
+import { useCanvasStore } from '../store/canvasStore';
 
 interface Command {
     id: string;
@@ -36,6 +37,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
     const [search, setSearch] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
+    const { copyToClipboard, pasteFromClipboard, duplicateElement, selectedElementId } = useCanvasStore();
 
     // Tool commands
     const toolCommands: Command[] = [
@@ -175,6 +177,41 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
         },
     ];
 
+    const editCommands: Command[] = [
+        {
+            id: 'copy',
+            label: 'Copy',
+            shortcut: 'Cmd+C',
+            action: () => {
+                copyToClipboard();
+                onClose();
+            },
+            group: 'actions',
+        },
+        {
+            id: 'paste',
+            label: 'Paste',
+            shortcut: 'Cmd+V',
+            action: () => {
+                pasteFromClipboard();
+                onClose();
+            },
+            group: 'actions',
+        },
+        {
+            id: 'duplicate',
+            label: 'Duplicate',
+            shortcut: 'Cmd+D',
+            action: () => {
+                if (selectedElementId) {
+                    duplicateElement(selectedElementId);
+                    onClose();
+                }
+            },
+            group: 'actions',
+        },
+    ];
+
     if (onClearCanvas) {
         actionCommands.push({
             id: 'clear-canvas',
@@ -188,7 +225,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
         });
     }
 
-    const allCommands = [...toolCommands, ...actionCommands];
+    const allCommands = [...toolCommands, ...editCommands, ...actionCommands];
 
     // Filter commands based on search
     const filteredCommands = allCommands.filter((cmd) =>
