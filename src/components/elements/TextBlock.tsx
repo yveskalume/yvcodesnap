@@ -7,7 +7,7 @@ import type { TextElement } from '../../types';
 interface TextBlockProps {
   element: TextElement;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e?: any) => void;
   onChange: (updates: Partial<TextElement>) => void;
 }
 
@@ -36,12 +36,16 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
 
   useEffect(() => {
     if (textRef.current) {
-      setTextDimensions({
-        width: textRef.current.width(),
-        height: textRef.current.height(),
-      });
+      const w = textRef.current.width();
+      const h = textRef.current.height();
+      setTextDimensions({ width: w, height: h });
+
+      // Update store if dimensions changed significantly
+      if (Math.abs(w - (element as any).width) > 1 || Math.abs(h - (element as any).height) > 1) {
+        onChange({ width: w, height: h } as any);
+      }
     }
-  }, [props.text, props.fontSize, props.fontFamily, props.bold, props.italic]);
+  }, [props.text, props.fontSize, props.fontFamily, props.bold, props.italic, element, onChange]);
 
   // Sync editValue when text changes externally
   useEffect(() => {
@@ -66,10 +70,10 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
   const handleTransformEnd = () => {
     const node = groupRef.current;
     if (!node) return;
-    
+
     node.scaleX(1);
     node.scaleY(1);
-    
+
     onChange({
       x: node.x(),
       y: node.y(),
@@ -184,7 +188,7 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
             cornerRadius={props.cornerRadius}
           />
         )}
-        
+
         {/* Text */}
         <Text
           ref={textRef}
@@ -218,7 +222,7 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
           </Html>
         )}
       </Group>
-      
+
       {isSelected && !isEditing && (
         <Transformer
           ref={trRef}

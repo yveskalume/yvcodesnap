@@ -31,11 +31,34 @@ const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onChange }) 
         const node = groupRef.current;
         if (!node) return;
 
-        // reset scale
         const scaleX = node.scaleX();
         const scaleY = node.scaleY();
+
+        // Reset scale to 1 for the Konva node
         node.scaleX(1);
         node.scaleY(1);
+
+        // Apply scale to children in a new elements array
+        const scaledElements = element.elements.map(el => {
+            const cloned = JSON.parse(JSON.stringify(el));
+            cloned.x *= scaleX;
+            cloned.y *= scaleY;
+
+            if ('width' in cloned) cloned.width *= scaleX;
+            if ('height' in cloned) cloned.height *= scaleY;
+
+            if (cloned.points) {
+                cloned.points = cloned.points.map((p: any) => ({
+                    x: p.x * scaleX,
+                    y: p.y * scaleY
+                }));
+            }
+
+            // Handle nested group properties if necessary (recurse? No, the GroupLayer for that child will handle its own children)
+            // Wait, if I change the child's width/height, its own GroupLayer will render it correctly.
+
+            return cloned;
+        });
 
         onChange({
             x: node.x(),
@@ -43,6 +66,7 @@ const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onChange }) 
             width: Math.max(5, node.width() * scaleX),
             height: Math.max(5, node.height() * scaleY),
             rotation: node.rotation(),
+            elements: scaledElements,
         });
     };
 
@@ -66,9 +90,9 @@ const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onChange }) 
                     key: el.id,
                     isSelected: false,
                     draggable: false,
-                    onSelect: () => {
-                        // Forward selection to group handler without requiring Event object
-                        onSelect({} as any);
+                    onSelect: (e: any) => {
+                        // Forward selection to group handler with event object
+                        onSelect(e);
                     },
                     onChange: (updates: any) => {
                         // When a child changes, update the group's elements array

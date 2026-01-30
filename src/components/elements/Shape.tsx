@@ -6,7 +6,7 @@ import type { ShapeElement } from '../../types';
 interface ShapeProps {
   element: ShapeElement;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e?: any) => void;
   onChange: (updates: Partial<ShapeElement>) => void;
 }
 

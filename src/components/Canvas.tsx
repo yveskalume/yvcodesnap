@@ -265,11 +265,13 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     });
   }, [dimensions.width, dimensions.height, width, height, zoom]);
 
-  const handleElementClick = (id: string, e: Konva.KonvaEventObject<MouseEvent>) => {
-    e.cancelBubble = true; // Prevent stage click
+  const handleElementClick = (id: string, e?: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e) {
+      e.cancelBubble = true; // Prevent stage click
+    }
     if (tool !== 'select') return;
 
-    const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
+    const metaPressed = e?.evt ? (e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey) : false;
     const isSelected = selectedElementIds.includes(id);
 
     if (metaPressed) {
@@ -1203,6 +1205,16 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               case 'image':
                 return (
                   <ImageLayer
+                    element={el as ImageElement}
+                    isSelected={selectedElementIds.includes(el.id)}
+                    onSelect={(e) => handleElementClick(el.id, e)}
+                    onChange={(updates) => updateElement(el.id, updates)}
+                  />
+                );
+              case 'image':
+                return (
+                  <ImageLayer
+                    key={el.id}
                     element={el as ImageElement}
                     isSelected={selectedElementIds.includes(el.id)}
                     onSelect={(e) => handleElementClick(el.id, e)}

@@ -176,6 +176,13 @@ export const useCanvasStore = create<CanvasState>()(
               x: element.x + 20,
               y: element.y + 20,
             };
+
+            // Ensure width and height are present for text elements, if they were somehow missing
+            if (newElement.type === 'text') {
+              newElement.width = (newElement as TextElement).width || 200; // Default width for text
+              newElement.height = (newElement as TextElement).height || 40; // Default height for text
+            }
+
             state.snap.elements.push(newElement);
             newIds.push(newElement.id);
           }
@@ -349,11 +356,8 @@ export const useCanvasStore = create<CanvasState>()(
             maxX = Math.max(maxX, el.x + elWidth);
             maxY = Math.max(maxY, el.y + elHeight);
           } else if (el.type === 'text') {
-            // Text doesn't have explicit width/height in store yet
-            // Use a fallback or better, calculate conservative bounds
-            // For now, let's assume a reasonable default if unknown
-            elWidth = 200; // text default width
-            elHeight = 40;  // text default height
+            elWidth = (el as any).width || 200;
+            elHeight = (el as any).height || 40;
             minX = Math.min(minX, el.x);
             minY = Math.min(minY, el.y);
             maxX = Math.max(maxX, el.x + elWidth);
@@ -515,6 +519,8 @@ export const createTextElement = (x: number, y: number): TextElement => ({
   x,
   y,
   rotation: 0,
+  width: 200,
+  height: 40,
   locked: false,
   visible: true,
   props: {

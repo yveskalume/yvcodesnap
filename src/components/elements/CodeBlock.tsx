@@ -8,7 +8,7 @@ import { tokenizeCode, getThemeBackground, isLightTheme, type LineTokens } from 
 interface CodeBlockProps {
   element: CodeElement;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e?: any) => void;
   onChange: (updates: Partial<CodeElement>) => void;
 }
 
@@ -90,14 +90,14 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
   const handleDoubleClick = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     // Prevent event from bubbling to avoid triggering canvas click
     e.cancelBubble = true;
-    
+
     if (!element.locked && groupRef.current) {
       const group = groupRef.current;
       const stage = group.getStage();
       if (!stage) return;
 
       const scale = stage.scaleX();
-      
+
       // Calculate absolute position accounting for stage position and scale
       const textColor = isLightTheme(props.theme) ? '#1f1f1f' : '#e5e5e5';
       const lineNumberWidth = props.lineNumbers ? 55 : 0;
@@ -145,11 +145,11 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
       if (e.shiftKey) {
         // Shift+Tab: Remove indentation
         const beforeCursor = value.substring(0, start);
-        
+
         // Find the start of the current line
         const lineStart = beforeCursor.lastIndexOf('\n') + 1;
         const linePrefix = value.substring(lineStart, start);
-        
+
         // Check if line starts with spaces or tab
         if (linePrefix.startsWith('  ')) {
           // Remove 2 spaces
@@ -177,7 +177,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
         }, 0);
       }
     }
-    
+
     // Handle Enter for auto-indentation
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -185,22 +185,22 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const value = textarea.value;
-      
+
       // Find the current line's indentation
       const beforeCursor = value.substring(0, start);
       const lineStart = beforeCursor.lastIndexOf('\n') + 1;
       const currentLine = value.substring(lineStart, start);
       const indentMatch = currentLine.match(/^(\s*)/);
       const indent = indentMatch ? indentMatch[1] : '';
-      
+
       // Check if the line ends with { or : (for additional indentation)
       const trimmedLine = currentLine.trim();
       const needsExtraIndent = trimmedLine.endsWith('{') || trimmedLine.endsWith(':') || trimmedLine.endsWith('(');
       const extraIndent = needsExtraIndent ? '  ' : '';
-      
+
       const newValue = value.substring(0, start) + '\n' + indent + extraIndent + value.substring(end);
       setEditValue(newValue);
-      
+
       // Move cursor after the newline and indentation
       const newCursorPos = start + 1 + indent.length + extraIndent.length;
       setTimeout(() => {
@@ -216,33 +216,33 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
 
   // Render code with syntax highlighting using tokens
   const renderCode = () => {
-    const lines = tokenizedLines.length > 0 ? tokenizedLines : 
+    const lines = tokenizedLines.length > 0 ? tokenizedLines :
       props.code.split('\n').map(line => ({
         tokens: [{ content: line, color: isLightTheme(props.theme) ? '#1f1f1f' : '#e5e5e5' }],
       }));
-    
+
     const lineHeight = props.fontSize * props.lineHeight;
     const startY = props.padding;
     const lineNumberWidth = props.lineNumbers ? 50 : 0;
     const lineNumColor = isLightTheme(props.theme) ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)';
-    
+
     const elements: React.ReactNode[] = [];
-    
+
     lines.forEach((lineTokens, index) => {
       const yPos = startY + index * lineHeight;
       const lineNum = index + 1;
-      
+
       // Check if this line is highlighted
       const highlight = props.highlights.find(
         h => lineNum >= h.from && lineNum <= h.to
       );
-      
+
       // Line highlight background
       if (highlight) {
         let bgColor = 'rgba(255, 255, 0, 0.2)'; // focus - yellow
         if (highlight.style === 'added') bgColor = 'rgba(46, 160, 67, 0.25)';
         if (highlight.style === 'removed') bgColor = 'rgba(248, 81, 73, 0.25)';
-        
+
         // Add a subtle left border indicator
         elements.push(
           <Rect
@@ -254,7 +254,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
             fill={bgColor}
           />
         );
-        
+
         // Left border for highlight
         elements.push(
           <Rect
@@ -265,12 +265,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
             height={lineHeight}
             fill={
               highlight.style === 'focus' ? '#facc15' :
-              highlight.style === 'added' ? '#2ea043' : '#f85149'
+                highlight.style === 'added' ? '#2ea043' : '#f85149'
             }
           />
         );
       }
-      
+
       // Line number
       if (props.lineNumbers) {
         elements.push(
@@ -287,10 +287,10 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
           />
         );
       }
-      
+
       // Code text with syntax highlighting
       let xOffset = props.padding + lineNumberWidth + (props.lineNumbers ? 5 : 0);
-      
+
       lineTokens.tokens.forEach((token, tokenIndex) => {
         if (token.content) {
           elements.push(
@@ -309,7 +309,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
         }
       });
     });
-    
+
     return elements;
   };
 
@@ -323,13 +323,13 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
   const handleTransformEnd = () => {
     const node = groupRef.current;
     if (!node) return;
-    
+
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
-    
+
     node.scaleX(1);
     node.scaleY(1);
-    
+
     onChange({
       x: node.x(),
       y: node.y(),
@@ -372,7 +372,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
           shadowBlur={props.shadow.blur}
           shadowColor={props.shadow.color}
         />
-        
+
         {/* Background - handles double click for inline editing */}
         <Rect
           width={width}
@@ -382,9 +382,9 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
           onDblClick={handleDoubleClick}
           onDblTap={handleDoubleClick}
         />
-        
+
         {/* Code content - also handles double click */}
-        <Group 
+        <Group
           clipFunc={(ctx) => {
             ctx.beginPath();
             ctx.roundRect(0, 0, width, height, props.cornerRadius);
@@ -416,7 +416,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
           </Html>
         )}
       </Group>
-      
+
       {isSelected && !isEditing && (
         <Transformer
           ref={trRef}

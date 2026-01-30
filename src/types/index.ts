@@ -133,6 +133,8 @@ export interface CodeElement extends BaseElement {
 
 export interface TextElement extends BaseElement {
   type: 'text';
+  width: number;
+  height: number;
   props: TextProps;
 }
 
