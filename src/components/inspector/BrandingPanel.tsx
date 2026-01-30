@@ -4,6 +4,7 @@ import { useBrandingStore } from '../../store/brandingStore';
 import { FONT_FAMILIES } from '../../types';
 import { SocialIcon } from '../elements/SocialIcons';
 import SelectField from '../ui/SelectField';
+import * as Slider from '@radix-ui/react-slider';
 
 const POSITION_OPTIONS = [
   { value: 'top-left', label: 'Top Left' },
@@ -252,14 +253,20 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Size: {preferences.avatarSize}px
                 </label>
-                <input
-                  type="range"
+                <Slider.Root
+                  className={sliderRoot}
                   min={32}
                   max={120}
-                  value={preferences.avatarSize}
-                  onChange={(e) => handleUpdatePreferences({ avatarSize: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
+                  step={1}
+                  value={[preferences.avatarSize]}
+                  onValueChange={([v]) => handleUpdatePreferences({ avatarSize: v })}
+                  aria-label="Avatar size"
+                >
+                  <Slider.Track className={sliderTrack}>
+                    <Slider.Range className={sliderRange} />
+                  </Slider.Track>
+                  <Slider.Thumb className={sliderThumb} />
+                </Slider.Root>
               </div>
             )}
           </div>
@@ -382,14 +389,20 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Icon Size: {preferences.socialIconSize}px
                 </label>
-                <input
-                  type="range"
-                  min="14"
-                  max="32"
-                  value={preferences.socialIconSize}
-                  onChange={(e) => handleUpdatePreferences({ socialIconSize: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
+                <Slider.Root
+                  className={sliderRoot}
+                  min={14}
+                  max={32}
+                  step={1}
+                  value={[preferences.socialIconSize]}
+                  onValueChange={([v]) => handleUpdatePreferences({ socialIconSize: v })}
+                  aria-label="Social icon size"
+                >
+                  <Slider.Track className={sliderTrack}>
+                    <Slider.Range className={sliderRange} />
+                  </Slider.Track>
+                  <Slider.Thumb className={sliderThumb} />
+                </Slider.Root>
               </div>
             </div>
           </div>
@@ -418,14 +431,20 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Font Size: {preferences.fontSize}px
               </label>
-              <input
-                type="range"
-                min="10"
-                max="24"
-                value={preferences.fontSize}
-                onChange={(e) => handleUpdatePreferences({ fontSize: parseInt(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
+              <Slider.Root
+                className={sliderRoot}
+                min={10}
+                max={24}
+                step={1}
+                value={[preferences.fontSize]}
+                onValueChange={([v]) => handleUpdatePreferences({ fontSize: v })}
+                aria-label="Font size"
+              >
+                <Slider.Track className={sliderTrack}>
+                  <Slider.Range className={sliderRange} />
+                </Slider.Track>
+                <Slider.Thumb className={sliderThumb} />
+              </Slider.Root>
             </div>
 
             {/* Color */}
@@ -454,15 +473,20 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Opacity: {Math.round(preferences.opacity * 100)}%
               </label>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.05"
-                value={preferences.opacity}
-                onChange={(e) => handleUpdatePreferences({ opacity: parseFloat(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
+              <Slider.Root
+                className={sliderRoot}
+                min={0.1}
+                max={1}
+                step={0.05}
+                value={[preferences.opacity]}
+                onValueChange={([v]) => handleUpdatePreferences({ opacity: v })}
+                aria-label="Opacity"
+              >
+                <Slider.Track className={sliderTrack}>
+                  <Slider.Range className={sliderRange} />
+                </Slider.Track>
+                <Slider.Thumb className={sliderThumb} />
+              </Slider.Root>
             </div>
 
             {/* Padding */}
@@ -470,14 +494,20 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Padding: {preferences.padding}px
               </label>
-              <input
-                type="range"
-                min="8"
-                max="48"
-                value={preferences.padding}
-                onChange={(e) => handleUpdatePreferences({ padding: parseInt(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
+              <Slider.Root
+                className={sliderRoot}
+                min={8}
+                max={48}
+                step={1}
+                value={[preferences.padding]}
+                onValueChange={([v]) => handleUpdatePreferences({ padding: v })}
+                aria-label="Padding"
+              >
+                <Slider.Track className={sliderTrack}>
+                  <Slider.Range className={sliderRange} />
+                </Slider.Track>
+                <Slider.Thumb className={sliderThumb} />
+              </Slider.Root>
             </div>
           </div>
         </div>
@@ -487,3 +517,8 @@ const BrandingPanel: React.FC = () => {
 };
 
 export default BrandingPanel;
+const sliderRoot = 'group relative flex h-7 w-full select-none items-center';
+const sliderTrack = 'relative h-1.5 w-full rounded-full bg-white/10';
+const sliderRange = 'absolute h-full rounded-full bg-blue-500/80';
+const sliderThumb =
+  'block h-4 w-4 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 transition-transform data-[state=active]:scale-105';
