@@ -38,6 +38,25 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     node.y(0);
   };
 
+  const handleDragMove = (e: any) => {
+    if (element.locked) return;
+    const node = e.target;
+    const dx = node.x();
+    const dy = node.y();
+
+    if (props.kind === 'line' && element.points) {
+      const newPoints = element.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+      onChange({ points: newPoints });
+    } else {
+      onChange({
+        x: element.x + dx,
+        y: element.y + dy,
+      });
+    }
+    node.x(0);
+    node.y(0);
+  };
+
   const common = {
     stroke: props.stroke,
     strokeWidth,
@@ -46,7 +65,8 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
     onTap: onSelect,
     draggable: !element.locked,
     onDragEnd: handleDragEnd,
-    onDragMove: () => {
+    onDragMove: handleDragMove,
+    onDragMoveCapture: () => {
       const stage = (window as any)?.stageRef?.current?.getStage?.();
       const container = stage?.container?.();
       if (container) container.style.cursor = element.locked ? 'default' : 'move';

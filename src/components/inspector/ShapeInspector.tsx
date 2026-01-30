@@ -16,10 +16,67 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
     updateElement(element.id, updates);
   };
 
+  const updatePosition = (updates: Partial<Pick<ShapeElement, 'x' | 'y'>>) => {
+    // For lines, shift points by delta; for others, update x/y directly.
+    if (props.kind === 'line' && element.points && element.points.length >= 2) {
+      const dx = updates.x !== undefined ? updates.x - element.points[0].x : 0;
+      const dy = updates.y !== undefined ? updates.y - element.points[0].y : 0;
+      const shifted = element.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+      updateElement(element.id, { points: shifted });
+      return;
+    }
+    updateElement(element.id, updates);
+  };
+
+  const updateRotation = (rotation: number) => {
+    updateElement(element.id, { rotation });
+  };
+
   const canFill = props.kind === 'rectangle' || props.kind === 'ellipse' || props.kind === 'polygon' || props.kind === 'star';
 
   return (
     <div className="space-y-4">
+      {/* Position */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">X</label>
+          <input
+            type="number"
+            value={props.kind === 'line' && element.points ? element.points[0].x : element.x}
+            onChange={(e) => updatePosition({ x: Number(e.target.value) })}
+            onBlur={saveToHistory}
+            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-neutral-400 mb-1">Y</label>
+          <input
+            type="number"
+            value={props.kind === 'line' && element.points ? element.points[0].y : element.y}
+            onChange={(e) => updatePosition({ y: Number(e.target.value) })}
+            onBlur={saveToHistory}
+            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Rotation */}
+      {props.kind !== 'line' && (
+        <div>
+          <label className="block text-sm text-neutral-400 mb-2">
+            Rotation: {Math.round((element.rotation || 0) * 10) / 10}°
+          </label>
+          <SliderField
+            min={-180}
+            max={180}
+            step={1}
+            value={element.rotation || 0}
+            onValueChange={(v) => updateRotation(v)}
+            ariaLabel="Rotation"
+          />
+        </div>
+      )}
+
       {/* Dimensions */}
       <div className="grid grid-cols-2 gap-3">
         <div>
