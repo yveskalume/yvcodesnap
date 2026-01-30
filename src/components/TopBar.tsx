@@ -15,21 +15,22 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
   const [showRecentSnaps, setShowRecentSnaps] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportTransparent, setExportTransparent] = useState(false);
   const recentButtonRef = useRef<HTMLButtonElement>(null);
   const exportButtonRef = useRef<HTMLButtonElement>(null);
-  
-  const { 
-    snap, 
-    updateMeta, 
-    newSnap, 
-    exportSnap, 
+
+  const {
+    snap,
+    updateMeta,
+    newSnap,
+    exportSnap,
     importSnap,
     undo,
     redo,
     history,
     saveToHistory,
   } = useCanvasStore();
-  
+
   const { addRecentSnap } = useRecentSnapsStore();
 
   const aspectOptions = useMemo(() => {
@@ -62,7 +63,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
     }
   }, [updateMeta, aspectOptions]);
 
-  const handleExportImage = useCallback(async (format: 'png' | 'jpeg', scale: number = 2) => {
+  const handleExportImage = useCallback(async (format: 'png' | 'jpeg', scale: number = 2, transparent: boolean = false) => {
     const stage = stageRef.current;
     if (!stage) {
       toast.error('Canvas not ready to export');
@@ -72,7 +73,24 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
     // Temporarily set scale for export
     const oldScale = stage.scaleX();
     const oldPosition = { x: stage.x(), y: stage.y() };
-    
+
+    // Check if background needs to be hidden for transparency
+    let bgLayer: Konva.Layer | undefined;
+    if (transparent) {
+      // Assuming background is the first layer, or we can find it by ID if assigned
+      // For now, let's assume the Background component in Canvas renders a rect on the main layer or separate?
+      // Actually, Canvas.tsx structure defines layers. Let's rely on finding standard background elements or hiding the background group.
+      // A safer way: CanvasStore has 'background'. We can temporarily update the stage Container background?
+      // Konva 'toDataURL' captures the stage. If we want transparency, the stage background must be transparent.
+      // And any background rect we drew manually must be hidden.
+
+      // Strategy: Hide the "Background" Layer.
+      // In Canvas.tsx, we usually have <Layer> <Background /> ... </Layer>
+      // Use stage.findOne('.background-layer') if we tagged it, or just find layer 0?
+      bgLayer = stage.getLayers()[0];
+      if (bgLayer) bgLayer.hide();
+    }
+
     stage.scale({ x: scale, y: scale });
     stage.position({ x: 0, y: 0 });
 
@@ -84,9 +102,12 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
       height: snap.meta.height * scale,
     });
 
-    // Restore scale
+    // Restore
     stage.scale({ x: oldScale, y: oldScale });
     stage.position(oldPosition);
+    if (transparent && bgLayer) {
+      bgLayer.show();
+    }
 
     // Download
     const link = document.createElement('a');
@@ -155,7 +176,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
     <>
       {/* Overlay for closing export menu */}
       {showExportMenu && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-transparent"
           onClick={() => setShowExportMenu(false)}
         />
@@ -198,16 +219,15 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
               </svg>
             </button>
-            
+
             <div className="relative">
               <button
                 ref={recentButtonRef}
                 onClick={toggleRecentSnaps}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${
-                  showRecentSnaps 
-                    ? 'text-white bg-white/10' 
-                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                }`}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${showRecentSnaps
+                  ? 'text-white bg-white/10'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                  }`}
                 title="Recent Projects"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -267,18 +287,17 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
               </svg>
             </button>
           </div>
-          
+
           <div className="h-6 w-px bg-white/10" />
 
           <div className="relative z-50">
             <button
               ref={exportButtonRef}
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className={`flex items-center gap-3 px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 border group ${
-                showExportMenu
-                  ? 'bg-blue-600/10 text-blue-400 border-blue-500/50 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
-                  : 'bg-white/5 text-neutral-300 hover:text-white hover:bg-white/10 border-white/5 hover:border-white/10'
-              }`}
+              className={`flex items-center gap-3 px-4 py-2 text-xs font-medium rounded-lg transition-all duration-200 border group ${showExportMenu
+                ? 'bg-blue-600/10 text-blue-400 border-blue-500/50 shadow-[0_0_20px_rgba(37,99,235,0.3)]'
+                : 'bg-white/5 text-neutral-300 hover:text-white hover:bg-white/10 border-white/5 hover:border-white/10'
+                }`}
             >
               <span>Export</span>
               <div className={`p-0.5 rounded-md transition-all duration-200 ${showExportMenu ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-neutral-400 group-hover:text-white'}`}>
@@ -287,16 +306,31 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
                 </svg>
               </div>
             </button>
-            
+
             {showExportMenu && (
               <div className="absolute right-0 top-full mt-3 w-72 bg-[#09090b]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl shadow-black/50 p-2 overflow-hidden animate-in fade-in zoom-in-95 duration-150 origin-top-right ring-1 ring-white/5 z-50">
                 <div className="px-3 py-2">
                   <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest pl-1">Download Image</span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 gap-1.5 px-1">
+
+                  {/* Transparent Toggle */}
+                  <div className="px-3 py-2 flex items-center justify-between">
+                    <span className="text-xs font-medium text-neutral-400">Transparent Background</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExportTransparent(!exportTransparent);
+                      }}
+                      className={`w-9 h-5 rounded-full relative transition-colors duration-200 ${exportTransparent ? 'bg-blue-600' : 'bg-white/10'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 ${exportTransparent ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => handleExportImage('png', 2)}
+                    onClick={() => handleExportImage('png', 2, exportTransparent)}
                     className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.02] hover:border-white/10 transition-all group active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-4">
@@ -311,10 +345,10 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
                   </button>
 
                   <button
-                    onClick={() => handleExportImage('jpeg', 2)}
+                    onClick={() => handleExportImage('jpeg', 2, exportTransparent)}
                     className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.02] hover:border-white/10 transition-all group active:scale-[0.98]"
                   >
-                   <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <span className="font-bold text-[10px]">JPG</span>
                       </div>
@@ -337,7 +371,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
                     onClick={handleExportJSON}
                     className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.02] hover:border-white/10 transition-all group active:scale-[0.98]"
                   >
-                     <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

@@ -1,14 +1,16 @@
 import React, { useRef, useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { Stage, Layer, Rect, Line, Text, Group, Path, Circle, Transformer } from 'react-konva';
 import type Konva from 'konva';
-import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement } from '../store/canvasStore';
+import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement, createImageElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
 import TextBlock from './elements/TextBlock';
 import Arrow from './elements/Arrow';
 import Shape from './elements/Shape';
+import ImageLayer from './elements/ImageLayer';
+import GroupLayer from './elements/GroupLayer';
 import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
 import { CommandMenu } from './CommandMenu';
-import type { CodeElement, TextElement, ArrowElement, ShapeElement, ShapeKind } from '../types';
+import type { CodeElement, TextElement, ArrowElement, ShapeElement, ShapeKind, ImageElement, GroupElement } from '../types';
 
 const MIN_CANVAS = 320;
 const MAX_CANVAS = 10000;
@@ -60,6 +62,9 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     copyToClipboard,
     pasteFromClipboard,
     selectAll,
+    groupSelection,
+    ungroupSelection,
+    duplicateElement,
   } = useCanvasStore();
 
   const { width, height } = snap.meta;
@@ -125,6 +130,27 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
         e.preventDefault();
         pasteFromClipboard();
+        return;
+      }
+
+      // Group: Cmd+G
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === 'g') {
+        e.preventDefault();
+        groupSelection();
+        return;
+      }
+
+      // Ungroup: Cmd+Shift+G
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'g') {
+        e.preventDefault();
+        ungroupSelection();
+        return;
+      }
+
+      // Duplicate: Cmd+D
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+        e.preventDefault();
+        duplicateElement();
         return;
       }
 
@@ -1172,6 +1198,23 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
                     element={el as ShapeElement}
                     onSelect={() => selectElement(el.id)}
                     onChange={(updates: Partial<ShapeElement>) => updateElement(el.id, updates)}
+                  />
+                );
+              case 'image':
+                return (
+                  <ImageLayer
+                    element={el as ImageElement}
+                    isSelected={selectedElementIds.includes(el.id)}
+                    onSelect={(e) => handleElementClick(el.id, e)}
+                    onChange={(updates) => updateElement(el.id, updates)}
+                  />
+                );
+              case 'group':
+                return (
+                  <GroupLayer
+                    element={el as GroupElement}
+                    onSelect={(e) => handleElementClick(el.id, e)}
+                    onChange={(updates) => updateElement(el.id, updates)}
                   />
                 );
               default:

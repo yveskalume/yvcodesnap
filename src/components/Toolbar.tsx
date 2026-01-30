@@ -1,8 +1,9 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { useCanvasStore } from '../store/canvasStore';
+import { useAppCommands } from '../hooks/useAppCommands';
 
-type ToolId = 'select' | 'code' | 'text' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+type ToolId = 'select' | 'code' | 'text' | 'image' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
 
 interface ToolConfig {
   id: ToolId;
@@ -13,6 +14,7 @@ interface ToolConfig {
 
 const Toolbar: React.FC = () => {
   const { tool, setTool, showGrid, setShowGrid, zoom, setZoom } = useCanvasStore();
+  const { commands } = useAppCommands();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -158,7 +160,14 @@ const Toolbar: React.FC = () => {
             <TooltipPrimitive.Root key={id}>
               <TooltipPrimitive.Trigger asChild>
                 <button
-                  onClick={() => setTool(id)}
+                  onClick={() => {
+                    if (id === 'image') {
+                      const cmd = commands.find(c => c.id === 'image');
+                      if (cmd) cmd.action();
+                    } else {
+                      setTool(id);
+                    }
+                  }}
                   className={`relative size-8 rounded-lg space-x-4 flex items-center justify-center transition-all duration-150 border ${tool === id
                     ? 'bg-[#2d7df4] text-white border-transparent scale-100'
                     : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'

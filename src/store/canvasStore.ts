@@ -12,6 +12,8 @@ import type {
   CanvasMeta,
   ShapeElement,
   ShapeKind,
+  ImageElement,
+  GroupElement,
 } from '../types';
 
 interface HistoryState {
@@ -19,7 +21,7 @@ interface HistoryState {
   future: Snap[];
 }
 
-export type ToolId = 'select' | 'code' | 'text' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+export type ToolId = 'select' | 'code' | 'text' | 'image' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
 
 interface CanvasState {
   snap: Snap;
@@ -58,6 +60,8 @@ interface CanvasState {
   newSnap: (meta: CanvasMeta) => void;
   exportSnap: () => string;
   importSnap: (json: string) => void;
+  groupSelection: () => void;
+  ungroupSelection: () => void;
 }
 
 const MAX_PERSISTED_AVATAR_LENGTH = 350000;
@@ -318,6 +322,125 @@ export const useCanvasStore = create<CanvasState>()(
           console.error('Failed to import snap:', e);
         }
       },
+
+      groupSelection: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length < 2) return;
+
+        get().saveToHistory();
+
+        // Find elements to group
+        const groupElements = state.snap.elements.filter((el) => selectedIds.includes(el.id));
+
+        // Remove from main list
+        state.snap.elements = state.snap.elements.filter((el) => !selectedIds.includes(el.id));
+
+        // Calculate bounding box of the selection
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        groupElements.forEach(el => {
+          let elWidth = 0;
+          let elHeight = 0;
+
+          if (el.type === 'code' || el.type === 'image' || el.type === 'group') {
+            elWidth = (el as any).width || 0;
+            elHeight = (el as any).height || 0;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          } else if (el.type === 'text') {
+            // Text doesn't have explicit width/height in store yet
+            // Use a fallback or better, calculate conservative bounds
+            // For now, let's assume a reasonable default if unknown
+            elWidth = 200; // text default width
+            elHeight = 40;  // text default height
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          } else if (el.type === 'arrow' || (el.type === 'shape' && el.points)) {
+            const points = el.points || [];
+            points.forEach(p => {
+              minX = Math.min(minX, p.x);
+              minY = Math.min(minY, p.y);
+              maxX = Math.max(maxX, p.x);
+              maxY = Math.max(maxY, p.y);
+            });
+          } else if (el.type === 'shape') {
+            elWidth = (el as any).width || 100;
+            elHeight = (el as any).height || 100;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          }
+        });
+
+        // Handle case where no elements were found or dimensions are invalid
+        if (minX === Infinity) return;
+
+        // Make coordinates relative to the group origin (minX, minY)
+        const adjustedElements = groupElements.map(el => {
+          const cloned = JSON.parse(JSON.stringify(el));
+          cloned.x -= minX;
+          cloned.y -= minY;
+          if (cloned.points) {
+            cloned.points = cloned.points.map((p: any) => ({
+              x: p.x - minX,
+              y: p.y - minY
+            }));
+          }
+          return cloned;
+        });
+
+        const newGroup: GroupElement = {
+          id: uuidv4(),
+          type: 'group',
+          x: minX,
+          y: minY,
+          width: maxX - minX,
+          height: maxY - minY,
+          rotation: 0,
+          locked: false,
+          visible: true,
+          elements: adjustedElements
+        };
+
+        state.snap.elements.push(newGroup);
+        state.selectedElementIds = [newGroup.id];
+      }),
+
+      ungroupSelection: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        const groupsToUngroup = state.snap.elements.filter(el =>
+          el.type === 'group' && selectedIds.includes(el.id)
+        ) as GroupElement[];
+
+        if (groupsToUngroup.length === 0) return;
+
+        get().saveToHistory();
+
+        groupsToUngroup.forEach(group => {
+          // Remove group
+          state.snap.elements = state.snap.elements.filter(el => el.id !== group.id);
+
+          // Add children back with adjusted coordinates
+          group.elements.forEach(el => {
+            const restored = JSON.parse(JSON.stringify(el));
+            restored.x += group.x;
+            restored.y += group.y;
+            if (restored.points) {
+              restored.points = restored.points.map((p: any) => ({
+                x: p.x + group.x,
+                y: p.y + group.y
+              }));
+            }
+            state.snap.elements.push(restored);
+          });
+        });
+
+        state.selectedElementIds = [];
+      }),
     })),
     {
       name: 'code-canvas-storage',
@@ -446,5 +569,27 @@ export const createShapeElement = (kind: ShapeKind, x: number, y: number): Shape
     strokeWidth: 3,
     fill: kind === 'rectangle' || kind === 'ellipse' ? '#60a5f4' : 'transparent',
     sides: kind === 'polygon' ? 5 : kind === 'star' ? 5 : undefined,
+  },
+});
+
+export const createImageElement = (x: number, y: number, src: string, width: number, height: number): ImageElement => ({
+  id: uuidv4(),
+  type: 'image',
+  x,
+  y,
+  rotation: 0,
+  locked: false,
+  visible: true,
+  width,
+  height,
+  props: {
+    src,
+    width,
+    height,
+    opacity: 1,
+    cornerRadius: 0,
+    shadow: { blur: 0, spread: 0, color: 'rgba(0,0,0,0.4)' },
+    rotate: 0,
+    fit: 'contain',
   },
 });

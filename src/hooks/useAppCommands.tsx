@@ -4,9 +4,10 @@ import {
     Hand, Square, Circle, Triangle, Star as StarIcon,
     Minus, ArrowRight, Type, Code, Grid, ZoomIn,
     ZoomOut, Maximize, Copy, Clipboard, Copy as DuplicateIcon,
-    CheckSquare, FilePlus, FileText, Download, RotateCcw, RotateCw, Trash2
+    CheckSquare, FilePlus, FileText, Download, RotateCcw, RotateCw, Trash2, Image as ImageIcon,
+    Layers, Ungroup
 } from 'lucide-react';
-import { useCanvasStore } from '../store/canvasStore';
+import { useCanvasStore, createImageElement } from '../store/canvasStore';
 import { useRecentSnapsStore } from '../store/recentSnapsStore';
 import { toast } from 'sonner';
 
@@ -40,7 +41,10 @@ export const useAppCommands = () => {
         newSnap,
         exportSnap,
         importSnap,
-        saveToHistory
+        saveToHistory,
+        addElement,
+        groupSelection,
+        ungroupSelection
     } = useCanvasStore();
 
     const { addRecentSnap } = useRecentSnapsStore();
@@ -97,6 +101,31 @@ export const useAppCommands = () => {
         }
     }, [exportSnap, snap, addRecentSnap]);
 
+    const handleImageUpload = useCallback(() => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const src = evt.target?.result as string;
+                    const img = new Image();
+                    img.onload = () => {
+                        const x = (snap.meta.width - img.width / 2) / 2;
+                        const y = (snap.meta.height - img.height / 2) / 2;
+                        addElement(createImageElement(x, y, src, img.width / 2, img.height / 2));
+                        toast.success('Image added');
+                    };
+                    img.src = src;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    }, [snap.meta, addElement]);
+
     const commands: Command[] = [
         // File
         {
@@ -134,6 +163,9 @@ export const useAppCommands = () => {
         { id: 'arrow', label: 'Arrow', shortcut: 'A', icon: <ArrowRight className="w-4 h-4" />, action: () => setTool('arrow'), group: 'tools' },
         { id: 'text', label: 'Text', shortcut: 'T', icon: <Type className="w-4 h-4" />, action: () => setTool('text'), group: 'tools' },
         { id: 'code', label: 'Code Block', shortcut: 'C', icon: <Code className="w-4 h-4" />, action: () => setTool('code'), group: 'tools' },
+        { id: 'image', label: 'Upload Image', shortcut: 'I', icon: <ImageIcon className="w-4 h-4" />, action: handleImageUpload, group: 'tools' },
+        { id: 'group', label: 'Group Selection', shortcut: 'Cmd+G', icon: <Layers className="w-4 h-4" />, action: groupSelection, group: 'tools' },
+        { id: 'ungroup', label: 'Ungroup', shortcut: 'Cmd+Shift+G', icon: <Ungroup className="w-4 h-4" />, action: ungroupSelection, group: 'tools' },
 
         // Edit
         { id: 'undo', label: 'Undo', shortcut: 'Cmd+Z', icon: <RotateCcw className="w-4 h-4" />, action: undo, group: 'edit' },

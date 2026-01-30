@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
-import type { CodeElement, TextElement, ArrowElement, ShapeElement } from '../types';
+
 import BackgroundPanel from './inspector/BackgroundPanel';
 import CanvasSizePanel from './inspector/CanvasSizePanel';
 import BrandingPanel from './inspector/BrandingPanel';
@@ -8,6 +8,8 @@ import CodeInspector from './inspector/CodeInspector';
 import TextInspector from './inspector/TextInspector';
 import ArrowInspector from './inspector/ArrowInspector';
 import ShapeInspector from './inspector/ShapeInspector';
+import ImageInspector from './inspector/ImageInspector';
+import type { CodeElement, TextElement, ArrowElement, ShapeElement, ImageElement } from '../types';
 
 const DEFAULT_WIDTH = 320;
 const MIN_WIDTH = 260;
@@ -188,6 +190,9 @@ const Inspector: React.FC = () => {
               )}
               {selectedElement.type === 'shape' && (
                 <ShapeInspector element={selectedElement as ShapeElement} />
+              )}
+              {selectedElement.type === 'image' && (
+                <ImageInspector element={selectedElement as ImageElement} />
               )}
             </div>
           </div>
