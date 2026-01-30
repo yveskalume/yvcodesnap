@@ -144,7 +144,7 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
             <ToggleSwitch
               checked={!!props.fill && props.fill !== 'transparent'}
               onCheckedChange={(checked) =>
-                updateProps({ fill: checked ? (props.fill && props.fill !== 'transparent' ? props.fill : '#60a5fa22') : 'transparent' })
+                updateProps({ fill: checked ? (props.fill && props.fill !== 'transparent' ? props.fill : '#60a5f4') : 'transparent' })
               }
               ariaLabel="Toggle fill"
             />
@@ -153,7 +153,7 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
             <div className="w-7 h-7 rounded overflow-hidden relative border border-white/10 shrink-0">
               <input
                 type="color"
-                value={props.fill && props.fill !== 'transparent' ? props.fill : '#60a5fa22'}
+                value={toHexColor(props.fill && props.fill !== 'transparent' ? props.fill : '#60a5f4')}
                 onChange={(e) => updateProps({ fill: e.target.value })}
                 className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer p-0 m-0 border-none"
               />

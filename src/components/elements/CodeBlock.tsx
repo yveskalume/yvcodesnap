@@ -21,6 +21,11 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(props.code);
 
+  // keep local edit buffer in sync when props change externally (e.g. inspector)
+  useEffect(() => {
+    if (!isEditing) setEditValue(props.code);
+  }, [props.code, isEditing]);
+
   useEffect(() => {
     if (isSelected && trRef.current && groupRef.current) {
       trRef.current.nodes([groupRef.current]);

@@ -135,6 +135,11 @@ export const useCanvasStore = create<CanvasState>()(
       updateElement: (id, updates) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index !== -1) {
+          // record history before mutating
+          state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
+          state.history.future = [];
+          if (state.history.past.length > 50) state.history.past.shift();
+
           state.snap.elements[index] = { ...state.snap.elements[index], ...updates } as CanvasElement;
         }
       }),
@@ -376,7 +381,7 @@ export const createShapeElement = (kind: ShapeKind, x: number, y: number): Shape
     kind,
     stroke: '#60a5fa',
     strokeWidth: 3,
-    fill: kind === 'rectangle' || kind === 'ellipse' ? 'rgba(96,165,244,0.12)' : 'transparent',
+    fill: kind === 'rectangle' || kind === 'ellipse' ? '#60a5f4' : 'transparent',
     sides: kind === 'polygon' ? 5 : kind === 'star' ? 5 : undefined,
   },
 });

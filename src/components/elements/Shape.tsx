@@ -94,28 +94,36 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
   }
 
   if (props.kind === 'rectangle') {
+    const cx = element.x + width / 2;
+    const cy = element.y + height / 2;
     return (
       <>
         {isSelected && (
           <Rect
-            x={element.x - 4}
-            y={element.y - 4}
+            x={cx}
+            y={cy}
+            offsetX={(width + 8) / 2}
+            offsetY={(height + 8) / 2}
             width={width + 8}
             height={height + 8}
             cornerRadius={8}
             stroke={outlineColor}
             strokeWidth={1.5}
             dash={[6, 4]}
+            rotation={element.rotation}
             listening={false}
           />
         )}
         <Rect
-          x={element.x}
-          y={element.y}
+          x={cx}
+          y={cy}
+          offsetX={width / 2}
+          offsetY={height / 2}
           width={width}
           height={height}
           fill={props.fill || 'transparent'}
           cornerRadius={6}
+          rotation={element.rotation}
           {...common}
         />
       </>
@@ -145,6 +153,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
           radiusX={Math.abs(width) / 2}
           radiusY={Math.abs(height) / 2}
           fill={props.fill || 'transparent'}
+          rotation={element.rotation}
           {...common}
         />
       </>
@@ -176,6 +185,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
           sides={sides}
           radius={radius}
           fill={props.fill || 'transparent'}
+          rotation={element.rotation}
           {...common}
         />
       </>
@@ -209,6 +219,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
           innerRadius={outerRadius / 2.2}
           outerRadius={outerRadius}
           fill={props.fill || 'transparent'}
+          rotation={element.rotation}
           {...common}
         />
       </>

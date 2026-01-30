@@ -20,6 +20,11 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(element.props.text);
   const [textareaStyle, setTextareaStyle] = useState<React.CSSProperties>({ display: 'none' });
+
+  // keep inline editor buffer synced when props change externally
+  useEffect(() => {
+    if (!isEditing) setEditValue(element.props.text);
+  }, [element.props.text, isEditing]);
   const { x, y, rotation, props } = element;
 
   useEffect(() => {

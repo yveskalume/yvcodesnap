@@ -78,21 +78,6 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  // Hide resize handles when clicking outside the canvas container
-  useEffect(() => {
-    const handleDocMouseDown = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      const target = e.target as Node | null;
-      if (target && !containerRef.current.contains(target)) {
-        setShowResizeHandles(false);
-        selectElement(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleDocMouseDown);
-    return () => document.removeEventListener('mousedown', handleDocMouseDown);
-  }, [selectElement]);
-
   // Keep stage centered initially and when viewport/layout changes (unless user already interacted)
   useEffect(() => {
     if (hasInteractedRef.current) return;
@@ -850,35 +835,67 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     height: height * zoom,
   }), [stagePos.x, stagePos.y, width, height, zoom]);
 
-  // Handle wheel/pinch zoom and pan on canvas
+  const wheelRaf = useRef<number | null>(null);
+  const wheelEventRef = useRef<{
+    deltaX: number;
+    deltaY: number;
+    ctrlKey: boolean;
+    metaKey: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (wheelRaf.current) cancelAnimationFrame(wheelRaf.current);
+    };
+  }, []);
+
+  // Handle wheel/pinch zoom and pan on canvas (debounced to next animation frame for smoothness)
   const handleContainerWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    // Check if it's a pinch zoom gesture (ctrlKey is true for pinch-to-zoom)
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      e.stopPropagation();
+    wheelEventRef.current = {
+      deltaX: e.deltaX,
+      deltaY: e.deltaY,
+      ctrlKey: e.ctrlKey,
+      metaKey: e.metaKey,
+    };
+    if (wheelRaf.current) return;
 
-      const scaleBy = 1.05;
-      const minZoom = 0.1;
-      const maxZoom = 3;
+    wheelRaf.current = requestAnimationFrame(() => {
+      wheelRaf.current = null;
+      const evt = wheelEventRef.current;
+      wheelEventRef.current = null;
+      if (!evt) return;
 
-      // Determine zoom direction
-      const direction = e.deltaY > 0 ? -1 : 1;
-      const newZoom = direction > 0 ? zoom * scaleBy : zoom / scaleBy;
+      // Pinch/trackpad zoom
+      if (evt.ctrlKey || evt.metaKey) {
+        const minZoom = 0.1;
+        const maxZoom = 3;
+        const zoomSpeed = 0.002; // smaller = smoother
+        const factor = Math.exp(-evt.deltaY * zoomSpeed);
+        const targetZoom = Math.min(Math.max(zoom * factor, minZoom), maxZoom);
 
-      // Clamp zoom between min and max
-      const clampedZoom = Math.min(Math.max(newZoom, minZoom), maxZoom);
-      setZoom(clampedZoom);
-    } else {
-      // Two-finger scroll for panning
-      e.preventDefault();
-      e.stopPropagation();
+        // Keep the point under cursor stationary while zooming
+        const stage = stageRef.current?.getStage?.();
+        const pointer = stage?.getPointerPosition?.();
+        if (pointer) {
+          const worldX = (pointer.x - stagePos.x) / zoom;
+          const worldY = (pointer.y - stagePos.y) / zoom;
+          const newStagePos = {
+            x: pointer.x - worldX * targetZoom,
+            y: pointer.y - worldY * targetZoom,
+          };
+          setStagePos(newStagePos);
+        }
 
-      setStagePos(prev => ({
-        x: prev.x - e.deltaX,
-        y: prev.y - e.deltaY,
-      }));
-    }
-  }, [zoom, setZoom]);
+        setZoom(targetZoom);
+      } else {
+        // Two-finger scroll for panning
+        setStagePos(prev => ({
+          x: prev.x - evt.deltaX,
+          y: prev.y - evt.deltaY,
+        }));
+      }
+    });
+  }, [zoom, stagePos]);
 
   // Prevent default browser zoom behavior on the container
   useEffect(() => {
