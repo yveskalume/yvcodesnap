@@ -23,7 +23,7 @@ const Toolbar: React.FC = () => {
       label: 'Select',
       shortcut: 'V',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -33,7 +33,7 @@ const Toolbar: React.FC = () => {
       label: 'Code Block',
       shortcut: 'C',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -43,7 +43,7 @@ const Toolbar: React.FC = () => {
       label: 'Text',
       shortcut: 'T',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -56,7 +56,7 @@ const Toolbar: React.FC = () => {
       label: 'Rectangle',
       shortcut: 'R',
       icon: (
-        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="5" y="5" width="14" height="14" rx="2" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -66,7 +66,7 @@ const Toolbar: React.FC = () => {
       label: 'Line',
       shortcut: 'L',
       icon: (
-        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M5 19 19 5" strokeLinecap="round" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -76,7 +76,7 @@ const Toolbar: React.FC = () => {
       label: 'Arrow',
       shortcut: 'Shift+L',
       icon: (
-        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M5 19 19 5m0 0h-6m6 0v6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -86,7 +86,7 @@ const Toolbar: React.FC = () => {
       label: 'Ellipse',
       shortcut: 'O',
       icon: (
-        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <ellipse cx="12" cy="12" rx="7" ry="9" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -96,7 +96,7 @@ const Toolbar: React.FC = () => {
       label: 'Polygon',
       shortcut: 'Shift+O',
       icon: (
-        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 3 20 8v8l-8 5-8-5V8z" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -106,7 +106,7 @@ const Toolbar: React.FC = () => {
       label: 'Star',
       shortcut: '',
       icon: (
-        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="m12 3 2.6 5.9 6.4.6-4.8 4.2 1.4 6.3L12 17.5 6.4 20l1.4-6.3L3 9.5l6.4-.6Z" />
         </svg>
       ) as React.ReactElement<React.SVGProps<SVGSVGElement>>
@@ -159,14 +159,14 @@ const Toolbar: React.FC = () => {
               <TooltipPrimitive.Trigger asChild>
                 <button
                   onClick={() => setTool(id)}
-                  className={`group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 border ${
+                  className={`group relative size-8 rounded-lg space-x-4 flex items-center justify-center transition-all duration-150 border ${
                     tool === id
-                      ? 'bg-[#2d7df4] text-white border-transparent shadow-[0_8px_20px_rgba(45,125,244,0.32)] scale-100'
+                      ? 'bg-[#2d7df4] text-white border-transparent scale-100'
                       : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
                   }`}
                   aria-label={label}
                 >
-                  {React.cloneElement<React.SVGProps<SVGSVGElement>>(icon, { className: 'w-4.5 h-4.5' })}
+                  {React.cloneElement<React.SVGProps<SVGSVGElement>>(icon, { className: 'size-5' })}
                 </button>
               </TooltipPrimitive.Trigger>
               {renderTooltip(label, shortcut)}
@@ -178,14 +178,14 @@ const Toolbar: React.FC = () => {
             <button
               ref={triggerRef}
               onClick={() => setMenuOpen((o) => !o)}
-              className={`group relative w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-150 border ${
+              className={`group relative size-8 rounded-lg space-x-4 flex items-center justify-center transition-all duration-150 border ${
                 menuOpen || shapeTools.some((t) => t.id === tool)
-                  ? 'bg-[#2d7df4] text-white border-transparent shadow-[0_8px_20px_rgba(45,125,244,0.32)]'
+                  ? 'bg-[#2d7df4] text-white border-transparent'
                   : 'bg-white text-neutral-700 hover:bg-neutral-100 border-transparent active:scale-95'
               }`}
               aria-label="Shapes"
             >
-              {React.cloneElement<React.SVGProps<SVGSVGElement>>(activeDrawingTool.icon, { className: 'w-4.5 h-4.5' })}
+              {React.cloneElement<React.SVGProps<SVGSVGElement>>(activeDrawingTool.icon, { className: 'size-5' })}
               <svg className="absolute right-1.5 bottom-1.5 w-2.5 h-2.5 text-current opacity-80" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 8l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -216,7 +216,7 @@ const Toolbar: React.FC = () => {
                           </svg>
                         )}
                       </span>
-                      {React.cloneElement<React.SVGProps<SVGSVGElement>>(icon, { className: 'w-4.5 h-4.5' })}
+                      {React.cloneElement<React.SVGProps<SVGSVGElement>>(icon, { className: 'size-5' })}
                       <span className="flex-1 text-left">{label}</span>
                       {shortcut && <span className="text-[11px] text-neutral-400">{shortcut}</span>}
                     </button>
@@ -241,7 +241,7 @@ const Toolbar: React.FC = () => {
               }`}
               aria-label="Toggle Grid"
             >
-              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM9 4v16M15 4v16M4 9h16M4 15h16" />
               </svg>
             </button>

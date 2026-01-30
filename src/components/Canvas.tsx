@@ -26,7 +26,9 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [showResizeHandles, setShowResizeHandles] = useState(false);
   const [drawingArrowId, setDrawingArrowId] = useState<string | null>(null);
+  const [drawingCodeId, setDrawingCodeId] = useState<string | null>(null);
   const arrowStartRef = useRef<{ x: number; y: number } | null>(null);
+  const codeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [drawingShapeId, setDrawingShapeId] = useState<string | null>(null);
   const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [resizeState, setResizeState] = useState<{
@@ -596,6 +598,23 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       }
       return;
     }
+    if (drawingCodeId && codeStartRef.current) {
+      e.evt.preventDefault();
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (stage && pointer) {
+        const canvasX = (pointer.x - stagePos.x) / zoom;
+        const canvasY = (pointer.y - stagePos.y) / zoom;
+        const start = codeStartRef.current!;
+        updateElement(drawingCodeId, {
+          x: Math.min(start.x, canvasX),
+          y: Math.min(start.y, canvasY),
+          width: Math.abs(canvasX - start.x),
+          height: Math.abs(canvasY - start.y),
+        });
+      }
+      return;
+    }
     if (drawingShapeId && shapeStartRef.current) {
       e.evt.preventDefault();
       const stage = e.target.getStage();
@@ -644,7 +663,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
 
   // Global listeners to keep arrow preview visible even when cursor leaves stage
   useEffect(() => {
-    if ((!drawingArrowId || !arrowStartRef.current) && (!drawingShapeId || !shapeStartRef.current)) return;
+    if ((!drawingArrowId || !arrowStartRef.current) && (!drawingShapeId || !shapeStartRef.current) && (!drawingCodeId || !codeStartRef.current)) return;
 
     const handleMove = (ev: MouseEvent) => {
       const stage = stageRef.current;
@@ -661,6 +680,14 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
             { x: arrowStartRef.current!.x, y: arrowStartRef.current!.y },
             { x: canvasX, y: canvasY },
           ],
+        });
+      } else if (drawingCodeId && codeStartRef.current) {
+        const start = codeStartRef.current!;
+        updateElement(drawingCodeId, {
+          x: Math.min(start.x, canvasX),
+          y: Math.min(start.y, canvasY),
+          width: Math.abs(canvasX - start.x),
+          height: Math.abs(canvasY - start.y),
         });
       } else if (drawingShapeId && shapeStartRef.current) {
         const start = shapeStartRef.current!;
@@ -714,6 +741,24 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         }
         setDrawingArrowId(null);
         arrowStartRef.current = null;
+      } else if (drawingCodeId && codeStartRef.current) {
+        const start = codeStartRef.current!;
+        const w = Math.abs(endX - start.x);
+        const h = Math.abs(endY - start.y);
+        if (w < 4 && h < 4) {
+          deleteElement(drawingCodeId);
+          selectElement(null);
+        } else {
+          updateElement(drawingCodeId, {
+            x: Math.min(start.x, endX),
+            y: Math.min(start.y, endY),
+            width: w,
+            height: h,
+          });
+          selectElement(drawingCodeId);
+        }
+        setDrawingCodeId(null);
+        codeStartRef.current = null;
       } else if (drawingShapeId && shapeStartRef.current) {
         const start = shapeStartRef.current!;
         const w = Math.abs(endX - start.x);
@@ -767,6 +812,26 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   }, [handleStageWheel]);
 
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (tool === 'code' && e.evt.button === 0 && !spacePressedRef.current) {
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (!stage || !pointer) return;
+      const canvasX = (pointer.x - stagePos.x) / zoom;
+      const canvasY = (pointer.y - stagePos.y) / zoom;
+      const code = createCodeElement(canvasX, canvasY);
+      code.x = canvasX;
+      code.y = canvasY;
+      code.width = 0;
+      code.height = 0;
+      addElement(code);
+      selectElement(code.id);
+      setDrawingCodeId(code.id);
+      codeStartRef.current = { x: canvasX, y: canvasY };
+      cancelClickRef.current = true;
+      setShowResizeHandles(false);
+      return;
+    }
+
     if (shapeTools.includes(tool as ShapeKind) && e.evt.button === 0 && !spacePressedRef.current) {
       const stage = e.target.getStage();
       const pointer = stage?.getPointerPosition();
