@@ -56,7 +56,9 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white selection:bg-blue-500/30 relative overflow-hidden">
-      {/* Background Ambience */}
+      {/* Background Ambience & Grid */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 pointer-events-none mix-blend-overlay" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none" />
 
@@ -101,88 +103,89 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
             {/* New Blank */}
             <button
               onClick={handleNewSnap}
-              className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-blue-500/30 rounded-2xl p-6 transition-all duration-300 text-left hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1"
+              className="group relative h-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/30 rounded-2xl p-8 transition-all duration-300 text-left hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 backdrop-blur-md"
             >
-              <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Plus className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-medium mb-2 text-white group-hover:text-blue-400 transition-colors">Blank Canvas</h3>
-              <p className="text-sm text-neutral-500 mb-4">Start from scratch with a fresh canvas</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+              <div className="relative">
+                <div className="w-14 h-14 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-blue-500/10">
+                  <Plus className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-400 transition-colors">Blank Canvas</h3>
+                <p className="text-sm text-neutral-400 mb-6 leading-relaxed">Start from scratch. Create specific dimensions or freeform designs.</p>
 
-              <div className="flex items-center text-xs font-medium text-neutral-500 group-hover:text-blue-400 transition-colors">
-                <span>Create new</span>
-                <ChevronRight className="w-3 h-3 ml-1" />
+                <div className="flex items-center text-xs font-semibold uppercase tracking-wider text-neutral-500 group-hover:text-blue-400 transition-colors">
+                  <span>Create new</span>
+                  <ChevronRight className="w-3 h-3 ml-1" />
+                </div>
               </div>
             </button>
 
             {/* Import File */}
             <button
               onClick={handleImportFile}
-              className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-purple-500/30 rounded-2xl p-6 transition-all duration-300 text-left hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1"
+              className="group relative h-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/30 rounded-2xl p-8 transition-all duration-300 text-left hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1 backdrop-blur-md"
             >
-              <div className="w-12 h-12 bg-purple-500/10 text-purple-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                <FileText className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-medium mb-2 text-white group-hover:text-purple-400 transition-colors">Import File</h3>
-              <p className="text-sm text-neutral-500 mb-4">Open an existing .yvsnap project file</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+              <div className="relative">
+                <div className="w-14 h-14 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-purple-500/10">
+                  <FileText className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-purple-400 transition-colors">Import File</h3>
+                <p className="text-sm text-neutral-400 mb-6 leading-relaxed">Open an existing .yvsnap project file to continue working.</p>
 
-              <div className="flex items-center text-xs font-medium text-neutral-500 group-hover:text-purple-400 transition-colors">
-                <span>Import</span>
-                <ChevronRight className="w-3 h-3 ml-1" />
+                <div className="flex items-center text-xs font-semibold uppercase tracking-wider text-neutral-500 group-hover:text-purple-400 transition-colors">
+                  <span>Import</span>
+                  <ChevronRight className="w-3 h-3 ml-1" />
+                </div>
               </div>
             </button>
 
             {/* Quick Template */}
             <button
               onClick={() => setActiveTab('templates')}
-              className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-emerald-500/30 rounded-2xl p-6 transition-all duration-300 text-left hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1"
+              className="group relative h-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-500/30 rounded-2xl p-8 transition-all duration-300 text-left hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1 backdrop-blur-md"
             >
-              <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Layout className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-medium mb-2 text-white group-hover:text-emerald-400 transition-colors">Use Template</h3>
-              <p className="text-sm text-neutral-500 mb-4">Start with a pre-designed template</p>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+              <div className="relative">
+                <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-emerald-500/10">
+                  <Layout className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-emerald-400 transition-colors">Use Template</h3>
+                <p className="text-sm text-neutral-400 mb-6 leading-relaxed">Jumpstart your design with our pre-made professional templates.</p>
 
-              <div className="flex items-center text-xs font-medium text-neutral-500 group-hover:text-emerald-400 transition-colors">
-                <span>Browse templates</span>
-                <ChevronRight className="w-3 h-3 ml-1" />
+                <div className="flex items-center text-xs font-semibold uppercase tracking-wider text-neutral-500 group-hover:text-emerald-400 transition-colors">
+                  <span>Browse gallery</span>
+                  <ChevronRight className="w-3 h-3 ml-1" />
+                </div>
               </div>
             </button>
           </div>
         </section>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-8 border-b border-white/[0.08] mb-8">
-          <button
-            onClick={() => setActiveTab('recent')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors relative ${activeTab === 'recent'
-                ? 'border-blue-500 text-white'
-                : 'border-transparent text-neutral-500 hover:text-neutral-300'
-              }`}
-          >
-            <div className="flex items-center gap-2">
+        {/* Tabs - Segmented Control Style */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex items-center bg-white/5 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
+            <button
+              onClick={() => setActiveTab('recent')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'recent'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
               <Clock className="w-4 h-4" />
               <span>Recent Work</span>
-            </div>
-            {activeTab === 'recent' && (
-              <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('templates')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors relative ${activeTab === 'templates'
-                ? 'border-blue-500 text-white'
-                : 'border-transparent text-neutral-500 hover:text-neutral-300'
-              }`}
-          >
-            <div className="flex items-center gap-2">
+            </button>
+            <button
+              onClick={() => setActiveTab('templates')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'templates'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
               <Sparkles className="w-4 h-4" />
               <span>Templates</span>
-            </div>
-            {activeTab === 'templates' && (
-              <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-            )}
-          </button>
+            </button>
+          </div>
         </div>
 
         {/* Tab Content */}
