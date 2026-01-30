@@ -14,12 +14,12 @@ import { Toaster } from 'sonner';
 function App() {
   const [showMainScreen, setShowMainScreen] = useState(true);
   const stageRef = useRef<Konva.Stage>(null);
-  const { 
+  const {
     snap,
-    deleteElement, 
-    duplicateElement, 
-    selectedElementId, 
-    undo, 
+    deleteElement,
+    duplicateElement,
+    selectedElementIds,
+    undo,
     redo,
     setZoom,
     zoom,
@@ -32,7 +32,7 @@ function App() {
     exportSnap,
     saveToHistory,
   } = useCanvasStore();
-  
+
   const { addRecentSnap } = useRecentSnapsStore();
 
   // Handle file import
@@ -94,71 +94,71 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isMeta = e.metaKey || e.ctrlKey;
-      
+
       // New snap (⌘N)
       if (isMeta && e.key === 'n') {
         e.preventDefault();
         handleNewSnap();
       }
-      
+
       // Open file (⌘O)
       if (isMeta && e.key === 'o') {
         e.preventDefault();
         handleImportFile();
       }
-      
+
       // Save/Export (⌘S)
       if (isMeta && e.key === 's') {
         e.preventDefault();
         handleExportFile();
       }
-      
+
       // Delete
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        if (selectedElementId && !isInputFocused()) {
+        if (selectedElementIds.length > 0 && !isInputFocused()) {
           e.preventDefault();
-          deleteElement(selectedElementId);
+          deleteElement(); // store handles using selectedElementIds if no arg
         }
       }
-      
+
       // Duplicate
       if (isMeta && e.key === 'd') {
-        if (selectedElementId) {
+        if (selectedElementIds.length > 0) {
           e.preventDefault();
-          duplicateElement(selectedElementId);
+          duplicateElement(); // store handles using selectedElementIds if no arg
         }
       }
-      
+
       // Undo
       if (isMeta && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
-      
+
       // Redo
       if (isMeta && e.key === 'z' && e.shiftKey) {
         e.preventDefault();
         redo();
       }
-      
+
       // Zoom in
       if (isMeta && (e.key === '=' || e.key === '+')) {
         e.preventDefault();
         setZoom(zoom + 0.1);
       }
-      
+
       // Zoom out
       if (isMeta && e.key === '-') {
         e.preventDefault();
         setZoom(zoom - 0.1);
       }
-      
+
       // Toggle grid
       if (isMeta && e.key === ';') {
         e.preventDefault();
         setShowGrid(!showGrid);
       }
-      
+
       // Tool shortcuts (only when not in input)
       if (!isInputFocused()) {
         if (e.key === 'v' || e.key === 'V') {
@@ -187,7 +187,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElementId, deleteElement, duplicateElement, undo, redo, zoom, setZoom, showGrid, setShowGrid, setTool, selectElement, handleNewSnap, handleImportFile, handleExportFile]);
+  }, [selectedElementIds, deleteElement, duplicateElement, undo, redo, zoom, setZoom, showGrid, setShowGrid, setTool, selectElement, handleNewSnap, handleImportFile, handleExportFile]);
 
   // Show main screen
   if (showMainScreen) {

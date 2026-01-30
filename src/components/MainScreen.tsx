@@ -55,8 +55,11 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white selection:bg-blue-500/30">
-      
+    <div className="min-h-screen bg-[#09090b] text-white selection:bg-blue-500/30 relative overflow-hidden">
+      {/* Background Ambience */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none" />
+
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/[0.08]">
@@ -69,9 +72,9 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
             </div>
             <span className="font-bold text-lg tracking-tight">YvCode</span>
           </div>
-          
+
           <div className="flex items-center gap-4">
-             {/* Add simplified user profile or links if needed later */}
+            {/* Add simplified user profile or links if needed later */}
           </div>
         </div>
       </header>
@@ -79,11 +82,17 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
       {/* Main Content */}
       <main className="relative max-w-7xl mx-auto px-6 py-12">
         {/* Welcome Section */}
-        <div className="mb-12 text-center">
-            <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              What will you create today?
-            </h1>
-            <p className="text-neutral-400">Create beautiful code snippets in seconds.</p>
+        <div className="mb-12 text-center relative">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-blue-400 mb-6 backdrop-blur-sm">
+            <Sparkles className="w-3 h-3" />
+            <span>New Templates Available</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-br from-white via-white to-white/40 bg-clip-text text-transparent tracking-tight">
+            What will you create today?
+          </h1>
+          <p className="text-lg text-neutral-400 max-w-lg mx-auto leading-relaxed">
+            Create beautiful code screenshots, diagrams, and social cards in seconds.
+          </p>
         </div>
 
         {/* Create New Section */}
@@ -99,7 +108,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
               </div>
               <h3 className="text-lg font-medium mb-2 text-white group-hover:text-blue-400 transition-colors">Blank Canvas</h3>
               <p className="text-sm text-neutral-500 mb-4">Start from scratch with a fresh canvas</p>
-              
+
               <div className="flex items-center text-xs font-medium text-neutral-500 group-hover:text-blue-400 transition-colors">
                 <span>Create new</span>
                 <ChevronRight className="w-3 h-3 ml-1" />
@@ -116,7 +125,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
               </div>
               <h3 className="text-lg font-medium mb-2 text-white group-hover:text-purple-400 transition-colors">Import File</h3>
               <p className="text-sm text-neutral-500 mb-4">Open an existing .yvsnap project file</p>
-              
+
               <div className="flex items-center text-xs font-medium text-neutral-500 group-hover:text-purple-400 transition-colors">
                 <span>Import</span>
                 <ChevronRight className="w-3 h-3 ml-1" />
@@ -133,7 +142,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
               </div>
               <h3 className="text-lg font-medium mb-2 text-white group-hover:text-emerald-400 transition-colors">Use Template</h3>
               <p className="text-sm text-neutral-500 mb-4">Start with a pre-designed template</p>
-              
+
               <div className="flex items-center text-xs font-medium text-neutral-500 group-hover:text-emerald-400 transition-colors">
                 <span>Browse templates</span>
                 <ChevronRight className="w-3 h-3 ml-1" />
@@ -146,34 +155,32 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
         <div className="flex items-center gap-8 border-b border-white/[0.08] mb-8">
           <button
             onClick={() => setActiveTab('recent')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors relative ${
-              activeTab === 'recent'
+            className={`pb-4 text-sm font-medium border-b-2 transition-colors relative ${activeTab === 'recent'
                 ? 'border-blue-500 text-white'
                 : 'border-transparent text-neutral-500 hover:text-neutral-300'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span>Recent Work</span>
+              <Clock className="w-4 h-4" />
+              <span>Recent Work</span>
             </div>
             {activeTab === 'recent' && (
-                <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+              <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
             )}
           </button>
           <button
             onClick={() => setActiveTab('templates')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors relative ${
-              activeTab === 'templates'
+            className={`pb-4 text-sm font-medium border-b-2 transition-colors relative ${activeTab === 'templates'
                 ? 'border-blue-500 text-white'
                 : 'border-transparent text-neutral-500 hover:text-neutral-300'
-            }`}
+              }`}
           >
-             <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                <span>Templates</span>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span>Templates</span>
             </div>
-             {activeTab === 'templates' && (
-                <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+            {activeTab === 'templates' && (
+              <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
             )}
           </button>
         </div>
@@ -223,7 +230,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
                         className="w-full aspect-video relative overflow-hidden bg-[#1e1e1e]"
                       >
                         <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105">
-                           <SnapPreview snap={entry.snap} />
+                          <SnapPreview snap={entry.snap} />
                         </div>
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
@@ -277,7 +284,7 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
                     className="w-full aspect-video relative overflow-hidden bg-[#1e1e1e]"
                   >
                     <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105">
-                        <SnapPreview snap={template.snap} />
+                      <SnapPreview snap={template.snap} />
                     </div>
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
@@ -287,7 +294,14 @@ export default function MainScreen({ onOpenEditor }: MainScreenProps) {
 
                   {/* Info */}
                   <div className="p-5">
-                    <h3 className="font-medium text-lg mb-2 group-hover:text-emerald-400 transition-colors">{template.name}</h3>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-medium text-lg group-hover:text-emerald-400 transition-colors">{template.name}</h3>
+                      {['flowchart-starter', 'microservices-arch', 'geometric-pop'].includes(template.id) && (
+                        <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded border border-emerald-500/20">
+                          New
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-neutral-400 line-clamp-2">{template.description}</p>
                     <div className="mt-4 pt-4 border-t border-white/[0.05] flex items-center gap-3 text-xs text-neutral-500 font-medium">
                       <span className="px-2 py-1 bg-white/5 rounded-md border border-white/5">{template.snap.meta.width} × {template.snap.meta.height}</span>

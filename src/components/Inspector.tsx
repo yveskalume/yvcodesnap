@@ -16,10 +16,10 @@ const EXPANDED_WIDTH = 420;
 
 const Inspector: React.FC = () => {
   const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
-  const { 
-    snap, 
-    selectedElementId, 
-    deleteElement, 
+  const {
+    snap,
+    selectedElementIds,
+    deleteElement,
     duplicateElement,
     moveElementUp,
     moveElementDown,
@@ -32,8 +32,13 @@ const Inspector: React.FC = () => {
   });
 
   const selectedElement = useMemo(
-    () => snap.elements.find(el => el.id === selectedElementId),
-    [snap.elements, selectedElementId]
+    () => {
+      if (selectedElementIds.length === 1) {
+        return snap.elements.find(el => el.id === selectedElementIds[0]);
+      }
+      return null;
+    },
+    [snap.elements, selectedElementIds]
   );
 
   const handleResizeMove = useCallback((event: MouseEvent) => {
@@ -77,30 +82,26 @@ const Inspector: React.FC = () => {
       stopDragging();
     }
   ), [stopDragging]);
-  
+
   const handleDelete = useCallback(() => {
-    if (selectedElement) {
-      deleteElement(selectedElement.id);
+    if (selectedElementIds.length > 0) {
+      deleteElement();
     }
-  }, [selectedElement, deleteElement]);
-  
+  }, [selectedElementIds, deleteElement]);
+
   const handleDuplicate = useCallback(() => {
-    if (selectedElement) {
-      duplicateElement(selectedElement.id);
+    if (selectedElementIds.length > 0) {
+      duplicateElement();
     }
-  }, [selectedElement, duplicateElement]);
-  
+  }, [selectedElementIds, duplicateElement]);
+
   const handleMoveUp = useCallback(() => {
-    if (selectedElement) {
-      moveElementUp(selectedElement.id);
-    }
-  }, [selectedElement, moveElementUp]);
-  
+    selectedElementIds.forEach(id => moveElementUp(id));
+  }, [selectedElementIds, moveElementUp]);
+
   const handleMoveDown = useCallback(() => {
-    if (selectedElement) {
-      moveElementDown(selectedElement.id);
-    }
-  }, [selectedElement, moveElementDown]);
+    selectedElementIds.forEach(id => moveElementDown(id));
+  }, [selectedElementIds, moveElementDown]);
 
   return (
     <div
@@ -150,29 +151,29 @@ const Inspector: React.FC = () => {
               </div>
             </div>
 
-             {/* Layer Controls */}
-             <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={handleMoveDown}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                  Send Backward
-                </button>
-                <button
-                  onClick={handleMoveUp}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                  </svg>
-                  Bring Forward
-                </button>
-             </div>
+            {/* Layer Controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleMoveDown}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                Send Backward
+              </button>
+              <button
+                onClick={handleMoveUp}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                Bring Forward
+              </button>
+            </div>
 
-             <div className="h-px bg-white/5 w-full -mx-2" />
+            <div className="h-px bg-white/5 w-full -mx-2" />
 
             {/* Element-specific inspector */}
             <div className="inspector-content">
@@ -192,16 +193,25 @@ const Inspector: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Canvas Settings</h3>
-            <CanvasSizePanel />
-            
-            <div className="h-px bg-white/5 w-full" />
-            <BackgroundPanel />
-            
-            <div className="h-px bg-white/5 w-full" />
-            
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Branding</h3>
-            <BrandingPanel />
+            {selectedElementIds.length > 1 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-neutral-400">
+                <span className="font-medium text-white mb-1">{selectedElementIds.length} elements selected</span>
+                <span className="text-xs">Select a single element to edit properties</span>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Canvas Settings</h3>
+                <CanvasSizePanel />
+
+                <div className="h-px bg-white/5 w-full" />
+                <BackgroundPanel />
+
+                <div className="h-px bg-white/5 w-full" />
+
+                <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Branding</h3>
+                <BrandingPanel />
+              </>
+            )}
           </div>
         )}
       </div>

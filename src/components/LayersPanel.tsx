@@ -35,12 +35,12 @@ const getElementLabel = (element: CanvasElement): string => {
 };
 
 // Memoized layer item component for performance
-const LayerItem = memo(({ 
-  element, 
-  isSelected, 
-  onSelect, 
-  onToggleLock, 
-  onToggleVisibility 
+const LayerItem = memo(({
+  element,
+  isSelected,
+  onSelect,
+  onToggleLock,
+  onToggleVisibility
 }: {
   element: CanvasElement;
   isSelected: boolean;
@@ -113,11 +113,10 @@ const LayerItem = memo(({
   return (
     <div
       onClick={onSelect}
-      className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
-        isSelected
-          ? 'bg-blue-600/20 border border-blue-500/50'
-          : 'hover:bg-white/5 border border-transparent'
-      }`}
+      className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${isSelected
+        ? 'bg-blue-600/20 border border-blue-500/50'
+        : 'hover:bg-white/5 border border-transparent'
+        }`}
     >
       {/* Element type icon */}
       <div className={`shrink-0 ${isSelected ? 'text-blue-400' : 'text-neutral-400'}`}>
@@ -125,9 +124,8 @@ const LayerItem = memo(({
       </div>
 
       {/* Element name */}
-      <span className={`flex-1 text-sm truncate ${
-        isSelected ? 'text-white' : 'text-neutral-300'
-      } ${!element.visible ? 'opacity-50' : ''}`}>
+      <span className={`flex-1 text-sm truncate ${isSelected ? 'text-white' : 'text-neutral-300'
+        } ${!element.visible ? 'opacity-50' : ''}`}>
         {getElementLabel(element)}
       </span>
 
@@ -139,9 +137,8 @@ const LayerItem = memo(({
             e.stopPropagation();
             onToggleLock();
           }}
-          className={`p-1 rounded hover:bg-white/10 transition-colors ${
-            element.locked ? 'text-yellow-400' : 'text-neutral-500 hover:text-neutral-300'
-          }`}
+          className={`p-1 rounded hover:bg-white/10 transition-colors ${element.locked ? 'text-yellow-400' : 'text-neutral-500 hover:text-neutral-300'
+            }`}
           title={element.locked ? 'Unlock' : 'Lock'}
         >
           {element.locked ? (
@@ -161,9 +158,8 @@ const LayerItem = memo(({
             e.stopPropagation();
             onToggleVisibility();
           }}
-          className={`p-1 rounded hover:bg-white/10 transition-colors ${
-            element.visible ? 'text-neutral-500 hover:text-neutral-300' : 'text-red-400'
-          }`}
+          className={`p-1 rounded hover:bg-white/10 transition-colors ${element.visible ? 'text-neutral-500 hover:text-neutral-300' : 'text-red-400'
+            }`}
           title={element.visible ? 'Hide' : 'Show'}
         >
           {element.visible ? (
@@ -187,7 +183,7 @@ LayerItem.displayName = 'LayerItem';
 const LayersPanel: React.FC = () => {
   const {
     snap,
-    selectedElementId,
+    selectedElementIds,
     selectElement,
     setTool,
     updateElement,
@@ -207,20 +203,22 @@ const LayersPanel: React.FC = () => {
   }, [updateElement]);
 
   const handleMoveUp = useCallback(() => {
-    if (selectedElementId) moveElementUp(selectedElementId);
-  }, [selectedElementId, moveElementUp]);
+    selectedElementIds.forEach(id => moveElementUp(id));
+  }, [selectedElementIds, moveElementUp]);
 
   const handleMoveDown = useCallback(() => {
-    if (selectedElementId) moveElementDown(selectedElementId);
-  }, [selectedElementId, moveElementDown]);
+    selectedElementIds.forEach(id => moveElementDown(id));
+  }, [selectedElementIds, moveElementDown]);
 
   const handleDelete = useCallback(() => {
-    if (selectedElementId) deleteElement(selectedElementId);
-  }, [selectedElementId, deleteElement]);
+    if (selectedElementIds.length > 0) {
+      deleteElement();
+    }
+  }, [selectedElementIds, deleteElement]);
 
   const selectedElement = useMemo(
-    () => snap.elements.find((el) => el.id === selectedElementId) || null,
-    [snap.elements, selectedElementId]
+    () => (selectedElementIds.length === 1 ? snap.elements.find((el) => el.id === selectedElementIds[0]) : null),
+    [snap.elements, selectedElementIds]
   );
 
   return (
@@ -228,7 +226,7 @@ const LayersPanel: React.FC = () => {
       <div className="p-4 border-b border-white/5">
         <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Layers</h3>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-2">
         {elements.length === 0 ? (
           <div className="text-neutral-500 text-xs text-center py-8">
@@ -242,10 +240,10 @@ const LayersPanel: React.FC = () => {
               <LayerItem
                 key={element.id}
                 element={element}
-                isSelected={selectedElementId === element.id}
+                isSelected={selectedElementIds.includes(element.id)}
                 onSelect={() => {
                   setTool('select');
-                  selectElement(element.id);
+                  selectElement(element.id, false); // Single select by default here, could add modifier key logic
                 }}
                 onToggleLock={() => handleToggleLock(element.id, element.locked)}
                 onToggleVisibility={() => handleToggleVisibility(element.id, element.visible)}
