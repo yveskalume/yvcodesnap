@@ -17,7 +17,7 @@ interface SelectFieldProps {
 }
 
 const baseTrigger =
-  'w-full inline-flex items-center justify-between gap-2 bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition';
+  'w-full h-10 inline-flex items-center justify-between gap-2 rounded-lg border border-white/12 bg-[#0f1117] px-3 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.35)] hover:border-blue-400/70 hover:bg-white/6 focus:outline-none focus:border-blue-400/90 focus:ring-2 focus:ring-blue-500/25 transition data-[state=open]:border-blue-400/90';
 
 const SelectField: React.FC<SelectFieldProps> = ({
   value,
@@ -32,37 +32,40 @@ const SelectField: React.FC<SelectFieldProps> = ({
         className={`${baseTrigger} ${triggerClassName}`}
         aria-label={placeholder}
       >
-        <Select.Value placeholder={placeholder} />
-        <Select.Icon>
-          <ChevronDown className="w-4 h-4 text-neutral-400" />
+        <Select.Value
+          placeholder={placeholder}
+          className="flex-1 text-left truncate data-[placeholder]:text-neutral-500"
+        />
+        <Select.Icon className="ml-2 shrink-0 text-neutral-400">
+          <ChevronDown className="w-4 h-4" />
         </Select.Icon>
       </Select.Trigger>
 
       <Select.Portal>
         <Select.Content
-          className="overflow-hidden rounded-lg border border-white/10 bg-[#0f1117] shadow-xl shadow-black/40 z-50"
-          position="popper"
-          sideOffset={6}
+          className="z-50 min-w-[var(--radix-select-trigger-width)] max-h-72 overflow-hidden rounded-xl border border-white/10 bg-[#0f1117] shadow-[0_16px_40px_rgba(0,0,0,0.5)]"
+          position="item-aligned"
+          sideOffset={4}
         >
-          <Select.ScrollUpButton className="flex items-center justify-center py-1 text-neutral-400">
+          <Select.ScrollUpButton className="flex items-center justify-center py-1 text-neutral-400 hover:text-white">
             <ChevronUp className="w-4 h-4" />
           </Select.ScrollUpButton>
-          <Select.Viewport className="p-1">
+          <Select.Viewport className="p-2">
             {options.map((opt) => (
               <Select.Item
                 key={opt.value}
                 value={opt.value}
                 disabled={opt.disabled}
-                className="text-sm text-neutral-200 rounded-md px-3 py-2 cursor-pointer select-none flex items-center justify-between gap-3 hover:bg-white/5 data-[state=checked]:bg-blue-600/20 data-[state=checked]:text-blue-200 focus:outline-none data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed"
+                className="relative flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-neutral-100 cursor-pointer select-none transition-colors data-[highlighted]:bg-white/8 data-[highlighted]:text-white data-[state=checked]:bg-[#113a73] data-[state=checked]:text-white focus:outline-none data-[disabled]:opacity-35 data-[disabled]:cursor-not-allowed"
               >
                 <Select.ItemText>{opt.label}</Select.ItemText>
-                <Select.ItemIndicator>
-                  <Check className="w-4 h-4 text-blue-400" />
+                <Select.ItemIndicator className="ml-auto text-blue-400">
+                  <Check className="w-4 h-4" />
                 </Select.ItemIndicator>
               </Select.Item>
             ))}
           </Select.Viewport>
-          <Select.ScrollDownButton className="flex items-center justify-center py-1 text-neutral-400">
+          <Select.ScrollDownButton className="flex items-center justify-center py-1 text-neutral-400 hover:text-white">
             <ChevronDown className="w-4 h-4" />
           </Select.ScrollDownButton>
         </Select.Content>
