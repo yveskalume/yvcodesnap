@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, memo, useCallback } from 'react';
-import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
+import { Stage, Layer, Rect, Line, Text, Group, Path, Circle, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
@@ -44,6 +44,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const hasInteractedRef = useRef(false);
   const spacePressedRef = useRef(false);
   const cancelClickRef = useRef(false);
+  const transformerRef = useRef<Konva.Transformer>(null);
   const {
     snap,
     zoom,
@@ -51,13 +52,14 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     updateMeta,
     showGrid,
     tool,
-    selectedElementId,
+    selectedElementIds,
     selectElement,
     addElement,
     updateElement,
     deleteElement,
     copyToClipboard,
     pasteFromClipboard,
+    selectAll,
   } = useCanvasStore();
 
   const { width, height } = snap.meta;
@@ -105,6 +107,13 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         return;
       }
 
+      // Select All: Cmd+A or Ctrl+A
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+
       // Copy: Cmd+C
       if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
         e.preventDefault();
@@ -145,7 +154,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [copyToClipboard, pasteFromClipboard, selectAll]);
 
   // Handle canvas resize via drag handles
   useEffect(() => {
@@ -230,6 +239,23 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     });
   }, [dimensions.width, dimensions.height, width, height, zoom]);
 
+  const handleElementClick = (id: string, e: Konva.KonvaEventObject<MouseEvent>) => {
+    e.cancelBubble = true; // Prevent stage click
+    if (tool !== 'select') return;
+
+    const metaPressed = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
+    const isSelected = selectedElementIds.includes(id);
+
+    if (metaPressed) {
+      // If meta key is pressed, toggle selection
+      selectElement(id, true);
+    } else if (!isSelected) {
+      // If not selected and meta key is not pressed, select only this element
+      selectElement(id, false);
+    }
+    // If already selected and meta key is not pressed, do nothing (allows for drag)
+  };
+
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (isPanning || cancelClickRef.current || resizeState) {
       cancelClickRef.current = false;
@@ -253,7 +279,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       } else if (tool === 'text') {
         addElement(createTextElement(canvasX, canvasY));
       } else {
-        selectElement(null);
+        selectElement(null); // Clear selection if clicking on empty space
       }
     }
   };
@@ -570,6 +596,19 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     );
   }, [background.branding, width, height, brandingAvatar]);
 
+  // Update Transformer nodes when selection changes
+  useEffect(() => {
+    if (transformerRef.current && stageRef.current) {
+      const stage = stageRef.current.getStage();
+      const selectedNodes = selectedElementIds
+        .map((id) => stage?.findOne(`#${id}`))
+        .filter((node) => node !== undefined) as Konva.Node[];
+
+      transformerRef.current.nodes(selectedNodes);
+      transformerRef.current.getLayer()?.batchDraw();
+    }
+  }, [selectedElementIds]);
+
   const handleStageWheel = useCallback((evt: WheelEvent) => {
     evt.preventDefault();
     const stage = stageRef.current;
@@ -603,7 +642,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     const isLeftClick = e.evt.button === 0;
     const isBackground = e.target === e.target.getStage() || e.target.name() === 'background';
     const isBackgroundDrag = isLeftClick && isBackground && tool === 'select' && !spacePressedRef.current;
-    if (!isMiddleClick && !isSpaceDrag && !isBackgroundDrag) return;
+
+    // If an element is selected and we're clicking on it, don't start panning
+    const clickedOnSelectedElement = selectedElementIds.length > 0 && selectedElementIds.includes(e.target.id());
+
+    if (!isMiddleClick && !isSpaceDrag && !isBackgroundDrag && !clickedOnSelectedElement) return;
 
     e.evt.preventDefault();
     hasInteractedRef.current = true;
@@ -690,6 +733,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const handleMouseUp = () => {
     setIsPanning(false);
     panStartRef.current = null;
+    // Only reset cancelClickRef if no drawing is active
+    if (!drawingArrowId && !drawingShapeId && !drawingCodeId) {
+      cancelClickRef.current = false;
+    }
   };
 
   // Global listeners to keep arrow preview visible even when cursor leaves stage
@@ -751,6 +798,8 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         arrowStartRef.current = null;
         setDrawingShapeId(null);
         shapeStartRef.current = null;
+        setDrawingCodeId(null);
+        codeStartRef.current = null;
         return;
       }
       const endX = (pointer.x - stagePos.x) / zoom;
@@ -768,7 +817,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               { x: endX, y: endY },
             ],
           });
-          selectElement(drawingArrowId);
+          selectElement(drawingArrowId, false);
         }
         setDrawingArrowId(null);
         arrowStartRef.current = null;
@@ -786,7 +835,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
             width: w,
             height: h,
           });
-          selectElement(drawingCodeId);
+          selectElement(drawingCodeId, false);
         }
         setDrawingCodeId(null);
         codeStartRef.current = null;
@@ -806,7 +855,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               { x: endX, y: endY },
             ],
           });
-          selectElement(drawingShapeId);
+          selectElement(drawingShapeId, false);
         } else {
           updateElement(drawingShapeId, {
             x: Math.min(start.x, endX),
@@ -814,7 +863,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
             width: w,
             height: h,
           } as any);
-          selectElement(drawingShapeId);
+          selectElement(drawingShapeId, false);
         }
         setDrawingShapeId(null);
         shapeStartRef.current = null;
@@ -831,7 +880,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [drawingArrowId, drawingShapeId, stagePos.x, stagePos.y, zoom, updateElement, deleteElement, selectElement, findElement]);
+  }, [drawingArrowId, drawingShapeId, drawingCodeId, stagePos.x, stagePos.y, zoom, updateElement, deleteElement, selectElement, findElement]);
 
   // Attach non-passive wheel listener to prevent scrolling warning
   useEffect(() => {
@@ -855,7 +904,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       code.width = 0;
       code.height = 0;
       addElement(code);
-      selectElement(code.id);
+      selectElement(code.id, false);
       setDrawingCodeId(code.id);
       codeStartRef.current = { x: canvasX, y: canvasY };
       cancelClickRef.current = true;
@@ -875,7 +924,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         shape.y = canvasY;
       }
       addElement(shape);
-      selectElement(shape.id);
+      selectElement(shape.id, false);
       setDrawingShapeId(shape.id);
       shapeStartRef.current = { x: canvasX, y: canvasY };
       cancelClickRef.current = true;
@@ -895,7 +944,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         { x: canvasX, y: canvasY },
       ];
       addElement(arrow);
-      selectElement(arrow.id);
+      selectElement(arrow.id, false);
       setDrawingArrowId(arrow.id);
       arrowStartRef.current = { x: canvasX, y: canvasY };
       cancelClickRef.current = true;
@@ -916,6 +965,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     hasInteractedRef.current = true;
     cancelClickRef.current = true;
     setIsPanning(false);
+    setShowResizeHandles(false); // Hide Konva handles when canvas resize starts
     setResizeState({
       edge,
       startMouse: { x: e.clientX, y: e.clientY },
@@ -1049,54 +1099,97 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           {brandingElement}
           {gridLines}
 
-          {snap.elements.map((element) => {
-            if (!element.visible) return null;
+          {snap.elements.map((el) => {
+            if (!el.visible) return null;
 
-            switch (element.type) {
+            const commonProps = {
+              key: el.id,
+              isSelected: selectedElementIds.includes(el.id),
+              draggable: tool === 'select' && !el.locked,
+              onClick: (e: any) => handleElementClick(el.id, e),
+              onTap: (e: any) => handleElementClick(el.id, e),
+              onDragStart: () => {
+                if (!selectedElementIds.includes(el.id)) {
+                  selectElement(el.id, false);
+                }
+              },
+              onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+                updateElement(el.id, { x: e.target.x(), y: e.target.y() });
+              },
+              onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
+                const node = e.target;
+                const scaleX = node.scaleX();
+                const scaleY = node.scaleY();
+                const rotation = node.rotation();
+
+                // Reset scale and rotation to 1 and 0, and apply changes to width/height
+                node.scaleX(1);
+                node.scaleY(1);
+                node.rotation(0);
+
+                updateElement(el.id, {
+                  x: node.x(),
+                  y: node.y(),
+                  width: Math.max(5, node.width() * scaleX),
+                  height: Math.max(5, node.height() * scaleY),
+                  rotation: rotation,
+                });
+              },
+            };
+
+            switch (el.type) {
               case 'code':
                 return (
                   <CodeBlock
-                    key={element.id}
-                    element={element as CodeElement}
-                    isSelected={selectedElementId === element.id}
-                    onSelect={() => selectElement(element.id)}
-                    onChange={(updates: Partial<CodeElement>) => updateElement(element.id, updates)}
+                    {...commonProps}
+                    element={el as CodeElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<CodeElement>) => updateElement(el.id, updates)}
                   />
                 );
               case 'text':
                 return (
                   <TextBlock
-                    key={element.id}
-                    element={element as TextElement}
-                    isSelected={selectedElementId === element.id}
-                    onSelect={() => selectElement(element.id)}
-                    onChange={(updates: Partial<TextElement>) => updateElement(element.id, updates)}
+                    {...commonProps}
+                    element={el as TextElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<TextElement>) => updateElement(el.id, updates)}
                   />
                 );
               case 'arrow':
                 return (
                   <Arrow
-                    key={element.id}
-                    element={element as ArrowElement}
-                    isSelected={selectedElementId === element.id}
-                    onSelect={() => selectElement(element.id)}
-                    onChange={(updates: Partial<ArrowElement>) => updateElement(element.id, updates)}
+                    {...commonProps}
+                    element={el as ArrowElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<ArrowElement>) => updateElement(el.id, updates)}
                   />
                 );
               case 'shape':
                 return (
                   <Shape
-                    key={element.id}
-                    element={element as ShapeElement}
-                    isSelected={selectedElementId === element.id}
-                    onSelect={() => selectElement(element.id)}
-                    onChange={(updates) => updateElement(element.id, updates)}
+                    {...commonProps}
+                    element={el as ShapeElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<ShapeElement>) => updateElement(el.id, updates)}
                   />
                 );
               default:
                 return null;
             }
           })}
+
+          <Transformer
+            ref={transformerRef}
+            flipEnabled={false}
+            boundBoxFunc={(oldBox, newBox) => {
+              // limit resize
+              if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
+                return oldBox;
+              }
+              return newBox;
+            }}
+          />
         </Layer>
       </Stage>
 

@@ -37,7 +37,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
     const [search, setSearch] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
-    const { copyToClipboard, pasteFromClipboard, duplicateElement, selectedElementId } = useCanvasStore();
+    const { copyToClipboard, pasteFromClipboard, duplicateElement, selectAll } = useCanvasStore();
 
     // Tool commands
     const toolCommands: Command[] = [
@@ -203,10 +203,18 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
             label: 'Duplicate',
             shortcut: 'Cmd+D',
             action: () => {
-                if (selectedElementId) {
-                    duplicateElement(selectedElementId);
-                    onClose();
-                }
+                duplicateElement();
+                onClose();
+            },
+            group: 'actions',
+        },
+        {
+            id: 'select-all',
+            label: 'Select All',
+            shortcut: 'Cmd+A',
+            action: () => {
+                selectAll();
+                onClose();
             },
             group: 'actions',
         },

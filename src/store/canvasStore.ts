@@ -23,11 +23,11 @@ export type ToolId = 'select' | 'code' | 'text' | 'arrow' | 'rectangle' | 'ellip
 
 interface CanvasState {
   snap: Snap;
-  selectedElementId: string | null;
+  selectedElementIds: string[];
   zoom: number;
   showGrid: boolean;
   tool: ToolId;
-  clipboard: CanvasElement | null;
+  clipboard: CanvasElement[] | null;
   history: HistoryState;
 
   // Actions
@@ -37,10 +37,11 @@ interface CanvasState {
 
   addElement: (element: CanvasElement) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
-  deleteElement: (id: string) => void;
-  duplicateElement: (id: string) => void;
+  deleteElement: (id?: string) => void;
+  duplicateElement: (id?: string) => void;
 
-  selectElement: (id: string | null) => void;
+  selectElement: (id: string | null, multi?: boolean) => void;
+  selectAll: () => void;
   setZoom: (zoom: number) => void;
   setShowGrid: (show: boolean) => void;
   setTool: (tool: ToolId) => void;
@@ -111,7 +112,7 @@ export const useCanvasStore = create<CanvasState>()(
   persist(
     immer((set, get) => ({
       snap: defaultSnap,
-      selectedElementId: null,
+      selectedElementIds: [],
       zoom: 0.5,
       showGrid: false,
       tool: 'select',
@@ -133,7 +134,7 @@ export const useCanvasStore = create<CanvasState>()(
       addElement: (element) => set((state) => {
         get().saveToHistory();
         state.snap.elements.push(element);
-        state.selectedElementId = element.id;
+        state.selectedElementIds = [element.id];
       }),
 
       updateElement: (id, updates) => set((state) => {
@@ -150,29 +151,54 @@ export const useCanvasStore = create<CanvasState>()(
 
       deleteElement: (id) => set((state) => {
         get().saveToHistory();
-        state.snap.elements = state.snap.elements.filter((el) => el.id !== id);
-        if (state.selectedElementId === id) {
-          state.selectedElementId = null;
-        }
+        const idsToDelete = id ? [id] : state.selectedElementIds;
+        state.snap.elements = state.snap.elements.filter((el) => !idsToDelete.includes(el.id));
+        state.selectedElementIds = state.selectedElementIds.filter((selId) => !idsToDelete.includes(selId));
       }),
 
       duplicateElement: (id) => set((state) => {
-        const element = state.snap.elements.find((el) => el.id === id);
-        if (element) {
-          get().saveToHistory();
-          const newElement = {
-            ...JSON.parse(JSON.stringify(element)),
-            id: uuidv4(),
-            x: element.x + 20,
-            y: element.y + 20,
-          };
-          state.snap.elements.push(newElement);
-          state.selectedElementId = newElement.id;
+        const idsToDuplicate = id ? [id] : state.selectedElementIds;
+        if (idsToDuplicate.length === 0) return;
+
+        get().saveToHistory();
+        const newIds: string[] = [];
+
+        idsToDuplicate.forEach((targetId) => {
+          const element = state.snap.elements.find((el) => el.id === targetId);
+          if (element) {
+            const newElement = {
+              ...JSON.parse(JSON.stringify(element)),
+              id: uuidv4(),
+              x: element.x + 20,
+              y: element.y + 20,
+            };
+            state.snap.elements.push(newElement);
+            newIds.push(newElement.id);
+          }
+        });
+
+        state.selectedElementIds = newIds;
+      }),
+
+      selectElement: (id, multi = false) => set((state) => {
+        if (id === null) {
+          if (!multi) state.selectedElementIds = [];
+          return;
+        }
+
+        if (multi) {
+          if (state.selectedElementIds.includes(id)) {
+            state.selectedElementIds = state.selectedElementIds.filter((selId) => selId !== id);
+          } else {
+            state.selectedElementIds.push(id);
+          }
+        } else {
+          state.selectedElementIds = [id];
         }
       }),
 
-      selectElement: (id) => set((state) => {
-        state.selectedElementId = id;
+      selectAll: () => set((state) => {
+        state.selectedElementIds = state.snap.elements.map((el) => el.id);
       }),
 
       setZoom: (zoom) => set((state) => {
@@ -186,7 +212,7 @@ export const useCanvasStore = create<CanvasState>()(
       setTool: (tool) => set((state) => {
         state.tool = tool;
         if (tool !== 'select') {
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
 
@@ -221,7 +247,7 @@ export const useCanvasStore = create<CanvasState>()(
           const previous = state.history.past.pop()!;
           state.history.future.push(JSON.parse(JSON.stringify(state.snap)));
           state.snap = previous;
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
 
@@ -230,37 +256,40 @@ export const useCanvasStore = create<CanvasState>()(
           const next = state.history.future.pop()!;
           state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
           state.snap = next;
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
 
       copyToClipboard: () => set((state) => {
-        if (state.selectedElementId) {
-          const element = state.snap.elements.find((el) => el.id === state.selectedElementId);
-          if (element) {
-            state.clipboard = JSON.parse(JSON.stringify(element));
-          }
+        if (state.selectedElementIds.length > 0) {
+          state.clipboard = state.snap.elements.filter((el) => state.selectedElementIds.includes(el.id));
         }
       }),
 
       pasteFromClipboard: () => set((state) => {
-        if (state.clipboard) {
+        if (state.clipboard && state.clipboard.length > 0) {
           get().saveToHistory();
-          const newElement = {
-            ...JSON.parse(JSON.stringify(state.clipboard)),
-            id: uuidv4(),
-            x: state.clipboard.x + 20,
-            y: state.clipboard.y + 20,
-          };
+          const newIds: string[] = [];
 
-          // Handle shape points if necessary (e.g. arrows, lines)
-          if (newElement.type === 'arrow' || (newElement.type === 'shape' && newElement.points)) {
-            // For elements with relative points, we just update x/y offset
-            // The points themselves are relative to (0,0) so they don't need shifting
-          }
+          state.clipboard.forEach((clipElement) => {
+            const newElement = {
+              ...JSON.parse(JSON.stringify(clipElement)),
+              id: uuidv4(),
+              x: clipElement.x + 20,
+              y: clipElement.y + 20,
+            };
 
-          state.snap.elements.push(newElement);
-          state.selectedElementId = newElement.id;
+            // Handle shape points if necessary (e.g. arrows, lines)
+            if (newElement.type === 'arrow' || (newElement.type === 'shape' && newElement.points)) {
+              // For elements with relative points, we just update x/y offset
+              // The points themselves are relative to (0,0) so they don't need shifting
+            }
+
+            state.snap.elements.push(newElement);
+            newIds.push(newElement.id);
+          });
+
+          state.selectedElementIds = newIds;
         }
       }),
 
@@ -269,7 +298,7 @@ export const useCanvasStore = create<CanvasState>()(
           ...defaultSnap,
           meta: { ...defaultSnap.meta, ...meta },
         };
-        state.selectedElementId = null;
+        state.selectedElementIds = [];
         state.history = { past: [], future: [] };
       }),
 
@@ -282,7 +311,7 @@ export const useCanvasStore = create<CanvasState>()(
           const snap = JSON.parse(json) as Snap;
           set((state) => {
             state.snap = snap;
-            state.selectedElementId = null;
+            state.selectedElementIds = [];
             state.history = { past: [], future: [] };
           });
         } catch (e) {
