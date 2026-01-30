@@ -19,7 +19,7 @@ interface HistoryState {
   future: Snap[];
 }
 
-type ToolId = 'select' | 'code' | 'text' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+export type ToolId = 'select' | 'code' | 'text' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
 
 interface CanvasState {
   snap: Snap;
@@ -28,29 +28,29 @@ interface CanvasState {
   showGrid: boolean;
   tool: ToolId;
   history: HistoryState;
-  
+
   // Actions
   setSnap: (snap: Snap) => void;
   updateMeta: (meta: Partial<CanvasMeta>) => void;
   setBackground: (background: Partial<Background>) => void;
-  
+
   addElement: (element: CanvasElement) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
   deleteElement: (id: string) => void;
   duplicateElement: (id: string) => void;
-  
+
   selectElement: (id: string | null) => void;
   setZoom: (zoom: number) => void;
   setShowGrid: (show: boolean) => void;
   setTool: (tool: ToolId) => void;
-  
+
   moveElementUp: (id: string) => void;
   moveElementDown: (id: string) => void;
-  
+
   undo: () => void;
   redo: () => void;
   saveToHistory: () => void;
-  
+
   newSnap: (meta: CanvasMeta) => void;
   exportSnap: () => string;
   importSnap: (json: string) => void;
@@ -113,25 +113,25 @@ export const useCanvasStore = create<CanvasState>()(
       showGrid: false,
       tool: 'select',
       history: { past: [], future: [] },
-      
+
       setSnap: (snap) => set((state) => {
         state.snap = snap;
       }),
-      
+
       updateMeta: (meta) => set((state) => {
         state.snap.meta = { ...state.snap.meta, ...meta };
       }),
-      
+
       setBackground: (background) => set((state) => {
         state.snap.background = { ...state.snap.background, ...background };
       }),
-      
+
       addElement: (element) => set((state) => {
         get().saveToHistory();
         state.snap.elements.push(element);
         state.selectedElementId = element.id;
       }),
-      
+
       updateElement: (id, updates) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index !== -1) {
@@ -143,7 +143,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.snap.elements[index] = { ...state.snap.elements[index], ...updates } as CanvasElement;
         }
       }),
-      
+
       deleteElement: (id) => set((state) => {
         get().saveToHistory();
         state.snap.elements = state.snap.elements.filter((el) => el.id !== id);
@@ -151,7 +151,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.selectedElementId = null;
         }
       }),
-      
+
       duplicateElement: (id) => set((state) => {
         const element = state.snap.elements.find((el) => el.id === id);
         if (element) {
@@ -166,26 +166,26 @@ export const useCanvasStore = create<CanvasState>()(
           state.selectedElementId = newElement.id;
         }
       }),
-      
+
       selectElement: (id) => set((state) => {
         state.selectedElementId = id;
       }),
-      
+
       setZoom: (zoom) => set((state) => {
         state.zoom = Math.max(0.25, Math.min(256, zoom));
       }),
-      
+
       setShowGrid: (show) => set((state) => {
         state.showGrid = show;
       }),
-      
+
       setTool: (tool) => set((state) => {
         state.tool = tool;
         if (tool !== 'select') {
           state.selectedElementId = null;
         }
       }),
-      
+
       moveElementUp: (id) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index < state.snap.elements.length - 1) {
@@ -194,7 +194,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.snap.elements[index + 1] = temp;
         }
       }),
-      
+
       moveElementDown: (id) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index > 0) {
@@ -203,7 +203,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.snap.elements[index - 1] = temp;
         }
       }),
-      
+
       saveToHistory: () => set((state) => {
         state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
         state.history.future = [];
@@ -211,7 +211,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.history.past.shift();
         }
       }),
-      
+
       undo: () => set((state) => {
         if (state.history.past.length > 0) {
           const previous = state.history.past.pop()!;
@@ -220,7 +220,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.selectedElementId = null;
         }
       }),
-      
+
       redo: () => set((state) => {
         if (state.history.future.length > 0) {
           const next = state.history.future.pop()!;
@@ -229,7 +229,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.selectedElementId = null;
         }
       }),
-      
+
       newSnap: (meta) => set((state) => {
         state.snap = {
           ...defaultSnap,
@@ -238,11 +238,11 @@ export const useCanvasStore = create<CanvasState>()(
         state.selectedElementId = null;
         state.history = { past: [], future: [] };
       }),
-      
+
       exportSnap: () => {
         return JSON.stringify(get().snap, null, 2);
       },
-      
+
       importSnap: (json) => {
         try {
           const snap = JSON.parse(json) as Snap;
@@ -262,8 +262,8 @@ export const useCanvasStore = create<CanvasState>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
 

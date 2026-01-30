@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect, useMemo, memo, useCallback} from 'react';
+import React, { useRef, useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
 import type Konva from 'konva';
 import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement } from '../store/canvasStore';
@@ -7,6 +7,7 @@ import TextBlock from './elements/TextBlock';
 import Arrow from './elements/Arrow';
 import Shape from './elements/Shape';
 import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
+import { CommandMenu } from './CommandMenu';
 import type { CodeElement, TextElement, ArrowElement, ShapeElement, ShapeKind } from '../types';
 
 const MIN_CANVAS = 320;
@@ -24,6 +25,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const [stagePos, setStagePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
+  const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const [showResizeHandles, setShowResizeHandles] = useState(false);
   const [drawingArrowId, setDrawingArrowId] = useState<string | null>(null);
   const [drawingCodeId, setDrawingCodeId] = useState<string | null>(null);
@@ -43,15 +45,14 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const spacePressedRef = useRef(false);
   const cancelClickRef = useRef(false);
   const {
-    snap, 
-    zoom, 
+    snap,
+    zoom,
     setZoom,
-    setSnap,
     updateMeta,
     showGrid,
-    tool, 
+    tool,
     selectedElementId,
-    selectElement, 
+    selectElement,
     addElement,
     updateElement,
     deleteElement,
@@ -75,7 +76,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         });
       }
     };
-    
+
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
@@ -92,22 +93,36 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     });
   }, [dimensions, width, height, zoom]);
 
-  // Track spacebar for panning with left click
+  // Track spacebar for panning with left click and Cmd+K for command menu
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Command Menu shortcut: Cmd+K or Ctrl+K
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandMenuOpen((prev) => !prev);
+        return;
+      }
+
       if (e.code === 'Space') {
         spacePressedRef.current = true;
         setSpaceHeld(true);
+        cancelClickRef.current = true;
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         spacePressedRef.current = false;
         setSpaceHeld(false);
         setIsPanning(false);
         panStartRef.current = null;
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     return () => {
@@ -205,18 +220,18 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
       return;
     }
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
-    
+
     if (clickedOnEmpty) {
       const stage = e.target.getStage();
       if (!stage) return;
-      
+
       const pos = stage.getPointerPosition();
       if (!pos) return;
-      
+
       // Convert screen position to canvas position
       const canvasX = (pos.x - stagePos.x) / zoom;
       const canvasY = (pos.y - stagePos.y) / zoom;
-      
+
       if (tool === 'code') {
         addElement(createCodeElement(canvasX - 300, canvasY - 150));
       } else if (tool === 'text') {
@@ -238,7 +253,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           width={width}
           height={height}
           fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-          fillLinearGradientEndPoint={{ 
+          fillLinearGradientEndPoint={{
             x: width * Math.cos((background.gradient.angle * Math.PI) / 180),
             y: height * Math.sin((background.gradient.angle * Math.PI) / 180)
           }}
@@ -263,7 +278,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     if (!showGrid) return null;
     const gridSize = 50;
     const lines = [];
-    
+
     // Vertical lines
     for (let i = 0; i <= width; i += gridSize) {
       lines.push(
@@ -275,7 +290,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         />
       );
     }
-    
+
     // Horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       lines.push(
@@ -287,7 +302,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         />
       );
     }
-    
+
     return <>{lines}</>;
   }, [showGrid, width, height]);
 
@@ -354,10 +369,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     // Get active social platforms with their values
     const activeSocialPlatforms = branding.showSocial && branding.social
       ? SOCIAL_PLATFORMS_CONFIG.filter(p => branding.social[p.key as keyof typeof branding.social])
-          .map(p => ({
-            ...p,
-            value: branding.social[p.key as keyof typeof branding.social] || ''
-          }))
+        .map(p => ({
+          ...p,
+          value: branding.social[p.key as keyof typeof branding.social] || ''
+        }))
       : [];
 
     const hasTextContent = lines.length > 0;
@@ -459,16 +474,16 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
             lineHeight={1.5}
           />
         )}
-        
+
         {/* Social icons with text */}
         {hasSocialIcons && activeSocialPlatforms.map((platform, index) => {
           const path = SOCIAL_ICON_PATHS[platform.key];
           if (!path) return null;
-          
+
           // Calculate position for this social item
           let itemX: number;
           let itemY: number;
-          
+
           if (socialLayout === 'vertical') {
             itemY = socialStartY + index * (socialItemHeight + iconGap - 4);
             itemX = anchorX;
@@ -982,7 +997,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   }, []);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex-1 bg-neutral-900 overflow-hidden relative"
       style={{ cursor: isPanning ? 'grabbing' : tool !== 'select' ? 'crosshair' : spaceHeld ? 'grab' : 'grab' }}
@@ -1000,27 +1015,27 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         height={dimensions.height}
         onClick={handleStageClick}
         onMouseDown={handleStageMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onContextMenu={(e) => {
-        e.evt.preventDefault();
-        e.evt.stopPropagation();
-      }}
-      x={stagePos.x}
-      y={stagePos.y}
-      scaleX={zoom}
-      scaleY={zoom}
-    >
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onContextMenu={(e) => {
+          e.evt.preventDefault();
+          e.evt.stopPropagation();
+        }}
+        x={stagePos.x}
+        y={stagePos.y}
+        scaleX={zoom}
+        scaleY={zoom}
+      >
         <Layer>
           {renderBackground()}
           {brandStripElement}
           {brandingElement}
           {gridLines}
-          
+
           {snap.elements.map((element) => {
             if (!element.visible) return null;
-            
+
             switch (element.type) {
               case 'code':
                 return (
@@ -1092,6 +1107,32 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           ))}
         </div>
       )}
+
+      {/* Command Menu */}
+      <CommandMenu
+        isOpen={commandMenuOpen}
+        onClose={() => setCommandMenuOpen(false)}
+        tool={tool}
+        setTool={(newTool) => {
+          useCanvasStore.setState({ tool: newTool });
+        }}
+        showGrid={showGrid}
+        setShowGrid={(show) => {
+          useCanvasStore.setState({ showGrid: show });
+        }}
+        zoom={zoom}
+        setZoom={setZoom}
+        onClearCanvas={() => {
+          // Clear all elements
+          useCanvasStore.setState((state) => ({
+            ...state,
+            snap: {
+              ...state.snap,
+              elements: [],
+            },
+          }));
+        }}
+      />
     </div>
   );
 };
