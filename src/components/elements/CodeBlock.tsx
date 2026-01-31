@@ -294,6 +294,10 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
 
       lineTokens.tokens.forEach((token, tokenIndex) => {
         if (token.content) {
+          // Focus Mode logic: dim lines that are not part of any highlight
+          const isHighlighted = props.highlights.some(h => lineNum >= h.from && lineNum <= h.to);
+          const shouldDim = props.focusMode && props.highlights.length > 0 && !isHighlighted;
+
           elements.push(
             <Text
               key={`code-${index}-${tokenIndex}`}
@@ -303,6 +307,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
               fontSize={props.fontSize}
               fontFamily={props.fontFamily}
               fill={token.color}
+              opacity={shouldDim ? 0.3 : 1}
             />
           );
           // Approximate character width for monospace font

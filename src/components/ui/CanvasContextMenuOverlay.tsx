@@ -48,22 +48,28 @@ const CanvasContextMenuOverlay: React.FC = () => {
 
         // Section 1: Edit actions
         const editItems = [];
-        if (hasSelection) {
-            editItems.push({
-                id: 'copy',
-                label: 'Copy',
-                icon: <Copy size={14} />,
-                shortcut: 'Cmd+C',
-                onClick: copyToClipboard,
-            });
-            editItems.push({
-                id: 'duplicate',
-                label: 'Duplicate',
-                icon: <SquarePlus size={14} />,
-                shortcut: 'Cmd+D',
-                onClick: () => duplicateElement(),
-            });
-        }
+        editItems.push({
+            id: 'copy',
+            label: 'Copy Elements',
+            icon: <Copy size={14} />,
+            shortcut: 'Cmd+C',
+            onClick: copyToClipboard,
+        });
+        editItems.push({
+            id: 'copy-image',
+            label: 'Copy as Image',
+            icon: <Copy size={14} />,
+            onClick: () => {
+                window.dispatchEvent(new CustomEvent('copy-canvas-image'));
+            },
+        });
+        editItems.push({
+            id: 'duplicate',
+            label: 'Duplicate',
+            icon: <SquarePlus size={14} />,
+            shortcut: 'Cmd+D',
+            onClick: () => duplicateElement(),
+        });
 
         editItems.push({
             id: 'paste',

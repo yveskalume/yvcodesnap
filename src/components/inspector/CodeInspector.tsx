@@ -41,7 +41,7 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
     const from = parseInt(highlightFrom);
     const to = parseInt(highlightTo) || from;
     if (isNaN(from) || from < 1) return;
-    
+
     const newHighlight: LineHighlight = { from, to: Math.max(from, to), style: highlightStyle };
     const highlights = [...element.props.highlights, newHighlight];
     updateProps({ highlights });
@@ -98,14 +98,13 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             <button
               key={theme.id}
               onClick={() => updateProps({ theme: theme.id })}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-all ${
-                element.props.theme === theme.id
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-all ${element.props.theme === theme.id
                   ? 'bg-blue-600 text-white'
                   : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-              }`}
+                }`}
             >
-              <div 
-                className="w-4 h-4 rounded border border-white/20 shrink-0" 
+              <div
+                className="w-4 h-4 rounded border border-white/20 shrink-0"
                 style={{ backgroundColor: theme.bg }}
               />
               <span className="truncate">{theme.name}</span>
@@ -125,11 +124,10 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
                 loadFont(font);
                 updateProps({ fontFamily: font });
               }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-all ${
-                element.props.fontFamily === font
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-all ${element.props.fontFamily === font
                   ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
                   : 'text-neutral-300 hover:bg-white/5 border border-transparent'
-              }`}
+                }`}
             >
               <span style={{ fontFamily: font }}>{font}</span>
               {element.props.fontFamily === font && (
@@ -166,14 +164,27 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         </div>
       </div>
 
-      {/* Line numbers */}
-      <div className="flex items-center justify-between">
-        <label className="text-sm text-neutral-400">Line Numbers</label>
-        <ToggleSwitch
-          checked={element.props.lineNumbers}
-          onCheckedChange={(checked) => updateProps({ lineNumbers: checked })}
-          ariaLabel="Toggle line numbers"
-        />
+      {/* Line numbers & Focus Mode */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-neutral-400">Line Numbers</label>
+          <ToggleSwitch
+            checked={element.props.lineNumbers}
+            onCheckedChange={(checked) => updateProps({ lineNumbers: checked })}
+            ariaLabel="Toggle line numbers"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-sm text-neutral-400">Focus Mode</label>
+            <span className="text-[10px] text-neutral-500">Dims non-highlighted lines</span>
+          </div>
+          <ToggleSwitch
+            checked={element.props.focusMode || false}
+            onCheckedChange={(checked) => updateProps({ focusMode: checked })}
+            ariaLabel="Toggle focus mode"
+          />
+        </div>
       </div>
 
       {/* Padding & Corner radius */}
@@ -222,21 +233,20 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         <label className="block text-sm text-neutral-400 mb-2">
           Line Highlights <span className="text-neutral-500">({totalLines} lines)</span>
         </label>
-        
+
         {/* Existing highlights */}
         {element.props.highlights.length > 0 && (
           <div className="space-y-1 mb-3">
             {element.props.highlights.map((h, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-center justify-between bg-neutral-700 px-2 py-1.5 rounded text-sm"
               >
                 <div className="flex items-center gap-2">
-                  <span 
-                    className={`w-2 h-2 rounded-full ${
-                      h.style === 'focus' ? 'bg-yellow-400' : 
-                      h.style === 'added' ? 'bg-green-400' : 'bg-red-400'
-                    }`} 
+                  <span
+                    className={`w-2 h-2 rounded-full ${h.style === 'focus' ? 'bg-yellow-400' :
+                        h.style === 'added' ? 'bg-green-400' : 'bg-red-400'
+                      }`}
                   />
                   <span className="text-white">
                     {h.from === h.to ? `Line ${h.from}` : `Lines ${h.from}-${h.to}`}
@@ -253,7 +263,7 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             ))}
           </div>
         )}
-        
+
         {/* Add new highlight */}
         <div className="space-y-2">
           <div className="flex gap-2">

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, memo, useEffect } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import { useRecentSnapsStore } from '../store/recentSnapsStore';
 import { ASPECT_RATIOS } from '../types';
@@ -168,6 +168,38 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
     input.click();
   }, [snap, addRecentSnap, saveToHistory, importSnap]);
 
+  const handleCopyImage = useCallback(async () => {
+    const stage = stageRef.current;
+    if (!stage) {
+      toast.error('Canvas not ready');
+      return;
+    }
+
+    try {
+      // Temporarily hide background if needed or just capture stage
+      // We'll capture at 2x scale for quality
+      const dataUrl = stage.toDataURL({ pixelRatio: 2 });
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+
+      toast.success('Image copied to clipboard!');
+      setShowExportMenu(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to copy image');
+    }
+  }, [stageRef]);
+
+  useEffect(() => {
+    const handleGlobalCopy = () => handleCopyImage();
+    window.addEventListener('copy-canvas-image' as any, handleGlobalCopy);
+    return () => window.removeEventListener('copy-canvas-image' as any, handleGlobalCopy);
+  }, [handleCopyImage]);
+
   const toggleRecentSnaps = useCallback(() => {
     setShowRecentSnaps((prev) => !prev);
   }, []);
@@ -309,7 +341,27 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
 
             {showExportMenu && (
               <div className="absolute right-0 top-full mt-3 w-72 bg-[#09090b]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl shadow-black/50 p-2 overflow-hidden animate-in fade-in zoom-in-95 duration-150 origin-top-right ring-1 ring-white/5 z-50">
-                <div className="px-3 py-2">
+                <div className="px-3 py-2 flex flex-col gap-2">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest pl-1">Quick Actions</span>
+                  <button
+                    onClick={handleCopyImage}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 hover:border-blue-500/40 transition-all group active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col items-start gap-0.5">
+                        <span className="text-sm font-medium text-blue-400">Copy to Clipboard</span>
+                        <span className="text-[10px] text-blue-500/70">Instant share as PNG</span>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                <div className="px-3 py-2 mt-2">
                   <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest pl-1">Download Image</span>
                 </div>
 

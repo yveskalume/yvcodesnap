@@ -549,6 +549,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
 
     return (
       <Group opacity={branding.opacity || 0.8}>
+
         {/* Avatar */}
         {hasAvatar && brandingAvatar && (
           <Circle

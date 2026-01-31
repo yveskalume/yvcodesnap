@@ -35,7 +35,7 @@ interface BrandingPreferences {
 interface BrandingStore {
   info: BrandingInfo;
   preferences: BrandingPreferences;
-  
+
   // Actions
   updateInfo: (updates: Partial<BrandingInfo>) => void;
   updateSocial: (platform: string, value: string) => void;
@@ -74,22 +74,22 @@ export const useBrandingStore = create<BrandingStore>()(
     (set) => ({
       info: defaultInfo,
       preferences: defaultPreferences,
-      
+
       updateInfo: (updates) => set((state) => ({
         info: { ...state.info, ...updates },
       })),
-      
+
       updateSocial: (platform, value) => set((state) => ({
         info: {
           ...state.info,
           social: { ...state.info.social, [platform]: value },
         },
       })),
-      
+
       updatePreferences: (updates) => set((state) => ({
         preferences: { ...state.preferences, ...updates },
       })),
-      
+
       resetToDefaults: () => set({
         info: defaultInfo,
         preferences: defaultPreferences,
@@ -101,8 +101,8 @@ export const useBrandingStore = create<BrandingStore>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
 

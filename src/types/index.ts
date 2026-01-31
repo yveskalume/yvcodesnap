@@ -29,7 +29,7 @@ export interface Branding {
   showName: boolean;
   showWebsite: boolean;
   showSocial: boolean;
-  showAvatar?: boolean;
+  showAvatar: boolean;
   fontSize: number;
   fontFamily: string;
   color: string;
@@ -80,6 +80,7 @@ export interface CodeBlockProps {
   lineHeight: number;
   lineNumbers: boolean;
   highlights: LineHighlight[];
+  focusMode?: boolean;
   padding: number;
   cornerRadius: number;
   shadow: Shadow;

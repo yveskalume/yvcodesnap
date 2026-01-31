@@ -188,8 +188,8 @@ const BrandingPanel: React.FC = () => {
                     key={opt.value}
                     onClick={() => handleUpdatePreferences({ position: opt.value })}
                     className={`flex items-center justify-center py-2 px-3 rounded-lg transition-all border ${preferences.position === opt.value
-                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
                       }`}
                     title={opt.label}
                     aria-label={opt.label}
