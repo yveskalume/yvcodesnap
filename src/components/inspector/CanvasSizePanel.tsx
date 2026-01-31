@@ -60,7 +60,7 @@ const CanvasSizePanel: React.FC = () => {
             min={MIN_CANVAS}
             max={MAX_CANVAS}
             step={10}
-            className="max-w-[160px]"
+            className="max-w-[140px]"
           />
           <span className="text-neutral-500 text-xs">px</span>
         </div>
@@ -72,7 +72,7 @@ const CanvasSizePanel: React.FC = () => {
             min={MIN_CANVAS}
             max={MAX_CANVAS}
             step={10}
-            className="max-w-[160px]"
+            className="max-w-[140px]"
           />
           <span className="text-neutral-500 text-xs">px</span>
         </div>

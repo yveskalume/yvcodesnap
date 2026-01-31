@@ -15,10 +15,10 @@ import { useAppCommands } from '../hooks/useAppCommands';
 export default function Editor() {
     const stageRef = useRef<Konva.Stage>(null);
     const navigate = useNavigate();
-    const { snap, selectElement, selectedElementIds, deleteElement } = useCanvasStore();
+    const { snap, selectElement } = useCanvasStore();
     const { addRecentSnap } = useRecentSnapsStore();
 
-    const { commands, handleNewSnap, handleImportFile, handleExportFile } = useAppCommands();
+    const { commands } = useAppCommands();
 
     // Handle going back to main screen
     const handleGoToMainScreen = useCallback(() => {

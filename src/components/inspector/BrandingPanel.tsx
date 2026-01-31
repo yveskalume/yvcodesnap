@@ -7,12 +7,14 @@ import SelectField from '../ui/SelectField';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import SliderField from '../ui/SliderField';
 
+import { ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight } from 'lucide-react';
+
 const POSITION_OPTIONS = [
-  { value: 'top-left', label: 'Top Left' },
-  { value: 'top-right', label: 'Top Right' },
-  { value: 'bottom-left', label: 'Bottom Left' },
-  { value: 'bottom-right', label: 'Bottom Right' },
-] as const;
+  { value: 'top-left' as const, icon: ArrowUpLeft, label: 'Top Left' },
+  { value: 'top-right' as const, icon: ArrowUpRight, label: 'Top Right' },
+  { value: 'bottom-left' as const, icon: ArrowDownLeft, label: 'Bottom Left' },
+  { value: 'bottom-right' as const, icon: ArrowDownRight, label: 'Bottom Right' },
+];
 
 const SOCIAL_PLATFORMS = [
   { key: 'twitter', label: 'X (Twitter)', placeholder: '@username' },
@@ -179,19 +181,23 @@ const BrandingPanel: React.FC = () => {
               Position
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {POSITION_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleUpdatePreferences({ position: opt.value })}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
-                    preferences.position === opt.value
-                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+              {POSITION_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleUpdatePreferences({ position: opt.value })}
+                    className={`flex items-center justify-center py-2 px-3 rounded-lg transition-all border ${preferences.position === opt.value
+                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      }`}
+                    title={opt.label}
+                    aria-label={opt.label}
+                  >
+                    <Icon size={18} />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -203,11 +209,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showAvatar: !preferences.showAvatar })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showAvatar
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showAvatar
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showAvatar ? 'Hide' : 'Show'}
               </button>
@@ -271,11 +276,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showName: !preferences.showName })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showName
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showName
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showName ? 'Show' : 'Hide'}
               </button>
@@ -297,11 +301,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showWebsite: !preferences.showWebsite })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showWebsite
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showWebsite
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showWebsite ? 'Show' : 'Hide'}
               </button>
@@ -323,11 +326,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showSocial: !preferences.showSocial })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showSocial
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showSocial
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showSocial ? 'Show' : 'Hide'}
               </button>
@@ -356,21 +358,19 @@ const BrandingPanel: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleUpdatePreferences({ socialLayout: 'horizontal' })}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
-                      preferences.socialLayout === 'horizontal'
-                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
-                    }`}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${preferences.socialLayout === 'horizontal'
+                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      }`}
                   >
                     Horizontal
                   </button>
                   <button
                     onClick={() => handleUpdatePreferences({ socialLayout: 'vertical' })}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
-                      preferences.socialLayout === 'vertical'
-                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
-                    }`}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${preferences.socialLayout === 'vertical'
+                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      }`}
                   >
                     Vertical
                   </button>

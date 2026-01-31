@@ -45,7 +45,7 @@ const NumberField: React.FC<Props> = ({
         max={max}
         step={step}
         placeholder={placeholder}
-        className="flex-1 bg-transparent outline-none text-white placeholder:text-neutral-500"
+        className="flex-1 bg-transparent text-xs outline-none text-white placeholder:text-neutral-500"
       />
     </div>
   );
