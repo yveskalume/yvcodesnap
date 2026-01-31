@@ -10,9 +10,10 @@ interface CodeBlockProps {
   isSelected: boolean;
   onSelect: (e?: any) => void;
   onChange: (updates: Partial<CodeElement>) => void;
+  draggable?: boolean;
 }
 
-const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, onChange }) => {
+const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, onChange, draggable }) => {
   const groupRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -350,7 +351,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
         width={width}
         height={height}
         rotation={rotation}
-        draggable={!element.locked && !isEditing}
+        draggable={draggable ?? (!element.locked && !isEditing)}
         onClick={onSelect}
         onTap={onSelect}
         onContextMenu={(e) => {

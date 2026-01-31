@@ -9,9 +9,10 @@ interface ImageLayerProps {
     onSelect: (e: any) => void;
     onContextMenu?: (e: any) => void;
     onChange: (updates: Partial<ImageElement>) => void;
+    draggable?: boolean;
 }
 
-const ImageLayer: React.FC<ImageLayerProps> = ({ element, isSelected, onSelect, onContextMenu, onChange }) => {
+const ImageLayer: React.FC<ImageLayerProps> = ({ element, isSelected, onSelect, onContextMenu, onChange, draggable }) => {
     const shapeRef = useRef<Konva.Image>(null);
     const trRef = useRef<Konva.Transformer>(null);
     const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -73,7 +74,7 @@ const ImageLayer: React.FC<ImageLayerProps> = ({ element, isSelected, onSelect, 
                 height={element.height}
                 rotation={element.rotation}
                 opacity={element.props.opacity}
-                draggable={!element.locked}
+                draggable={draggable ?? !element.locked}
                 onClick={onSelect}
                 onTap={onSelect}
                 onContextMenu={onContextMenu}

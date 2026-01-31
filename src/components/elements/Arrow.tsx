@@ -8,6 +8,7 @@ interface ArrowProps {
   isSelected: boolean;
   onSelect: (e?: any) => void;
   onChange: (updates: Partial<ArrowElement>) => void;
+  draggable?: boolean;
 }
 
 // Calculate bezier curve points for smooth curved arrows
@@ -83,7 +84,7 @@ const getPointOnBezier = (
   };
 };
 
-const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }) => {
+const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange, draggable }) => {
   const arrowRef = useRef<Konva.Arrow>(null);
   const { points, props } = element;
   const start = points[0];
@@ -165,7 +166,7 @@ const Arrow: React.FC<ArrowProps> = ({ element, isSelected, onSelect, onChange }
 
   return (
     <Group
-      draggable={!element.locked}
+      draggable={draggable ?? !element.locked}
       onContextMenu={(e) => {
         e.evt.preventDefault();
         e.cancelBubble = true;

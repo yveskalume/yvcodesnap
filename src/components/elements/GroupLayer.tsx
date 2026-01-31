@@ -89,7 +89,6 @@ const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onContextMen
         >
             {element.elements.map((el) => {
                 const childProps = {
-                    key: el.id,
                     isSelected: false,
                     draggable: false,
                     onSelect: (e: any) => {
@@ -107,17 +106,17 @@ const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onContextMen
 
                 switch (el.type) {
                     case 'code':
-                        return <CodeBlock {...childProps} element={el as CodeElement} />;
+                        return <CodeBlock key={el.id} {...childProps} element={el as CodeElement} />;
                     case 'text':
-                        return <TextBlock {...childProps} element={el as TextElement} />;
+                        return <TextBlock key={el.id} {...childProps} element={el as TextElement} />;
                     case 'arrow':
-                        return <Arrow {...childProps} element={el as ArrowElement} />;
+                        return <Arrow key={el.id} {...childProps} element={el as ArrowElement} />;
                     case 'shape':
-                        return <Shape {...childProps} element={el as ShapeElement} />;
+                        return <Shape key={el.id} {...childProps} element={el as ShapeElement} />;
                     case 'image':
-                        return <ImageLayer {...childProps} element={el as ImageElement} onSelect={childProps.onSelect} onChange={childProps.onChange} />;
+                        return <ImageLayer key={el.id} element={el as ImageElement} isSelected={childProps.isSelected} draggable={false} onSelect={childProps.onSelect} onChange={childProps.onChange} />;
                     case 'group':
-                        return <GroupLayer {...childProps} element={el as GroupElement} onSelect={childProps.onSelect} onChange={childProps.onChange} />;
+                        return <GroupLayer key={el.id} element={el as GroupElement} onSelect={childProps.onSelect} onChange={childProps.onChange} />;
                     default:
                         return null;
                 }

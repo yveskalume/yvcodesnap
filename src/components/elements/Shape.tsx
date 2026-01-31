@@ -8,9 +8,10 @@ interface ShapeProps {
   isSelected: boolean;
   onSelect: (e?: any) => void;
   onChange: (updates: Partial<ShapeElement>) => void;
+  draggable?: boolean;
 }
 
-const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }) => {
+const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange, draggable }) => {
   const { props, width, height } = element;
   const strokeWidth = props.strokeWidth ?? 2;
   const outlineColor = '#3b82f6';
@@ -50,7 +51,7 @@ const Shape: React.FC<ShapeProps> = ({ element, isSelected, onSelect, onChange }
       e.cancelBubble = true;
       onSelect();
     },
-    draggable: !element.locked,
+    draggable: draggable ?? !element.locked,
     onDragEnd: handleDragEnd,
     onDragMoveCapture: () => {
       const stage = (window as any)?.stageRef?.current?.getStage?.();

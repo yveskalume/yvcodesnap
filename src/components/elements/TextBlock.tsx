@@ -9,9 +9,10 @@ interface TextBlockProps {
   isSelected: boolean;
   onSelect: (e?: any) => void;
   onChange: (updates: Partial<TextElement>) => void;
+  draggable?: boolean;
 }
 
-const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, onChange }) => {
+const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, onChange, draggable }) => {
   const groupRef = useRef<Konva.Group>(null);
   const textRef = useRef<Konva.Text>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -164,7 +165,7 @@ const TextBlock: React.FC<TextBlockProps> = ({ element, isSelected, onSelect, on
         x={x}
         y={y}
         rotation={rotation}
-        draggable={!element.locked && !isEditing}
+        draggable={draggable ?? (!element.locked && !isEditing)}
         onClick={onSelect}
         onTap={onSelect}
         onContextMenu={(e) => {
