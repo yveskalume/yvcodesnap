@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { Stage, Layer, Rect, Line, Text, Group, Path, Circle, Transformer } from 'react-konva';
 import type Konva from 'konva';
-import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement, createImageElement } from '../store/canvasStore';
+import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
 import TextBlock from './elements/TextBlock';
 import Arrow from './elements/Arrow';
@@ -10,6 +10,7 @@ import ImageLayer from './elements/ImageLayer';
 import GroupLayer from './elements/GroupLayer';
 import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
 import { CommandMenu } from './CommandMenu';
+import CanvasContextMenuOverlay from './ui/CanvasContextMenuOverlay';
 import type { CodeElement, TextElement, ArrowElement, ShapeElement, ShapeKind, ImageElement, GroupElement } from '../types';
 
 const MIN_CANVAS = 320;
@@ -47,25 +48,25 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const spacePressedRef = useRef(false);
   const cancelClickRef = useRef(false);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const {
-    snap,
-    zoom,
-    setZoom,
-    updateMeta,
-    showGrid,
-    tool,
-    selectedElementIds,
-    selectElement,
-    addElement,
-    updateElement,
-    deleteElement,
-    copyToClipboard,
-    pasteFromClipboard,
-    selectAll,
-    groupSelection,
-    ungroupSelection,
-    duplicateElement,
-  } = useCanvasStore();
+  const snap = useCanvasStore((state) => state.snap);
+  const zoom = useCanvasStore((state) => state.zoom);
+  const setZoom = useCanvasStore((state) => state.setZoom);
+  const updateMeta = useCanvasStore((state) => state.updateMeta);
+  const showGrid = useCanvasStore((state) => state.showGrid);
+  const tool = useCanvasStore((state) => state.tool);
+  const selectedElementIds = useCanvasStore((state) => state.selectedElementIds);
+  const selectElement = useCanvasStore((state) => state.selectElement);
+  const addElement = useCanvasStore((state) => state.addElement);
+  const updateElement = useCanvasStore((state) => state.updateElement);
+  const deleteElement = useCanvasStore((state) => state.deleteElement);
+  const duplicateElement = useCanvasStore((state) => state.duplicateElement);
+  const copyToClipboard = useCanvasStore((state) => state.copyToClipboard);
+  const pasteFromClipboard = useCanvasStore((state) => state.pasteFromClipboard);
+  const groupSelection = useCanvasStore((state) => state.groupSelection);
+  const ungroupSelection = useCanvasStore((state) => state.ungroupSelection);
+  const selectAll = useCanvasStore((state) => state.selectAll);
+
+  const setContextMenu = useCanvasStore((state) => state.setContextMenu);
 
   const { width, height } = snap.meta;
   const { background } = snap;
@@ -152,6 +153,13 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         e.preventDefault();
         duplicateElement();
         return;
+      }
+
+      // Delete/Backspace
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        // Don't delete if we are in an input or textarea
+        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+        deleteElement();
       }
 
       if (e.code === 'Space') {
@@ -284,8 +292,34 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     // If already selected and meta key is not pressed, do nothing (allows for drag)
   };
 
+  const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent | MouseEvent>) => {
+    e.evt.preventDefault();
+    e.evt.stopPropagation();
+
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    // Get pointer position relative to page for the menu positioning
+    const { clientX, clientY } = e.evt;
+
+    // Get pointer position relative to stage for pasting
+    const pointerPos = stage.getPointerPosition();
+    if (!pointerPos) return;
+
+    // Convert stage mouse position to canvas coordinates (considering zoom/pan)
+    const transform = stage.getAbsoluteTransform().copy().invert();
+    const canvasPos = transform.point(pointerPos);
+
+    setContextMenu({
+      isOpen: true,
+      x: clientX,
+      y: clientY,
+      canvasX: canvasPos.x,
+      canvasY: canvasPos.y,
+    });
+  };
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (isPanning || cancelClickRef.current || resizeState) {
+    if (isPanning || cancelClickRef.current || resizeState || e.evt.button !== 0) {
       cancelClickRef.current = false;
       return;
     }
@@ -920,6 +954,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   }, [handleStageWheel]);
 
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e.evt.button !== 0 && e.evt.button !== 1) return; // Ignore right click, allow left and middle
     if (tool === 'code' && e.evt.button === 0 && !spacePressedRef.current) {
       const stage = e.target.getStage();
       const pointer = stage?.getPointerPosition();
@@ -1112,10 +1147,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onContextMenu={(e) => {
-          e.evt.preventDefault();
-          e.evt.stopPropagation();
-        }}
+        onContextMenu={handleContextMenu}
         x={stagePos.x}
         y={stagePos.y}
         scaleX={zoom}
@@ -1131,11 +1163,18 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
             if (!el.visible) return null;
 
             const commonProps = {
-              key: el.id,
               isSelected: selectedElementIds.includes(el.id),
               draggable: tool === 'select' && !el.locked,
               onClick: (e: any) => handleElementClick(el.id, e),
               onTap: (e: any) => handleElementClick(el.id, e),
+              onContextMenu: (e: any) => {
+                e.evt.preventDefault();
+                e.evt.stopPropagation();
+                if (!selectedElementIds.includes(el.id)) {
+                  selectElement(el.id, false);
+                }
+                handleContextMenu(e);
+              },
               onDragStart: () => {
                 if (!selectedElementIds.includes(el.id)) {
                   selectElement(el.id, false);
@@ -1169,6 +1208,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               case 'code':
                 return (
                   <CodeBlock
+                    key={el.id}
                     {...commonProps}
                     element={el as CodeElement}
                     onSelect={() => selectElement(el.id)}
@@ -1178,6 +1218,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               case 'text':
                 return (
                   <TextBlock
+                    key={el.id}
                     {...commonProps}
                     element={el as TextElement}
                     onSelect={() => selectElement(el.id)}
@@ -1187,6 +1228,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               case 'arrow':
                 return (
                   <Arrow
+                    key={el.id}
                     {...commonProps}
                     element={el as ArrowElement}
                     onSelect={() => selectElement(el.id)}
@@ -1196,6 +1238,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               case 'shape':
                 return (
                   <Shape
+                    key={el.id}
                     {...commonProps}
                     element={el as ShapeElement}
                     onSelect={() => selectElement(el.id)}
@@ -1205,27 +1248,31 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
               case 'image':
                 return (
                   <ImageLayer
-                    element={el as ImageElement}
-                    isSelected={selectedElementIds.includes(el.id)}
-                    onSelect={(e) => handleElementClick(el.id, e)}
-                    onChange={(updates) => updateElement(el.id, updates)}
-                  />
-                );
-              case 'image':
-                return (
-                  <ImageLayer
                     key={el.id}
                     element={el as ImageElement}
                     isSelected={selectedElementIds.includes(el.id)}
                     onSelect={(e) => handleElementClick(el.id, e)}
+                    onContextMenu={(e) => {
+                      if (!selectedElementIds.includes(el.id)) {
+                        selectElement(el.id, false);
+                      }
+                      handleContextMenu(e);
+                    }}
                     onChange={(updates) => updateElement(el.id, updates)}
                   />
                 );
               case 'group':
                 return (
                   <GroupLayer
+                    key={el.id}
                     element={el as GroupElement}
                     onSelect={(e) => handleElementClick(el.id, e)}
+                    onContextMenu={(e) => {
+                      if (!selectedElementIds.includes(el.id)) {
+                        selectElement(el.id, false);
+                      }
+                      handleContextMenu(e);
+                    }}
                     onChange={(updates) => updateElement(el.id, updates)}
                   />
                 );
@@ -1297,6 +1344,8 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           }));
         }}
       />
+      {/* Context Menu Overlay */}
+      <CanvasContextMenuOverlay />
     </div>
   );
 };

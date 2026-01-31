@@ -6,11 +6,12 @@ import type { ImageElement } from '../../types';
 interface ImageLayerProps {
     element: ImageElement;
     isSelected: boolean;
-    onSelect: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+    onSelect: (e: any) => void;
+    onContextMenu?: (e: any) => void;
     onChange: (updates: Partial<ImageElement>) => void;
 }
 
-const ImageLayer: React.FC<ImageLayerProps> = ({ element, isSelected, onSelect, onChange }) => {
+const ImageLayer: React.FC<ImageLayerProps> = ({ element, isSelected, onSelect, onContextMenu, onChange }) => {
     const shapeRef = useRef<Konva.Image>(null);
     const trRef = useRef<Konva.Transformer>(null);
     const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -75,6 +76,7 @@ const ImageLayer: React.FC<ImageLayerProps> = ({ element, isSelected, onSelect, 
                 draggable={!element.locked}
                 onClick={onSelect}
                 onTap={onSelect}
+                onContextMenu={onContextMenu}
                 onDragEnd={handleDragEnd}
                 onTransformEnd={handleTransformEnd}
                 strokeEnabled={false}

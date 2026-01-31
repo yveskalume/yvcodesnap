@@ -12,10 +12,11 @@ import type Konva from 'konva';
 interface GroupLayerProps {
     element: GroupElement;
     onSelect: (e: any) => void;
+    onContextMenu?: (e: any) => void;
     onChange: (updates: Partial<GroupElement>) => void;
 }
 
-const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onChange }) => {
+const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onContextMenu, onChange }) => {
     const groupRef = React.useRef<Konva.Group>(null);
 
     const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -82,6 +83,7 @@ const GroupLayer: React.FC<GroupLayerProps> = ({ element, onSelect, onChange }) 
             draggable={!element.locked}
             onClick={onSelect}
             onTap={onSelect}
+            onContextMenu={onContextMenu}
             onDragEnd={handleDragEnd}
             onTransformEnd={handleTransformEnd}
         >

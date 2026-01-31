@@ -31,6 +31,14 @@ interface CanvasState {
   tool: ToolId;
   clipboard: CanvasElement[] | null;
   history: HistoryState;
+  contextMenu: {
+    isOpen: boolean;
+    x: number;
+    y: number;
+    canvasX: number;
+    canvasY: number;
+    targetId: string | null;
+  };
 
   // Actions
   setSnap: (snap: Snap) => void;
@@ -50,18 +58,21 @@ interface CanvasState {
 
   moveElementUp: (id: string) => void;
   moveElementDown: (id: string) => void;
+  bringToFront: () => void;
+  sendToBack: () => void;
 
   undo: () => void;
   redo: () => void;
   saveToHistory: () => void;
   copyToClipboard: () => void;
-  pasteFromClipboard: () => void;
+  pasteFromClipboard: (x?: number, y?: number) => void;
 
   newSnap: (meta: CanvasMeta) => void;
   exportSnap: () => string;
   importSnap: (json: string) => void;
   groupSelection: () => void;
   ungroupSelection: () => void;
+  setContextMenu: (contextMenu: Partial<CanvasState['contextMenu']>) => void;
 }
 
 const MAX_PERSISTED_AVATAR_LENGTH = 350000;
@@ -122,6 +133,14 @@ export const useCanvasStore = create<CanvasState>()(
       tool: 'select',
       clipboard: null,
       history: { past: [], future: [] },
+      contextMenu: {
+        isOpen: false,
+        x: 0,
+        y: 0,
+        canvasX: 0,
+        canvasY: 0,
+        targetId: null,
+      },
 
       setSnap: (snap) => set((state) => {
         state.snap = snap;
@@ -245,6 +264,28 @@ export const useCanvasStore = create<CanvasState>()(
         }
       }),
 
+      bringToFront: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length === 0) return;
+
+        get().saveToHistory();
+
+        const selectedElements = state.snap.elements.filter(el => selectedIds.includes(el.id));
+        const remainingElements = state.snap.elements.filter(el => !selectedIds.includes(el.id));
+        state.snap.elements = [...remainingElements, ...selectedElements];
+      }),
+
+      sendToBack: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length === 0) return;
+
+        get().saveToHistory();
+
+        const selectedElements = state.snap.elements.filter(el => selectedIds.includes(el.id));
+        const remainingElements = state.snap.elements.filter(el => !selectedIds.includes(el.id));
+        state.snap.elements = [...selectedElements, ...remainingElements];
+      }),
+
       saveToHistory: () => set((state) => {
         state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
         state.history.future = [];
@@ -277,23 +318,42 @@ export const useCanvasStore = create<CanvasState>()(
         }
       }),
 
-      pasteFromClipboard: () => set((state) => {
+      pasteFromClipboard: (x, y) => set((state) => {
         if (state.clipboard && state.clipboard.length > 0) {
           get().saveToHistory();
           const newIds: string[] = [];
+
+          let offsetX = 20;
+          let offsetY = 20;
+
+          if (x !== undefined && y !== undefined) {
+            // Find min x and min y from clipboard items to calculate offset properly
+            let minX = Infinity;
+            let minY = Infinity;
+
+            state.clipboard.forEach(el => {
+              if (el.x < minX) minX = el.x;
+              if (el.y < minY) minY = el.y;
+            });
+
+            // If it's a single element, we use its coordinate to calculate absolute shift to x,y
+            // If it's a bunch of elements, they stay relative but the group top-left moves to x,y
+            offsetX = x - minX;
+            offsetY = y - minY;
+          }
 
           state.clipboard.forEach((clipElement) => {
             const newElement = {
               ...JSON.parse(JSON.stringify(clipElement)),
               id: uuidv4(),
-              x: clipElement.x + 20,
-              y: clipElement.y + 20,
+              x: clipElement.x + offsetX,
+              y: clipElement.y + offsetY,
             };
 
-            // Handle shape points if necessary (e.g. arrows, lines)
-            if (newElement.type === 'arrow' || (newElement.type === 'shape' && newElement.points)) {
-              // For elements with relative points, we just update x/y offset
-              // The points themselves are relative to (0,0) so they don't need shifting
+            // Ensure width and height are present for text elements
+            if (newElement.type === 'text') {
+              newElement.width = (newElement as TextElement).width || 200;
+              newElement.height = (newElement as TextElement).height || 40;
             }
 
             state.snap.elements.push(newElement);
@@ -444,6 +504,10 @@ export const useCanvasStore = create<CanvasState>()(
         });
 
         state.selectedElementIds = [];
+      }),
+
+      setContextMenu: (updates) => set((state) => {
+        state.contextMenu = { ...state.contextMenu, ...updates };
       }),
     })),
     {
