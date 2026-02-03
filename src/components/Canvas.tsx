@@ -106,6 +106,19 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   // Track spacebar for panning with left click and Cmd+K for command menu
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Allow native shortcuts inside form fields / editable areas
+      const target = e.target as HTMLElement | null;
+      if (
+        target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable
+        )
+      ) {
+        return;
+      }
+
       // Command Menu shortcut: Cmd+K or Ctrl+K
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();

@@ -18,11 +18,15 @@ export function useKeyboardShortcuts() {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       // Don't trigger shortcuts when typing in inputs
-      const target = e.target as HTMLElement;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      // Allow native shortcuts (copy/paste, select all, etc.) inside form fields or editable blocks
       if (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
-        target.contentEditable === 'true'
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
       ) {
         return;
       }

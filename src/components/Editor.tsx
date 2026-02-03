@@ -33,7 +33,11 @@ export default function Editor() {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Ignore if input is focused
             const active = document.activeElement;
-            const isInputFocused = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA' || active?.tagName === 'SELECT';
+            const isInputFocused =
+                active?.tagName === 'INPUT' ||
+                active?.tagName === 'TEXTAREA' ||
+                active?.tagName === 'SELECT' ||
+                active?.isContentEditable;
             if (isInputFocused) return;
 
             const isMeta = e.metaKey || e.ctrlKey;

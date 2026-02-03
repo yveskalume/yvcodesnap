@@ -281,7 +281,7 @@ const BrandingPanel: React.FC = () => {
                   : 'bg-white/5 text-neutral-500'
                   }`}
               >
-                {preferences.showName ? 'Show' : 'Hide'}
+                {preferences.showName ? 'Hide' : 'Show'}
               </button>
             </div>
             <input
@@ -331,7 +331,7 @@ const BrandingPanel: React.FC = () => {
                   : 'bg-white/5 text-neutral-500'
                   }`}
               >
-                {preferences.showSocial ? 'Show' : 'Hide'}
+                {preferences.showSocial ? 'Hide' : 'Show'}
               </button>
             </div>
             <div className="space-y-2">
