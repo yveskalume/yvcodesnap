@@ -5,6 +5,10 @@ import { LANGUAGES, FONT_FAMILIES, CODE_THEMES } from '../../types';
 import { detectLanguage } from '../../utils/highlighter';
 import { loadFont } from '../../utils/fontLoader';
 import CodeEditor from './CodeEditor';
+import SelectField from '../ui/SelectField';
+import NumberField from '../ui/NumberField';
+import SliderField from '../ui/SliderField';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 interface CodeInspectorProps {
   element: CodeElement;
@@ -37,7 +41,7 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
     const from = parseInt(highlightFrom);
     const to = parseInt(highlightTo) || from;
     if (isNaN(from) || from < 1) return;
-    
+
     const newHighlight: LineHighlight = { from, to: Math.max(from, to), style: highlightStyle };
     const highlights = [...element.props.highlights, newHighlight];
     updateProps({ highlights });
@@ -79,17 +83,11 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             Auto-detect
           </button>
         </div>
-        <select
+        <SelectField
           value={element.props.language}
-          onChange={(e) => updateProps({ language: e.target.value })}
-          className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
-        >
-          {LANGUAGES.map((lang) => (
-            <option key={lang} value={lang}>
-              {lang}
-            </option>
-          ))}
-        </select>
+          onValueChange={(v) => updateProps({ language: v })}
+          options={LANGUAGES.map((lang) => ({ value: lang, label: lang }))}
+        />
       </div>
 
       {/* Theme */}
@@ -100,14 +98,13 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             <button
               key={theme.id}
               onClick={() => updateProps({ theme: theme.id })}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-all ${
-                element.props.theme === theme.id
+              className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-all ${element.props.theme === theme.id
                   ? 'bg-blue-600 text-white'
                   : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-              }`}
+                }`}
             >
-              <div 
-                className="w-4 h-4 rounded border border-white/20 shrink-0" 
+              <div
+                className="w-4 h-4 rounded border border-white/20 shrink-0"
                 style={{ backgroundColor: theme.bg }}
               />
               <span className="truncate">{theme.name}</span>
@@ -127,11 +124,10 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
                 loadFont(font);
                 updateProps({ fontFamily: font });
               }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-all ${
-                element.props.fontFamily === font
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-all ${element.props.fontFamily === font
                   ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
                   : 'text-neutral-300 hover:bg-white/5 border border-transparent'
-              }`}
+                }`}
             >
               <span style={{ fontFamily: font }}>{font}</span>
               {element.props.fontFamily === font && (
@@ -148,22 +144,19 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Size</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.fontSize}
-            onChange={(e) => updateProps({ fontSize: parseInt(e.target.value) || 14 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ fontSize: typeof v === 'number' ? v : 14 })}
             min={10}
             max={32}
+            step={1}
           />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Line Height</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.lineHeight}
-            onChange={(e) => updateProps({ lineHeight: parseFloat(e.target.value) || 1.5 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ lineHeight: typeof v === 'number' ? v : 1.5 })}
             min={1}
             max={3}
             step={0.1}
@@ -171,45 +164,49 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         </div>
       </div>
 
-      {/* Line numbers */}
-      <div className="flex items-center justify-between">
-        <label className="text-sm text-neutral-400">Line Numbers</label>
-        <button
-          onClick={() => updateProps({ lineNumbers: !element.props.lineNumbers })}
-          className={`w-12 h-6 rounded-full transition-colors ${
-            element.props.lineNumbers ? 'bg-blue-600' : 'bg-neutral-600'
-          }`}
-        >
-          <div
-            className={`w-5 h-5 bg-white rounded-full transition-transform ${
-              element.props.lineNumbers ? 'translate-x-6' : 'translate-x-0.5'
-            }`}
+      {/* Line numbers & Focus Mode */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-neutral-400">Line Numbers</label>
+          <ToggleSwitch
+            checked={element.props.lineNumbers}
+            onCheckedChange={(checked) => updateProps({ lineNumbers: checked })}
+            ariaLabel="Toggle line numbers"
           />
-        </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-sm text-neutral-400">Focus Mode</label>
+            <span className="text-[10px] text-neutral-500">Dims non-highlighted lines</span>
+          </div>
+          <ToggleSwitch
+            checked={element.props.focusMode || false}
+            onCheckedChange={(checked) => updateProps({ focusMode: checked })}
+            ariaLabel="Toggle focus mode"
+          />
+        </div>
       </div>
 
       {/* Padding & Corner radius */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Padding</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.padding}
-            onChange={(e) => updateProps({ padding: parseInt(e.target.value) || 0 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ padding: typeof v === 'number' ? v : 0 })}
             min={0}
             max={64}
+            step={2}
           />
         </div>
         <div>
           <label className="block text-sm text-neutral-400 mb-2">Radius</label>
-          <input
-            type="number"
+          <NumberField
             value={element.props.cornerRadius}
-            onChange={(e) => updateProps({ cornerRadius: parseInt(e.target.value) || 0 })}
-            className="w-full bg-neutral-700 text-white px-3 py-2 rounded text-sm"
+            onChange={(v) => updateProps({ cornerRadius: typeof v === 'number' ? v : 0 })}
             min={0}
             max={32}
+            step={1}
           />
         </div>
       </div>
@@ -219,15 +216,15 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         <label className="block text-sm text-neutral-400 mb-2">
           Shadow Blur: {element.props.shadow.blur}
         </label>
-        <input
-          type="range"
-          value={element.props.shadow.blur}
-          onChange={(e) => updateProps({
-            shadow: { ...element.props.shadow, blur: parseInt(e.target.value) }
-          })}
-          className="w-full"
+        <SliderField
           min={0}
           max={64}
+          step={1}
+          value={element.props.shadow.blur}
+          onValueChange={(v) =>
+            updateProps({ shadow: { ...element.props.shadow, blur: v } })
+          }
+          ariaLabel="Shadow blur"
         />
       </div>
 
@@ -236,21 +233,20 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         <label className="block text-sm text-neutral-400 mb-2">
           Line Highlights <span className="text-neutral-500">({totalLines} lines)</span>
         </label>
-        
+
         {/* Existing highlights */}
         {element.props.highlights.length > 0 && (
           <div className="space-y-1 mb-3">
             {element.props.highlights.map((h, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-center justify-between bg-neutral-700 px-2 py-1.5 rounded text-sm"
               >
                 <div className="flex items-center gap-2">
-                  <span 
-                    className={`w-2 h-2 rounded-full ${
-                      h.style === 'focus' ? 'bg-yellow-400' : 
-                      h.style === 'added' ? 'bg-green-400' : 'bg-red-400'
-                    }`} 
+                  <span
+                    className={`w-2 h-2 rounded-full ${h.style === 'focus' ? 'bg-yellow-400' :
+                        h.style === 'added' ? 'bg-green-400' : 'bg-red-400'
+                      }`}
                   />
                   <span className="text-white">
                     {h.from === h.to ? `Line ${h.from}` : `Lines ${h.from}-${h.to}`}
@@ -267,37 +263,38 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             ))}
           </div>
         )}
-        
+
         {/* Add new highlight */}
         <div className="space-y-2">
           <div className="flex gap-2">
-            <input
-              type="number"
+            <NumberField
+              value={highlightFrom === '' ? '' : Number(highlightFrom)}
+              onChange={(v) => setHighlightFrom(v === '' ? '' : String(v))}
+              min={1}
+              max={totalLines}
+              step={1}
               placeholder="From"
-              value={highlightFrom}
-              onChange={(e) => setHighlightFrom(e.target.value)}
-              className="w-20 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
+              className="w-24"
+            />
+            <NumberField
+              value={highlightTo === '' ? '' : Number(highlightTo)}
+              onChange={(v) => setHighlightTo(v === '' ? '' : String(v))}
               min={1}
               max={totalLines}
-            />
-            <input
-              type="number"
+              step={1}
               placeholder="To"
-              value={highlightTo}
-              onChange={(e) => setHighlightTo(e.target.value)}
-              className="w-20 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
-              min={1}
-              max={totalLines}
+              className="w-24"
             />
-            <select
+            <SelectField
               value={highlightStyle}
-              onChange={(e) => setHighlightStyle(e.target.value as 'focus' | 'added' | 'removed')}
-              className="flex-1 bg-neutral-700 text-white px-2 py-1.5 rounded text-sm"
-            >
-              <option value="focus">Focus</option>
-              <option value="added">Added</option>
-              <option value="removed">Removed</option>
-            </select>
+              onValueChange={(v) => setHighlightStyle(v as 'focus' | 'added' | 'removed')}
+              options={[
+                { value: 'focus', label: 'Focus' },
+                { value: 'added', label: 'Added' },
+                { value: 'removed', label: 'Removed' },
+              ]}
+              triggerClassName="bg-neutral-700 border-neutral-600 text-white px-2 py-1.5 rounded text-sm"
+            />
           </div>
           <button
             onClick={addHighlight}

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useLayoutEffect } from 'react';
 import { tokenizeCode, getThemeBackground, isLightTheme } from '../../utils/highlighter';
 import type { CodeThemeId } from '../../types';
 
@@ -32,6 +32,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const highlightRef = useRef<HTMLDivElement>(null);
   const [tokens, setTokens] = useState<LineTokens[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [height, setHeight] = useState<number>(160);
 
   // Sync scroll between textarea and highlight overlay
   const syncScroll = useCallback(() => {
@@ -62,6 +63,24 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       cancelled = true;
     };
   }, [value, language, theme]);
+
+  // Auto-grow textarea & overlay height to content
+  const adjustHeight = useCallback(() => {
+    const ta = textareaRef.current;
+    const hl = highlightRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    const next = Math.max(160, ta.scrollHeight);
+    ta.style.height = `${next}px`;
+    if (hl) {
+      hl.style.height = `${next}px`;
+    }
+    setHeight(next);
+  }, []);
+
+  useLayoutEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
@@ -256,12 +275,13 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       {/* Syntax highlighted overlay */}
       <div
         ref={highlightRef}
-        className="absolute inset-0 overflow-hidden pointer-events-none p-3 whitespace-pre"
+        className="absolute inset-x-0 top-0 overflow-hidden pointer-events-none p-3 whitespace-pre"
         style={{
           fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
           fontSize: '0.875rem',
           lineHeight: '1.5',
           tabSize: 2,
+          height,
         }}
         aria-hidden="true"
       >
@@ -292,7 +312,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         onKeyDown={handleKeyDown}
         onBlur={onBlur}
         onScroll={syncScroll}
-        className="relative w-full h-32 bg-transparent resize-y p-3 outline-none"
+        className="relative w-full bg-transparent resize-none p-3 outline-none overflow-hidden"
         style={{
           fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
           fontSize: '0.875rem',
@@ -301,6 +321,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           color: 'transparent',
           caretColor: caretColor,
           WebkitTextFillColor: 'transparent',
+          height,
         }}
         spellCheck={false}
         autoComplete="off"

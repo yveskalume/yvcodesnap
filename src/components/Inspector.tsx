@@ -1,12 +1,16 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
-import type { CodeElement, TextElement, ArrowElement } from '../types';
+
 import BackgroundPanel from './inspector/BackgroundPanel';
 import CanvasSizePanel from './inspector/CanvasSizePanel';
 import BrandingPanel from './inspector/BrandingPanel';
 import CodeInspector from './inspector/CodeInspector';
 import TextInspector from './inspector/TextInspector';
 import ArrowInspector from './inspector/ArrowInspector';
+import ShapeInspector from './inspector/ShapeInspector';
+import ImageInspector from './inspector/ImageInspector';
+import PresetsPanel from './inspector/PresetsPanel';
+import type { CodeElement, TextElement, ArrowElement, ShapeElement, ImageElement } from '../types';
 
 const DEFAULT_WIDTH = 320;
 const MIN_WIDTH = 260;
@@ -15,13 +19,16 @@ const EXPANDED_WIDTH = 420;
 
 const Inspector: React.FC = () => {
   const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
-  const { 
-    snap, 
-    selectedElementId, 
-    deleteElement, 
+  const [activeTab, setActiveTab] = useState<'settings' | 'presets'>('settings');
+  const {
+    snap,
+    selectedElementIds,
+    deleteElement,
     duplicateElement,
     moveElementUp,
     moveElementDown,
+    alignSelection,
+    distributeSelection,
   } = useCanvasStore();
 
   const dragStateRef = useRef({
@@ -31,8 +38,13 @@ const Inspector: React.FC = () => {
   });
 
   const selectedElement = useMemo(
-    () => snap.elements.find(el => el.id === selectedElementId),
-    [snap.elements, selectedElementId]
+    () => {
+      if (selectedElementIds.length === 1) {
+        return snap.elements.find(el => el.id === selectedElementIds[0]);
+      }
+      return null;
+    },
+    [snap.elements, selectedElementIds]
   );
 
   const handleResizeMove = useCallback((event: MouseEvent) => {
@@ -76,34 +88,30 @@ const Inspector: React.FC = () => {
       stopDragging();
     }
   ), [stopDragging]);
-  
+
   const handleDelete = useCallback(() => {
-    if (selectedElement) {
-      deleteElement(selectedElement.id);
+    if (selectedElementIds.length > 0) {
+      deleteElement();
     }
-  }, [selectedElement, deleteElement]);
-  
+  }, [selectedElementIds, deleteElement]);
+
   const handleDuplicate = useCallback(() => {
-    if (selectedElement) {
-      duplicateElement(selectedElement.id);
+    if (selectedElementIds.length > 0) {
+      duplicateElement();
     }
-  }, [selectedElement, duplicateElement]);
-  
+  }, [selectedElementIds, duplicateElement]);
+
   const handleMoveUp = useCallback(() => {
-    if (selectedElement) {
-      moveElementUp(selectedElement.id);
-    }
-  }, [selectedElement, moveElementUp]);
-  
+    selectedElementIds.forEach(id => moveElementUp(id));
+  }, [selectedElementIds, moveElementUp]);
+
   const handleMoveDown = useCallback(() => {
-    if (selectedElement) {
-      moveElementDown(selectedElement.id);
-    }
-  }, [selectedElement, moveElementDown]);
+    selectedElementIds.forEach(id => moveElementDown(id));
+  }, [selectedElementIds, moveElementDown]);
 
   return (
     <div
-      className="relative flex-shrink-0 h-full bg-[#09090b] border-l border-white/5 transition-[width] duration-150 ease-out"
+      className="relative shrink-0 h-full bg-[#09090b] border-l border-white/5 transition-[width] duration-150 ease-out"
       style={{ width }}
     >
       <div
@@ -122,7 +130,9 @@ const Inspector: React.FC = () => {
             {/* Header with Title and Element Actions */}
             <div className="flex items-center justify-between">
               <h3 className="text-white font-semibold text-sm uppercase tracking-wider">
-                {selectedElement.type}
+                {selectedElement.type === 'shape'
+                  ? (selectedElement as ShapeElement).props.kind
+                  : selectedElement.type}
               </h3>
               <div className="flex items-center gap-1">
                 <button
@@ -147,29 +157,29 @@ const Inspector: React.FC = () => {
               </div>
             </div>
 
-             {/* Layer Controls */}
-             <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={handleMoveDown}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                  Send Backward
-                </button>
-                <button
-                  onClick={handleMoveUp}
-                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                  </svg>
-                  Bring Forward
-                </button>
-             </div>
+            {/* Layer Controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleMoveDown}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                Send Backward
+              </button>
+              <button
+                onClick={handleMoveUp}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors border border-white/5"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                Bring Forward
+              </button>
+            </div>
 
-             <div className="h-px bg-white/5 w-full -mx-2" />
+            <div className="h-px bg-white/5 w-full -mx-2" />
 
             {/* Element-specific inspector */}
             <div className="inspector-content">
@@ -182,24 +192,120 @@ const Inspector: React.FC = () => {
               {selectedElement.type === 'arrow' && (
                 <ArrowInspector element={selectedElement as ArrowElement} />
               )}
+              {selectedElement.type === 'shape' && (
+                <ShapeInspector element={selectedElement as ShapeElement} />
+              )}
+              {selectedElement.type === 'image' && (
+                <ImageInspector element={selectedElement as ImageElement} />
+              )}
             </div>
           </div>
         ) : (
           <div className="space-y-6">
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Canvas Settings</h3>
-            <CanvasSizePanel />
-            
-            <div className="h-px bg-white/5 w-full" />
-            <BackgroundPanel />
-            
-            <div className="h-px bg-white/5 w-full" />
-            
-            <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Branding</h3>
-            <BrandingPanel />
+            {selectedElementIds.length > 1 ? (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex flex-col items-center justify-center pt-2 pb-6 text-neutral-400 border-b border-white/5">
+                  <span className="font-medium text-white mb-1">{selectedElementIds.length} elements selected</span>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-white font-semibold text-xs uppercase tracking-wider">Alignment</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button onClick={() => alignSelection('left')} className="flex flex-col items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                      <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20M8 6h10a2 2 0 012 2v2a2 2 0 01-2 2H8M8 14h6a2 2 0 012 2v2a2 2 0 01-2 2H8" /></svg>
+                      <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Left</span>
+                    </button>
+                    <button onClick={() => alignSelection('center')} className="flex flex-col items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                      <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v2m0 16v2M7 6h10a2 2 0 012 2v2a2 2 0 01-2 2H7M9 14h6a2 2 0 012 2v2a2 2 0 01-2 2H9" /></svg>
+                      <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Center</span>
+                    </button>
+                    <button onClick={() => alignSelection('right')} className="flex flex-col items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                      <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 2v20M16 6H6a2 2 0 00-2 2v2a2 2 0 002 2h10M16 14h-6a2 2 0 00-2 2v2a2 2 0 002 2h6" /></svg>
+                      <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Right</span>
+                    </button>
+                    <button onClick={() => alignSelection('top')} className="flex flex-col items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                      <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 4H2M6 8v10a2 2 0 002 2h2a2 2 0 002-2V8M14 8v6a2 2 0 002 2h2a2 2 0 002-2V8" /></svg>
+                      <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Top</span>
+                    </button>
+                    <button onClick={() => alignSelection('middle')} className="flex flex-col items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                      <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12h2m16 0h2M6 7v10a2 2 0 002 2h2a2 2 0 002-2V7M14 9v6a2 2 0 002 2h2a2 2 0 002-2V9" /></svg>
+                      <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Middle</span>
+                    </button>
+                    <button onClick={() => alignSelection('bottom')} className="flex flex-col items-center gap-2 p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                      <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 20H2M6 16V6a2 2 0 012-2h2a2 2 0 012 2v10M14 16v-6a2 2 0 012-2h2a2 2 0 012 2v6" /></svg>
+                      <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Bottom</span>
+                    </button>
+                  </div>
+                </div>
+
+                {selectedElementIds.length > 2 && (
+                  <div className="space-y-4">
+                    <h3 className="text-white font-semibold text-xs uppercase tracking-wider">Distribution</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={() => distributeSelection('horizontal')} className="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                        <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20M20 2v20M8 12h8" /></svg>
+                        <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Horizontal</span>
+                      </button>
+                      <button onClick={() => distributeSelection('vertical')} className="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 group transition-all">
+                        <svg className="w-5 h-5 text-neutral-400 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 4h20M2 20h20M12 8v8" /></svg>
+                        <span className="text-[10px] uppercase tracking-tight text-neutral-500 group-hover:text-neutral-300">Vertical</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Tabs */}
+                <div className="flex p-1 bg-white/5 rounded-xl border border-white/5">
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'settings' ? 'bg-white/10 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                  >
+                    Canvas
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('presets')}
+                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'presets' ? 'bg-white/10 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                  >
+                    Presets
+                  </button>
+                </div>
+
+                {activeTab === 'settings' ? (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div>
+                      <h3 className="text-white font-semibold text-xs uppercase tracking-wider mb-4">Canvas Settings</h3>
+                      <CanvasSizePanel />
+                    </div>
+
+                    <div className="h-px bg-white/5 w-full" />
+
+                    <div>
+                      <h3 className="text-white font-semibold text-xs uppercase tracking-wider mb-4">Appearance</h3>
+                      <BackgroundPanel />
+                    </div>
+
+                    <div className="h-px bg-white/5 w-full" />
+
+                    <div>
+                      <h3 className="text-white font-semibold text-xs uppercase tracking-wider mb-4">Branding</h3>
+                      <BrandingPanel />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                    <h3 className="text-white font-semibold text-xs uppercase tracking-wider mb-4">Design Presets</h3>
+                    <PresetsPanel />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
   );
 };
+
 export default memo(Inspector);

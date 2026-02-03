@@ -1,16 +1,22 @@
-import React, {useRef, useState, useEffect, useMemo, memo, useCallback} from 'react';
-import { Stage, Layer, Rect, Line, Text, Group, Path, Circle } from 'react-konva';
+import React, { useRef, useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { Stage, Layer, Rect, Line, Text, Group, Path, Circle, Transformer } from 'react-konva';
 import type Konva from 'konva';
-import { useCanvasStore, createCodeElement, createTextElement, createArrowElement } from '../store/canvasStore';
+import { useCanvasStore, createCodeElement, createTextElement, createArrowElement, createShapeElement } from '../store/canvasStore';
 import CodeBlock from './elements/CodeBlock';
 import TextBlock from './elements/TextBlock';
 import Arrow from './elements/Arrow';
+import Shape from './elements/Shape';
+import ImageLayer from './elements/ImageLayer';
+import GroupLayer from './elements/GroupLayer';
 import { SOCIAL_ICON_PATHS, SOCIAL_PLATFORMS_CONFIG } from './elements/SocialIcons';
-import type { CodeElement, TextElement, ArrowElement } from '../types';
+import { CommandMenu } from './CommandMenu';
+import CanvasContextMenuOverlay from './ui/CanvasContextMenuOverlay';
+import type { CodeElement, TextElement, ArrowElement, ShapeElement, ShapeKind, ImageElement, GroupElement } from '../types';
 
 const MIN_CANVAS = 320;
 const MAX_CANVAS = 10000;
 type ResizeEdge = 'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+const shapeTools: ShapeKind[] = ['rectangle', 'ellipse', 'line', 'polygon', 'star'];
 
 interface CanvasProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -19,11 +25,17 @@ interface CanvasProps {
 const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight - 120 });
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [stagePos, setStagePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [spaceHeld, setSpaceHeld] = useState(false);
+  const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const [showResizeHandles, setShowResizeHandles] = useState(false);
+  const [drawingArrowId, setDrawingArrowId] = useState<string | null>(null);
+  const [drawingCodeId, setDrawingCodeId] = useState<string | null>(null);
+  const arrowStartRef = useRef<{ x: number; y: number } | null>(null);
+  const codeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [drawingShapeId, setDrawingShapeId] = useState<string | null>(null);
+  const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [resizeState, setResizeState] = useState<{
     edge: ResizeEdge;
     startMouse: { x: number; y: number };
@@ -35,22 +47,34 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const hasInteractedRef = useRef(false);
   const spacePressedRef = useRef(false);
   const cancelClickRef = useRef(false);
-  const {
-    snap, 
-    zoom, 
-    setZoom,
-    updateMeta,
-    showGrid,
-    tool, 
-    selectedElementId,
-    selectElement, 
-    addElement,
-    updateElement,
-  } = useCanvasStore();
+  const transformerRef = useRef<Konva.Transformer>(null);
+  const snap = useCanvasStore((state) => state.snap);
+  const zoom = useCanvasStore((state) => state.zoom);
+  const setZoom = useCanvasStore((state) => state.setZoom);
+  const updateMeta = useCanvasStore((state) => state.updateMeta);
+  const showGrid = useCanvasStore((state) => state.showGrid);
+  const tool = useCanvasStore((state) => state.tool);
+  const selectedElementIds = useCanvasStore((state) => state.selectedElementIds);
+  const selectElement = useCanvasStore((state) => state.selectElement);
+  const addElement = useCanvasStore((state) => state.addElement);
+  const updateElement = useCanvasStore((state) => state.updateElement);
+  const deleteElement = useCanvasStore((state) => state.deleteElement);
+  const duplicateElement = useCanvasStore((state) => state.duplicateElement);
+  const copyToClipboard = useCanvasStore((state) => state.copyToClipboard);
+  const pasteFromClipboard = useCanvasStore((state) => state.pasteFromClipboard);
+  const groupSelection = useCanvasStore((state) => state.groupSelection);
+  const ungroupSelection = useCanvasStore((state) => state.ungroupSelection);
+  const selectAll = useCanvasStore((state) => state.selectAll);
+
+  const setContextMenu = useCanvasStore((state) => state.setContextMenu);
 
   const { width, height } = snap.meta;
   const { background } = snap;
   const [brandingAvatar, setBrandingAvatar] = useState<HTMLImageElement | null>(null);
+  const findElement = useCallback(
+    (id: string | null) => snap.elements.find((el) => el.id === id),
+    [snap.elements]
+  );
 
   // Handle resize
   useEffect(() => {
@@ -62,24 +86,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         });
       }
     };
-    
+
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
-
-  // Hide resize handles when clicking outside the canvas container
-  useEffect(() => {
-    const handleDocMouseDown = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      const target = e.target as Node | null;
-      if (target && !containerRef.current.contains(target)) {
-        setShowResizeHandles(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleDocMouseDown);
-    return () => document.removeEventListener('mousedown', handleDocMouseDown);
   }, []);
 
   // Keep stage centered initially and when viewport/layout changes (unless user already interacted)
@@ -93,29 +103,92 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     });
   }, [dimensions, width, height, zoom]);
 
-  // Track spacebar for panning with left click
+  // Track spacebar for panning with left click and Cmd+K for command menu
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Command Menu shortcut: Cmd+K or Ctrl+K
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandMenuOpen((prev) => !prev);
+        return;
+      }
+
+      // Select All: Cmd+A or Ctrl+A
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
+        e.preventDefault();
+        selectAll();
+        return;
+      }
+
+      // Copy: Cmd+C
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+        e.preventDefault();
+        copyToClipboard();
+        return;
+      }
+
+      // Paste: Cmd+V
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+        e.preventDefault();
+        pasteFromClipboard();
+        return;
+      }
+
+      // Group: Cmd+G
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === 'g') {
+        e.preventDefault();
+        groupSelection();
+        return;
+      }
+
+      // Ungroup: Cmd+Shift+G
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'g') {
+        e.preventDefault();
+        ungroupSelection();
+        return;
+      }
+
+      // Duplicate: Cmd+D
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+        e.preventDefault();
+        duplicateElement();
+        return;
+      }
+
+      // Delete/Backspace
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        // Don't delete if we are in an input or textarea
+        if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+        deleteElement();
+      }
+
       if (e.code === 'Space') {
         spacePressedRef.current = true;
         setSpaceHeld(true);
+        cancelClickRef.current = true;
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         spacePressedRef.current = false;
         setSpaceHeld(false);
         setIsPanning(false);
         panStartRef.current = null;
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [copyToClipboard, pasteFromClipboard, selectAll]);
 
   // Handle canvas resize via drag handles
   useEffect(() => {
@@ -191,47 +264,84 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     };
   }, [background.branding?.avatarUrl]);
 
-  // Calculate stage position to center the canvas
-  const getStagePosition = useCallback(() => {
+  const resetPan = useCallback(() => {
     const scaledWidth = width * zoom;
     const scaledHeight = height * zoom;
-    return {
-      x: Math.max(20, (dimensions.width - scaledWidth) / 2) + panOffset.x,
-      y: Math.max(20, (dimensions.height - scaledHeight) / 2) + panOffset.y,
-    };
-  }, [width, height, zoom, dimensions, panOffset]);
+    setStagePos({
+      x: Math.max(20, (dimensions.width - scaledWidth) / 2),
+      y: Math.max(20, (dimensions.height - scaledHeight) / 2),
+    });
+  }, [dimensions.width, dimensions.height, width, height, zoom]);
 
-  // Reset pan offset when zoom changes significantly or canvas is re-centered
-  const resetPan = useCallback(() => {
-    setPanOffset({ x: 0, y: 0 });
-  }, []);
+  const handleElementClick = (id: string, e?: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e) {
+      e.cancelBubble = true; // Prevent stage click
+    }
+    if (tool !== 'select') return;
 
+    const metaPressed = e?.evt ? (e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey) : false;
+    const isSelected = selectedElementIds.includes(id);
+
+    if (metaPressed) {
+      // If meta key is pressed, toggle selection
+      selectElement(id, true);
+    } else if (!isSelected) {
+      // If not selected and meta key is not pressed, select only this element
+      selectElement(id, false);
+    }
+    // If already selected and meta key is not pressed, do nothing (allows for drag)
+  };
+
+  const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent | MouseEvent>) => {
+    e.evt.preventDefault();
+    e.evt.stopPropagation();
+
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    // Get pointer position relative to page for the menu positioning
+    const { clientX, clientY } = e.evt;
+
+    // Get pointer position relative to stage for pasting
+    const pointerPos = stage.getPointerPosition();
+    if (!pointerPos) return;
+
+    // Convert stage mouse position to canvas coordinates (considering zoom/pan)
+    const transform = stage.getAbsoluteTransform().copy().invert();
+    const canvasPos = transform.point(pointerPos);
+
+    setContextMenu({
+      isOpen: true,
+      x: clientX,
+      y: clientY,
+      canvasX: canvasPos.x,
+      canvasY: canvasPos.y,
+    });
+  };
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (isPanning || cancelClickRef.current || resizeState) {
+    if (isPanning || cancelClickRef.current || resizeState || e.evt.button !== 0) {
       cancelClickRef.current = false;
       return;
     }
     const clickedOnEmpty = e.target === e.target.getStage() || e.target.name() === 'background';
-    
+
     if (clickedOnEmpty) {
       const stage = e.target.getStage();
       if (!stage) return;
-      
+
       const pos = stage.getPointerPosition();
       if (!pos) return;
-      
+
       // Convert screen position to canvas position
       const canvasX = (pos.x - stagePos.x) / zoom;
       const canvasY = (pos.y - stagePos.y) / zoom;
-      
+
       if (tool === 'code') {
         addElement(createCodeElement(canvasX - 300, canvasY - 150));
       } else if (tool === 'text') {
         addElement(createTextElement(canvasX, canvasY));
-      } else if (tool === 'arrow') {
-        addElement(createArrowElement(canvasX, canvasY));
       } else {
-        selectElement(null);
+        selectElement(null); // Clear selection if clicking on empty space
       }
     }
   };
@@ -247,7 +357,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           width={width}
           height={height}
           fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-          fillLinearGradientEndPoint={{ 
+          fillLinearGradientEndPoint={{
             x: width * Math.cos((background.gradient.angle * Math.PI) / 180),
             y: height * Math.sin((background.gradient.angle * Math.PI) / 180)
           }}
@@ -272,7 +382,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     if (!showGrid) return null;
     const gridSize = 50;
     const lines = [];
-    
+
     // Vertical lines
     for (let i = 0; i <= width; i += gridSize) {
       lines.push(
@@ -284,7 +394,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         />
       );
     }
-    
+
     // Horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       lines.push(
@@ -296,7 +406,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         />
       );
     }
-    
+
     return <>{lines}</>;
   }, [showGrid, width, height]);
 
@@ -363,10 +473,10 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     // Get active social platforms with their values
     const activeSocialPlatforms = branding.showSocial && branding.social
       ? SOCIAL_PLATFORMS_CONFIG.filter(p => branding.social[p.key as keyof typeof branding.social])
-          .map(p => ({
-            ...p,
-            value: branding.social[p.key as keyof typeof branding.social] || ''
-          }))
+        .map(p => ({
+          ...p,
+          value: branding.social[p.key as keyof typeof branding.social] || ''
+        }))
       : [];
 
     const hasTextContent = lines.length > 0;
@@ -439,6 +549,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
 
     return (
       <Group opacity={branding.opacity || 0.8}>
+
         {/* Avatar */}
         {hasAvatar && brandingAvatar && (
           <Circle
@@ -468,16 +579,16 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
             lineHeight={1.5}
           />
         )}
-        
+
         {/* Social icons with text */}
         {hasSocialIcons && activeSocialPlatforms.map((platform, index) => {
           const path = SOCIAL_ICON_PATHS[platform.key];
           if (!path) return null;
-          
+
           // Calculate position for this social item
           let itemX: number;
           let itemY: number;
-          
+
           if (socialLayout === 'vertical') {
             itemY = socialStartY + index * (socialItemHeight + iconGap - 4);
             itemX = anchorX;
@@ -548,8 +659,21 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     );
   }, [background.branding, width, height, brandingAvatar]);
 
-  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-    e.evt.preventDefault();
+  // Update Transformer nodes when selection changes
+  useEffect(() => {
+    if (transformerRef.current && stageRef.current) {
+      const stage = stageRef.current.getStage();
+      const selectedNodes = selectedElementIds
+        .map((id) => stage?.findOne(`#${id}`))
+        .filter((node) => node !== undefined) as Konva.Node[];
+
+      transformerRef.current.nodes(selectedNodes);
+      transformerRef.current.getLayer()?.batchDraw();
+    }
+  }, [selectedElementIds]);
+
+  const handleStageWheel = useCallback((evt: WheelEvent) => {
+    evt.preventDefault();
     const stage = stageRef.current;
     if (!stage) return;
 
@@ -557,7 +681,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     if (!pointer) return;
 
     const scaleBy = 1.05;
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const direction = evt.deltaY > 0 ? -1 : 1;
     const newZoom = Math.max(0.25, Math.min(256, zoom * (direction > 0 ? scaleBy : 1 / scaleBy)));
 
     const mousePointTo = {
@@ -573,7 +697,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     hasInteractedRef.current = true;
     setZoom(newZoom);
     setStagePos(newPos);
-  };
+  }, [stagePos.x, stagePos.y, zoom, setZoom]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const isMiddleClick = e.evt.button === 1;
@@ -581,7 +705,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     const isLeftClick = e.evt.button === 0;
     const isBackground = e.target === e.target.getStage() || e.target.name() === 'background';
     const isBackgroundDrag = isLeftClick && isBackground && tool === 'select' && !spacePressedRef.current;
-    if (!isMiddleClick && !isSpaceDrag && !isBackgroundDrag) return;
+
+    // If an element is selected and we're clicking on it, don't start panning
+    const clickedOnSelectedElement = selectedElementIds.length > 0 && selectedElementIds.includes(e.target.id());
+
+    if (!isMiddleClick && !isSpaceDrag && !isBackgroundDrag && !clickedOnSelectedElement) return;
 
     e.evt.preventDefault();
     hasInteractedRef.current = true;
@@ -591,6 +719,66 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   };
 
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (drawingArrowId && arrowStartRef.current) {
+      e.evt.preventDefault();
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (stage && pointer) {
+        const canvasX = (pointer.x - stagePos.x) / zoom;
+        const canvasY = (pointer.y - stagePos.y) / zoom;
+        updateElement(drawingArrowId, {
+          points: [
+            { x: arrowStartRef.current.x, y: arrowStartRef.current.y },
+            { x: canvasX, y: canvasY },
+          ],
+        });
+      }
+      return;
+    }
+    if (drawingCodeId && codeStartRef.current) {
+      e.evt.preventDefault();
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (stage && pointer) {
+        const canvasX = (pointer.x - stagePos.x) / zoom;
+        const canvasY = (pointer.y - stagePos.y) / zoom;
+        const start = codeStartRef.current!;
+        updateElement(drawingCodeId, {
+          x: Math.min(start.x, canvasX),
+          y: Math.min(start.y, canvasY),
+          width: Math.abs(canvasX - start.x),
+          height: Math.abs(canvasY - start.y),
+        });
+      }
+      return;
+    }
+    if (drawingShapeId && shapeStartRef.current) {
+      e.evt.preventDefault();
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (stage && pointer) {
+        const canvasX = (pointer.x - stagePos.x) / zoom;
+        const canvasY = (pointer.y - stagePos.y) / zoom;
+        const start = shapeStartRef.current!;
+        if (shapeTools.includes(tool as ShapeKind) && (tool as ShapeKind) === 'line') {
+          updateElement(drawingShapeId, {
+            points: [
+              { x: start.x, y: start.y },
+              { x: canvasX, y: canvasY },
+            ],
+          } as Partial<ShapeElement>);
+        } else {
+          updateElement(drawingShapeId, {
+            x: Math.min(start.x, canvasX),
+            y: Math.min(start.y, canvasY),
+            width: Math.abs(canvasX - start.x),
+            height: Math.abs(canvasY - start.y),
+          } as Partial<ShapeElement>);
+        }
+      }
+      return;
+    }
+
     if (!isPanning || !panStartRef.current) return;
     e.evt.preventDefault();
 
@@ -608,9 +796,226 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   const handleMouseUp = () => {
     setIsPanning(false);
     panStartRef.current = null;
+    // Only reset cancelClickRef if no drawing is active
+    if (!drawingArrowId && !drawingShapeId && !drawingCodeId) {
+      cancelClickRef.current = false;
+    }
   };
 
+  // Global listeners to keep arrow preview visible even when cursor leaves stage
+  useEffect(() => {
+    if ((!drawingArrowId || !arrowStartRef.current) && (!drawingShapeId || !shapeStartRef.current) && (!drawingCodeId || !codeStartRef.current)) return;
+
+    const handleMove = (ev: MouseEvent) => {
+      const stage = stageRef.current;
+      if (!stage) return;
+      // Update internal pointer position for Konva so getPointerPosition works
+      stage.setPointersPositions(ev as any);
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      const canvasX = (pointer.x - stagePos.x) / zoom;
+      const canvasY = (pointer.y - stagePos.y) / zoom;
+      if (drawingArrowId && arrowStartRef.current) {
+        updateElement(drawingArrowId, {
+          points: [
+            { x: arrowStartRef.current!.x, y: arrowStartRef.current!.y },
+            { x: canvasX, y: canvasY },
+          ],
+        });
+      } else if (drawingCodeId && codeStartRef.current) {
+        const start = codeStartRef.current!;
+        updateElement(drawingCodeId, {
+          x: Math.min(start.x, canvasX),
+          y: Math.min(start.y, canvasY),
+          width: Math.abs(canvasX - start.x),
+          height: Math.abs(canvasY - start.y),
+        });
+      } else if (drawingShapeId && shapeStartRef.current) {
+        const start = shapeStartRef.current!;
+        const current = findElement(drawingShapeId) as ShapeElement | undefined;
+        if (current?.props.kind === 'line') {
+          updateElement(drawingShapeId, {
+            points: [
+              { x: start.x, y: start.y },
+              { x: canvasX, y: canvasY },
+            ],
+          });
+        } else {
+          updateElement(drawingShapeId, {
+            x: Math.min(start.x, canvasX),
+            y: Math.min(start.y, canvasY),
+            width: Math.abs(canvasX - start.x),
+            height: Math.abs(canvasY - start.y),
+          } as any);
+        }
+      }
+    };
+
+    const handleUp = (ev: MouseEvent) => {
+      const stage = stageRef.current;
+      if (!stage) return;
+      stage.setPointersPositions(ev as any);
+      const pointer = stage.getPointerPosition();
+      if (!pointer) {
+        setDrawingArrowId(null);
+        arrowStartRef.current = null;
+        setDrawingShapeId(null);
+        shapeStartRef.current = null;
+        setDrawingCodeId(null);
+        codeStartRef.current = null;
+        return;
+      }
+      const endX = (pointer.x - stagePos.x) / zoom;
+      const endY = (pointer.y - stagePos.y) / zoom;
+      if (drawingArrowId && arrowStartRef.current) {
+        const start = arrowStartRef.current!;
+        const length = Math.hypot(endX - start.x, endY - start.y);
+        if (length < 4) {
+          deleteElement(drawingArrowId);
+          selectElement(null);
+        } else {
+          updateElement(drawingArrowId, {
+            points: [
+              { x: start.x, y: start.y },
+              { x: endX, y: endY },
+            ],
+          });
+          selectElement(drawingArrowId, false);
+        }
+        setDrawingArrowId(null);
+        arrowStartRef.current = null;
+      } else if (drawingCodeId && codeStartRef.current) {
+        const start = codeStartRef.current!;
+        const w = Math.abs(endX - start.x);
+        const h = Math.abs(endY - start.y);
+        if (w < 4 && h < 4) {
+          deleteElement(drawingCodeId);
+          selectElement(null);
+        } else {
+          updateElement(drawingCodeId, {
+            x: Math.min(start.x, endX),
+            y: Math.min(start.y, endY),
+            width: w,
+            height: h,
+          });
+          selectElement(drawingCodeId, false);
+        }
+        setDrawingCodeId(null);
+        codeStartRef.current = null;
+      } else if (drawingShapeId && shapeStartRef.current) {
+        const start = shapeStartRef.current!;
+        const w = Math.abs(endX - start.x);
+        const h = Math.abs(endY - start.y);
+        const length = Math.hypot(endX - start.x, endY - start.y);
+        const current = findElement(drawingShapeId) as ShapeElement | undefined;
+        if (w < 2 && h < 2 && length < 4) {
+          deleteElement(drawingShapeId);
+          selectElement(null);
+        } else if (current?.props.kind === 'line') {
+          updateElement(drawingShapeId, {
+            points: [
+              { x: start.x, y: start.y },
+              { x: endX, y: endY },
+            ],
+          });
+          selectElement(drawingShapeId, false);
+        } else {
+          updateElement(drawingShapeId, {
+            x: Math.min(start.x, endX),
+            y: Math.min(start.y, endY),
+            width: w,
+            height: h,
+          } as any);
+          selectElement(drawingShapeId, false);
+        }
+        setDrawingShapeId(null);
+        shapeStartRef.current = null;
+      }
+      cancelClickRef.current = true;
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [drawingArrowId, drawingShapeId, drawingCodeId, stagePos.x, stagePos.y, zoom, updateElement, deleteElement, selectElement, findElement]);
+
+  // Attach non-passive wheel listener to prevent scrolling warning
+  useEffect(() => {
+    const container = stageRef.current?.getStage()?.container();
+    if (!container) return;
+    const listener = (e: WheelEvent) => handleStageWheel(e);
+    container.addEventListener('wheel', listener, { passive: false });
+    return () => container.removeEventListener('wheel', listener);
+  }, [handleStageWheel]);
+
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e.evt.button !== 0 && e.evt.button !== 1) return; // Ignore right click, allow left and middle
+    if (tool === 'code' && e.evt.button === 0 && !spacePressedRef.current) {
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (!stage || !pointer) return;
+      const canvasX = (pointer.x - stagePos.x) / zoom;
+      const canvasY = (pointer.y - stagePos.y) / zoom;
+      const code = createCodeElement(canvasX, canvasY);
+      code.x = canvasX;
+      code.y = canvasY;
+      code.width = 0;
+      code.height = 0;
+      addElement(code);
+      selectElement(code.id, false);
+      setDrawingCodeId(code.id);
+      codeStartRef.current = { x: canvasX, y: canvasY };
+      cancelClickRef.current = true;
+      setShowResizeHandles(false);
+      return;
+    }
+
+    if (shapeTools.includes(tool as ShapeKind) && e.evt.button === 0 && !spacePressedRef.current) {
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (!stage || !pointer) return;
+      const canvasX = (pointer.x - stagePos.x) / zoom;
+      const canvasY = (pointer.y - stagePos.y) / zoom;
+      const shape = createShapeElement(tool as ShapeKind, canvasX, canvasY);
+      if (shape.props.kind !== 'line') {
+        shape.x = canvasX;
+        shape.y = canvasY;
+      }
+      addElement(shape);
+      selectElement(shape.id, false);
+      setDrawingShapeId(shape.id);
+      shapeStartRef.current = { x: canvasX, y: canvasY };
+      cancelClickRef.current = true;
+      setShowResizeHandles(false);
+      return;
+    }
+
+    if (tool === 'arrow' && e.evt.button === 0 && !spacePressedRef.current) {
+      const stage = e.target.getStage();
+      const pointer = stage?.getPointerPosition();
+      if (!stage || !pointer) return;
+      const canvasX = (pointer.x - stagePos.x) / zoom;
+      const canvasY = (pointer.y - stagePos.y) / zoom;
+      const arrow = createArrowElement(canvasX, canvasY);
+      arrow.points = [
+        { x: canvasX, y: canvasY },
+        { x: canvasX, y: canvasY },
+      ];
+      addElement(arrow);
+      selectElement(arrow.id, false);
+      setDrawingArrowId(arrow.id);
+      arrowStartRef.current = { x: canvasX, y: canvasY };
+      cancelClickRef.current = true;
+      setShowResizeHandles(false);
+      return;
+    }
+
     setShowResizeHandles(true);
     handleMouseDown(e);
   };
@@ -624,6 +1029,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     hasInteractedRef.current = true;
     cancelClickRef.current = true;
     setIsPanning(false);
+    setShowResizeHandles(false); // Hide Konva handles when canvas resize starts
     setResizeState({
       edge,
       startMouse: { x: e.clientX, y: e.clientY },
@@ -640,35 +1046,67 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     height: height * zoom,
   }), [stagePos.x, stagePos.y, width, height, zoom]);
 
-  // Handle wheel/pinch zoom and pan on canvas
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    // Check if it's a pinch zoom gesture (ctrlKey is true for pinch-to-zoom)
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      e.stopPropagation();
+  const wheelRaf = useRef<number | null>(null);
+  const wheelEventRef = useRef<{
+    deltaX: number;
+    deltaY: number;
+    ctrlKey: boolean;
+    metaKey: boolean;
+  } | null>(null);
 
-      const scaleBy = 1.05;
-      const minZoom = 0.1;
-      const maxZoom = 3;
+  useEffect(() => {
+    return () => {
+      if (wheelRaf.current) cancelAnimationFrame(wheelRaf.current);
+    };
+  }, []);
 
-      // Determine zoom direction
-      const direction = e.deltaY > 0 ? -1 : 1;
-      const newZoom = direction > 0 ? zoom * scaleBy : zoom / scaleBy;
+  // Handle wheel/pinch zoom and pan on canvas (debounced to next animation frame for smoothness)
+  const handleContainerWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    wheelEventRef.current = {
+      deltaX: e.deltaX,
+      deltaY: e.deltaY,
+      ctrlKey: e.ctrlKey,
+      metaKey: e.metaKey,
+    };
+    if (wheelRaf.current) return;
 
-      // Clamp zoom between min and max
-      const clampedZoom = Math.min(Math.max(newZoom, minZoom), maxZoom);
-      setZoom(clampedZoom);
-    } else {
-      // Two-finger scroll for panning
-      e.preventDefault();
-      e.stopPropagation();
+    wheelRaf.current = requestAnimationFrame(() => {
+      wheelRaf.current = null;
+      const evt = wheelEventRef.current;
+      wheelEventRef.current = null;
+      if (!evt) return;
 
-      setPanOffset(prev => ({
-        x: prev.x - e.deltaX,
-        y: prev.y - e.deltaY,
-      }));
-    }
-  }, [zoom, setZoom]);
+      // Pinch/trackpad zoom
+      if (evt.ctrlKey || evt.metaKey) {
+        const minZoom = 0.1;
+        const maxZoom = 3;
+        const zoomSpeed = 0.002; // smaller = smoother
+        const factor = Math.exp(-evt.deltaY * zoomSpeed);
+        const targetZoom = Math.min(Math.max(zoom * factor, minZoom), maxZoom);
+
+        // Keep the point under cursor stationary while zooming
+        const stage = stageRef.current?.getStage?.();
+        const pointer = stage?.getPointerPosition?.();
+        if (pointer) {
+          const worldX = (pointer.x - stagePos.x) / zoom;
+          const worldY = (pointer.y - stagePos.y) / zoom;
+          const newStagePos = {
+            x: pointer.x - worldX * targetZoom,
+            y: pointer.y - worldY * targetZoom,
+          };
+          setStagePos(newStagePos);
+        }
+
+        setZoom(targetZoom);
+      } else {
+        // Two-finger scroll for panning
+        setStagePos(prev => ({
+          x: prev.x - evt.deltaX,
+          y: prev.y - evt.deltaY,
+        }));
+      }
+    });
+  }, [zoom, stagePos]);
 
   // Prevent default browser zoom behavior on the container
   useEffect(() => {
@@ -689,11 +1127,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   }, []);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex-1 bg-neutral-900 overflow-hidden relative"
       style={{ cursor: isPanning ? 'grabbing' : tool !== 'select' ? 'crosshair' : spaceHeld ? 'grab' : 'grab' }}
-      onWheel={handleWheel}
+      onWheel={handleContainerWheel}
       onDoubleClick={(e) => {
         // Double-click on empty area to reset pan
         if (e.target === containerRef.current) {
@@ -706,11 +1144,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         width={dimensions.width}
         height={dimensions.height}
         onClick={handleStageClick}
-        onWheel={handleWheel}
         onMouseDown={handleStageMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onContextMenu={handleContextMenu}
         x={stagePos.x}
         y={stagePos.y}
         scaleX={zoom}
@@ -721,45 +1159,140 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           {brandStripElement}
           {brandingElement}
           {gridLines}
-          
-          {snap.elements.map((element) => {
-            if (!element.visible) return null;
-            
-            switch (element.type) {
+
+          {snap.elements.map((el) => {
+            if (!el.visible) return null;
+
+            const commonProps = {
+              isSelected: selectedElementIds.includes(el.id),
+              draggable: tool === 'select' && !el.locked,
+              onClick: (e: any) => handleElementClick(el.id, e),
+              onTap: (e: any) => handleElementClick(el.id, e),
+              onContextMenu: (e: any) => {
+                e.evt.preventDefault();
+                e.evt.stopPropagation();
+                if (!selectedElementIds.includes(el.id)) {
+                  selectElement(el.id, false);
+                }
+                handleContextMenu(e);
+              },
+              onDragStart: () => {
+                if (!selectedElementIds.includes(el.id)) {
+                  selectElement(el.id, false);
+                }
+              },
+              onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+                updateElement(el.id, { x: e.target.x(), y: e.target.y() });
+              },
+              onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
+                const node = e.target;
+                const scaleX = node.scaleX();
+                const scaleY = node.scaleY();
+                const rotation = node.rotation();
+
+                // Reset scale and rotation to 1 and 0, and apply changes to width/height
+                node.scaleX(1);
+                node.scaleY(1);
+                node.rotation(0);
+
+                updateElement(el.id, {
+                  x: node.x(),
+                  y: node.y(),
+                  width: Math.max(5, node.width() * scaleX),
+                  height: Math.max(5, node.height() * scaleY),
+                  rotation: rotation,
+                });
+              },
+            };
+
+            switch (el.type) {
               case 'code':
                 return (
                   <CodeBlock
-                    key={element.id}
-                    element={element as CodeElement}
-                    isSelected={selectedElementId === element.id}
-                    onSelect={() => selectElement(element.id)}
-                    onChange={(updates: Partial<CodeElement>) => updateElement(element.id, updates)}
+                    key={el.id}
+                    {...commonProps}
+                    element={el as CodeElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<CodeElement>) => updateElement(el.id, updates)}
                   />
                 );
               case 'text':
                 return (
                   <TextBlock
-                    key={element.id}
-                    element={element as TextElement}
-                    isSelected={selectedElementId === element.id}
-                    onSelect={() => selectElement(element.id)}
-                    onChange={(updates: Partial<TextElement>) => updateElement(element.id, updates)}
+                    key={el.id}
+                    {...commonProps}
+                    element={el as TextElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<TextElement>) => updateElement(el.id, updates)}
                   />
                 );
               case 'arrow':
                 return (
                   <Arrow
-                    key={element.id}
-                    element={element as ArrowElement}
-                    isSelected={selectedElementId === element.id}
-                    onSelect={() => selectElement(element.id)}
-                    onChange={(updates: Partial<ArrowElement>) => updateElement(element.id, updates)}
+                    key={el.id}
+                    {...commonProps}
+                    element={el as ArrowElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<ArrowElement>) => updateElement(el.id, updates)}
+                  />
+                );
+              case 'shape':
+                return (
+                  <Shape
+                    key={el.id}
+                    {...commonProps}
+                    element={el as ShapeElement}
+                    onSelect={() => selectElement(el.id)}
+                    onChange={(updates: Partial<ShapeElement>) => updateElement(el.id, updates)}
+                  />
+                );
+              case 'image':
+                return (
+                  <ImageLayer
+                    key={el.id}
+                    element={el as ImageElement}
+                    isSelected={selectedElementIds.includes(el.id)}
+                    onSelect={(e) => handleElementClick(el.id, e)}
+                    onContextMenu={(e) => {
+                      if (!selectedElementIds.includes(el.id)) {
+                        selectElement(el.id, false);
+                      }
+                      handleContextMenu(e);
+                    }}
+                    onChange={(updates) => updateElement(el.id, updates)}
+                  />
+                );
+              case 'group':
+                return (
+                  <GroupLayer
+                    key={el.id}
+                    element={el as GroupElement}
+                    onSelect={(e) => handleElementClick(el.id, e)}
+                    onContextMenu={(e) => {
+                      if (!selectedElementIds.includes(el.id)) {
+                        selectElement(el.id, false);
+                      }
+                      handleContextMenu(e);
+                    }}
+                    onChange={(updates) => updateElement(el.id, updates)}
                   />
                 );
               default:
                 return null;
             }
           })}
+
+          <Transformer
+            ref={transformerRef}
+            flipEnabled={false}
+            boundBoxFunc={(oldBox, newBox) => {
+              // limit resize
+              if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
+                return oldBox;
+              }
+              return newBox;
+            }}
+          />
         </Layer>
       </Stage>
 
@@ -778,7 +1311,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           ].map((h) => (
             <button
               key={h.edge}
-              className="pointer-events-auto absolute w-3 h-3 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded shadow-md border border-neutral-400"
+              className="pointer-events-auto absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded-[2px] shadow-sm border border-blue-400 hover:shadow hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
               style={{ left: h.x, top: h.y, cursor: h.cursor }}
               onMouseDown={(e) => handleResizeStart(h.edge as ResizeEdge, e)}
               aria-label={`Resize ${h.edge}`}
@@ -786,6 +1319,34 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           ))}
         </div>
       )}
+
+      {/* Command Menu */}
+      <CommandMenu
+        isOpen={commandMenuOpen}
+        onClose={() => setCommandMenuOpen(false)}
+        tool={tool}
+        setTool={(newTool) => {
+          useCanvasStore.setState({ tool: newTool });
+        }}
+        showGrid={showGrid}
+        setShowGrid={(show) => {
+          useCanvasStore.setState({ showGrid: show });
+        }}
+        zoom={zoom}
+        setZoom={setZoom}
+        onClearCanvas={() => {
+          // Clear all elements
+          useCanvasStore.setState((state) => ({
+            ...state,
+            snap: {
+              ...state.snap,
+              elements: [],
+            },
+          }));
+        }}
+      />
+      {/* Context Menu Overlay */}
+      <CanvasContextMenuOverlay />
     </div>
   );
 };

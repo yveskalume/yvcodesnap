@@ -10,6 +10,11 @@ import type {
   ArrowElement,
   Background,
   CanvasMeta,
+  Shadow,
+  ShapeElement,
+  ShapeKind,
+  ImageElement,
+  GroupElement,
 } from '../types';
 
 interface HistoryState {
@@ -17,39 +22,61 @@ interface HistoryState {
   future: Snap[];
 }
 
+export type ToolId = 'select' | 'code' | 'text' | 'image' | 'arrow' | 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+
 interface CanvasState {
   snap: Snap;
-  selectedElementId: string | null;
+  selectedElementIds: string[];
   zoom: number;
   showGrid: boolean;
-  tool: 'select' | 'code' | 'text' | 'arrow';
+  tool: ToolId;
+  clipboard: CanvasElement[] | null;
   history: HistoryState;
-  
+  contextMenu: {
+    isOpen: boolean;
+    x: number;
+    y: number;
+    canvasX: number;
+    canvasY: number;
+    targetId: string | null;
+  };
+
   // Actions
   setSnap: (snap: Snap) => void;
   updateMeta: (meta: Partial<CanvasMeta>) => void;
   setBackground: (background: Partial<Background>) => void;
-  
+
   addElement: (element: CanvasElement) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
-  deleteElement: (id: string) => void;
-  duplicateElement: (id: string) => void;
-  
-  selectElement: (id: string | null) => void;
+  deleteElement: (id?: string) => void;
+  duplicateElement: (id?: string) => void;
+
+  selectElement: (id: string | null, multi?: boolean) => void;
+  selectAll: () => void;
   setZoom: (zoom: number) => void;
   setShowGrid: (show: boolean) => void;
-  setTool: (tool: 'select' | 'code' | 'text' | 'arrow') => void;
-  
+  setTool: (tool: ToolId) => void;
+
   moveElementUp: (id: string) => void;
   moveElementDown: (id: string) => void;
-  
+  bringToFront: () => void;
+  sendToBack: () => void;
+
   undo: () => void;
   redo: () => void;
   saveToHistory: () => void;
-  
+  copyToClipboard: () => void;
+  pasteFromClipboard: (x?: number, y?: number) => void;
+
   newSnap: (meta: CanvasMeta) => void;
   exportSnap: () => string;
   importSnap: (json: string) => void;
+  groupSelection: () => void;
+  ungroupSelection: () => void;
+  alignSelection: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  distributeSelection: (direction: 'horizontal' | 'vertical') => void;
+  applyPreset: (preset: { background: Partial<Background>; shadow?: Shadow; cornerRadius?: number }) => void;
+  setContextMenu: (contextMenu: Partial<CanvasState['contextMenu']>) => void;
 }
 
 const MAX_PERSISTED_AVATAR_LENGTH = 350000;
@@ -100,84 +127,148 @@ const defaultSnap: Snap = {
   elements: [],
 };
 
+const getElementBBox = (el: CanvasElement) => {
+  if (el.type === 'arrow' || (el.type === 'shape' && (el as ShapeElement).props.kind === 'line' && (el as ShapeElement).points)) {
+    const pts = (el as any).points || [];
+    if (pts.length === 0) return { x: el.x, y: el.y, width: 0, height: 0 };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    pts.forEach((p: any) => {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    });
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  const width = (el as any).width || 0;
+  const height = (el as any).height || 0;
+  return { x: el.x, y: el.y, width, height };
+};
+
 export const useCanvasStore = create<CanvasState>()(
   persist(
     immer((set, get) => ({
       snap: defaultSnap,
-      selectedElementId: null,
+      selectedElementIds: [],
       zoom: 0.5,
       showGrid: false,
       tool: 'select',
+      clipboard: null,
       history: { past: [], future: [] },
-      
+      contextMenu: {
+        isOpen: false,
+        x: 0,
+        y: 0,
+        canvasX: 0,
+        canvasY: 0,
+        targetId: null,
+      },
+
       setSnap: (snap) => set((state) => {
         state.snap = snap;
       }),
-      
+
       updateMeta: (meta) => set((state) => {
         state.snap.meta = { ...state.snap.meta, ...meta };
       }),
-      
+
       setBackground: (background) => set((state) => {
         state.snap.background = { ...state.snap.background, ...background };
       }),
-      
+
       addElement: (element) => set((state) => {
         get().saveToHistory();
         state.snap.elements.push(element);
-        state.selectedElementId = element.id;
-        state.tool = 'select';
+        state.selectedElementIds = [element.id];
       }),
-      
+
       updateElement: (id, updates) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index !== -1) {
+          // record history before mutating
+          state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
+          state.history.future = [];
+          if (state.history.past.length > 50) state.history.past.shift();
+
           state.snap.elements[index] = { ...state.snap.elements[index], ...updates } as CanvasElement;
         }
       }),
-      
+
       deleteElement: (id) => set((state) => {
         get().saveToHistory();
-        state.snap.elements = state.snap.elements.filter((el) => el.id !== id);
-        if (state.selectedElementId === id) {
-          state.selectedElementId = null;
-        }
+        const idsToDelete = id ? [id] : state.selectedElementIds;
+        state.snap.elements = state.snap.elements.filter((el) => !idsToDelete.includes(el.id));
+        state.selectedElementIds = state.selectedElementIds.filter((selId) => !idsToDelete.includes(selId));
       }),
-      
+
       duplicateElement: (id) => set((state) => {
-        const element = state.snap.elements.find((el) => el.id === id);
-        if (element) {
-          get().saveToHistory();
-          const newElement = {
-            ...JSON.parse(JSON.stringify(element)),
-            id: uuidv4(),
-            x: element.x + 20,
-            y: element.y + 20,
-          };
-          state.snap.elements.push(newElement);
-          state.selectedElementId = newElement.id;
+        const idsToDuplicate = id ? [id] : state.selectedElementIds;
+        if (idsToDuplicate.length === 0) return;
+
+        get().saveToHistory();
+        const newIds: string[] = [];
+
+        idsToDuplicate.forEach((targetId) => {
+          const element = state.snap.elements.find((el) => el.id === targetId);
+          if (element) {
+            const newElement = {
+              ...JSON.parse(JSON.stringify(element)),
+              id: uuidv4(),
+              x: element.x + 20,
+              y: element.y + 20,
+            };
+
+            // Ensure width and height are present for text elements, if they were somehow missing
+            if (newElement.type === 'text') {
+              newElement.width = (newElement as TextElement).width || 200; // Default width for text
+              newElement.height = (newElement as TextElement).height || 40; // Default height for text
+            }
+
+            state.snap.elements.push(newElement);
+            newIds.push(newElement.id);
+          }
+        });
+
+        state.selectedElementIds = newIds;
+      }),
+
+      selectElement: (id, multi = false) => set((state) => {
+        if (id === null) {
+          if (!multi) state.selectedElementIds = [];
+          return;
+        }
+
+        if (multi) {
+          if (state.selectedElementIds.includes(id)) {
+            state.selectedElementIds = state.selectedElementIds.filter((selId) => selId !== id);
+          } else {
+            state.selectedElementIds.push(id);
+          }
+        } else {
+          state.selectedElementIds = [id];
         }
       }),
-      
-      selectElement: (id) => set((state) => {
-        state.selectedElementId = id;
+
+      selectAll: () => set((state) => {
+        state.selectedElementIds = state.snap.elements.map((el) => el.id);
       }),
-      
+
       setZoom: (zoom) => set((state) => {
         state.zoom = Math.max(0.25, Math.min(256, zoom));
       }),
-      
+
       setShowGrid: (show) => set((state) => {
         state.showGrid = show;
       }),
-      
+
       setTool: (tool) => set((state) => {
         state.tool = tool;
         if (tool !== 'select') {
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
-      
+
       moveElementUp: (id) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index < state.snap.elements.length - 1) {
@@ -186,7 +277,7 @@ export const useCanvasStore = create<CanvasState>()(
           state.snap.elements[index + 1] = temp;
         }
       }),
-      
+
       moveElementDown: (id) => set((state) => {
         const index = state.snap.elements.findIndex((el) => el.id === id);
         if (index > 0) {
@@ -195,7 +286,29 @@ export const useCanvasStore = create<CanvasState>()(
           state.snap.elements[index - 1] = temp;
         }
       }),
-      
+
+      bringToFront: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length === 0) return;
+
+        get().saveToHistory();
+
+        const selectedElements = state.snap.elements.filter(el => selectedIds.includes(el.id));
+        const remainingElements = state.snap.elements.filter(el => !selectedIds.includes(el.id));
+        state.snap.elements = [...remainingElements, ...selectedElements];
+      }),
+
+      sendToBack: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length === 0) return;
+
+        get().saveToHistory();
+
+        const selectedElements = state.snap.elements.filter(el => selectedIds.includes(el.id));
+        const remainingElements = state.snap.elements.filter(el => !selectedIds.includes(el.id));
+        state.snap.elements = [...selectedElements, ...remainingElements];
+      }),
+
       saveToHistory: () => set((state) => {
         state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
         state.history.future = [];
@@ -203,50 +316,361 @@ export const useCanvasStore = create<CanvasState>()(
           state.history.past.shift();
         }
       }),
-      
+
       undo: () => set((state) => {
         if (state.history.past.length > 0) {
           const previous = state.history.past.pop()!;
           state.history.future.push(JSON.parse(JSON.stringify(state.snap)));
           state.snap = previous;
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
-      
+
       redo: () => set((state) => {
         if (state.history.future.length > 0) {
           const next = state.history.future.pop()!;
           state.history.past.push(JSON.parse(JSON.stringify(state.snap)));
           state.snap = next;
-          state.selectedElementId = null;
+          state.selectedElementIds = [];
         }
       }),
-      
+
+      copyToClipboard: () => set((state) => {
+        if (state.selectedElementIds.length > 0) {
+          state.clipboard = state.snap.elements.filter((el) => state.selectedElementIds.includes(el.id));
+        }
+      }),
+
+      pasteFromClipboard: (x, y) => set((state) => {
+        if (state.clipboard && state.clipboard.length > 0) {
+          get().saveToHistory();
+          const newIds: string[] = [];
+
+          let offsetX = 20;
+          let offsetY = 20;
+
+          if (x !== undefined && y !== undefined) {
+            // Find min x and min y from clipboard items to calculate offset properly
+            let minX = Infinity;
+            let minY = Infinity;
+
+            state.clipboard.forEach(el => {
+              if (el.x < minX) minX = el.x;
+              if (el.y < minY) minY = el.y;
+            });
+
+            // If it's a single element, we use its coordinate to calculate absolute shift to x,y
+            // If it's a bunch of elements, they stay relative but the group top-left moves to x,y
+            offsetX = x - minX;
+            offsetY = y - minY;
+          }
+
+          state.clipboard.forEach((clipElement) => {
+            const newElement = {
+              ...JSON.parse(JSON.stringify(clipElement)),
+              id: uuidv4(),
+              x: clipElement.x + offsetX,
+              y: clipElement.y + offsetY,
+            };
+
+            // Ensure width and height are present for text elements
+            if (newElement.type === 'text') {
+              newElement.width = (newElement as TextElement).width || 200;
+              newElement.height = (newElement as TextElement).height || 40;
+            }
+
+            state.snap.elements.push(newElement);
+            newIds.push(newElement.id);
+          });
+
+          state.selectedElementIds = newIds;
+        }
+      }),
+
       newSnap: (meta) => set((state) => {
         state.snap = {
           ...defaultSnap,
           meta: { ...defaultSnap.meta, ...meta },
         };
-        state.selectedElementId = null;
+        state.selectedElementIds = [];
         state.history = { past: [], future: [] };
       }),
-      
+
       exportSnap: () => {
         return JSON.stringify(get().snap, null, 2);
       },
-      
+
       importSnap: (json) => {
         try {
           const snap = JSON.parse(json) as Snap;
           set((state) => {
             state.snap = snap;
-            state.selectedElementId = null;
+            state.selectedElementIds = [];
             state.history = { past: [], future: [] };
           });
         } catch (e) {
           console.error('Failed to import snap:', e);
         }
       },
+
+      groupSelection: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length < 2) return;
+
+        get().saveToHistory();
+
+        // Find elements to group
+        const groupElements = state.snap.elements.filter((el) => selectedIds.includes(el.id));
+
+        // Remove from main list
+        state.snap.elements = state.snap.elements.filter((el) => !selectedIds.includes(el.id));
+
+        // Calculate bounding box of the selection
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        groupElements.forEach(el => {
+          let elWidth = 0;
+          let elHeight = 0;
+
+          if (el.type === 'code' || el.type === 'image' || el.type === 'group') {
+            elWidth = (el as any).width || 0;
+            elHeight = (el as any).height || 0;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          } else if (el.type === 'text') {
+            elWidth = (el as any).width || 200;
+            elHeight = (el as any).height || 40;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          } else if (el.type === 'arrow' || (el.type === 'shape' && el.points)) {
+            const points = el.points || [];
+            points.forEach(p => {
+              minX = Math.min(minX, p.x);
+              minY = Math.min(minY, p.y);
+              maxX = Math.max(maxX, p.x);
+              maxY = Math.max(maxY, p.y);
+            });
+          } else if (el.type === 'shape') {
+            elWidth = (el as any).width || 100;
+            elHeight = (el as any).height || 100;
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + elWidth);
+            maxY = Math.max(maxY, el.y + elHeight);
+          }
+        });
+
+        // Handle case where no elements were found or dimensions are invalid
+        if (minX === Infinity) return;
+
+        // Make coordinates relative to the group origin (minX, minY)
+        const adjustedElements = groupElements.map(el => {
+          const cloned = JSON.parse(JSON.stringify(el));
+          cloned.x -= minX;
+          cloned.y -= minY;
+          if (cloned.points) {
+            cloned.points = cloned.points.map((p: any) => ({
+              x: p.x - minX,
+              y: p.y - minY
+            }));
+          }
+          return cloned;
+        });
+
+        const newGroup: GroupElement = {
+          id: uuidv4(),
+          type: 'group',
+          x: minX,
+          y: minY,
+          width: maxX - minX,
+          height: maxY - minY,
+          rotation: 0,
+          locked: false,
+          visible: true,
+          elements: adjustedElements
+        };
+
+        state.snap.elements.push(newGroup);
+        state.selectedElementIds = [newGroup.id];
+      }),
+
+      ungroupSelection: () => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        const groupsToUngroup = state.snap.elements.filter(el =>
+          el.type === 'group' && selectedIds.includes(el.id)
+        ) as GroupElement[];
+
+        if (groupsToUngroup.length === 0) return;
+
+        get().saveToHistory();
+
+        groupsToUngroup.forEach(group => {
+          // Remove group
+          state.snap.elements = state.snap.elements.filter(el => el.id !== group.id);
+
+          // Add children back with adjusted coordinates
+          group.elements.forEach(el => {
+            const restored = JSON.parse(JSON.stringify(el));
+            restored.x += group.x;
+            restored.y += group.y;
+            if (restored.points) {
+              restored.points = restored.points.map((p: any) => ({
+                x: p.x + group.x,
+                y: p.y + group.y
+              }));
+            }
+            state.snap.elements.push(restored);
+          });
+        });
+
+        state.selectedElementIds = [];
+      }),
+
+      alignSelection: (alignment) => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length < 1) return;
+
+        get().saveToHistory();
+
+        const selectedElements = state.snap.elements.filter(el => selectedIds.includes(el.id));
+
+        // Calculate bounding box of all selected elements
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        const bboxes = selectedElements.map(el => {
+          const bbox = getElementBBox(el);
+          minX = Math.min(minX, bbox.x);
+          minY = Math.min(minY, bbox.y);
+          maxX = Math.max(maxX, bbox.x + bbox.width);
+          maxY = Math.max(maxY, bbox.y + bbox.height);
+          return { id: el.id, ...bbox };
+        });
+
+        selectedElements.forEach((el, index) => {
+          const bbox = bboxes[index];
+          const elementIndex = state.snap.elements.findIndex(e => e.id === el.id);
+
+          let dx = 0;
+          let dy = 0;
+
+          if (alignment === 'left') dx = minX - bbox.x;
+          else if (alignment === 'center') dx = (minX + maxX) / 2 - (bbox.x + bbox.width / 2);
+          else if (alignment === 'right') dx = maxX - (bbox.x + bbox.width);
+          else if (alignment === 'top') dy = minY - bbox.y;
+          else if (alignment === 'middle') dy = (minY + maxY) / 2 - (bbox.y + bbox.height / 2);
+          else if (alignment === 'bottom') dy = maxY - (bbox.y + bbox.height);
+
+          if (dx !== 0 || dy !== 0) {
+            state.snap.elements[elementIndex].x += dx;
+            state.snap.elements[elementIndex].y += dy;
+
+            // Adjust points for arrows/lines
+            if ('points' in state.snap.elements[elementIndex]) {
+              const elWithPoints = state.snap.elements[elementIndex] as any;
+              elWithPoints.points = elWithPoints.points.map((p: any) => ({
+                x: p.x + dx,
+                y: p.y + dy
+              }));
+            }
+          }
+        });
+      }),
+
+      distributeSelection: (direction) => set((state) => {
+        const selectedIds = state.selectedElementIds;
+        if (selectedIds.length < 3) return; // Need at least 3 for distribution
+
+        get().saveToHistory();
+
+        const selectedElements = [...state.snap.elements.filter(el => selectedIds.includes(el.id))];
+
+        if (direction === 'horizontal') {
+          // Sort by x
+          selectedElements.sort((a, b) => a.x - b.x);
+          const first = getElementBBox(selectedElements[0]);
+          const last = getElementBBox(selectedElements[selectedElements.length - 1]);
+
+          // Calculate space between elements
+          // We want equal gaps between edges
+          const minLeft = first.x;
+          const maxRight = last.x + last.width;
+          const totalItemsWidth = selectedElements.reduce((sum, el) => sum + getElementBBox(el).width, 0);
+          const gap = (maxRight - minLeft - totalItemsWidth) / (selectedElements.length - 1);
+
+          let currentX = minLeft;
+          selectedElements.forEach((el) => {
+            const bbox = getElementBBox(el);
+            const dx = currentX - bbox.x;
+            const elementIndex = state.snap.elements.findIndex(e => e.id === el.id);
+
+            state.snap.elements[elementIndex].x += dx;
+            if ('points' in state.snap.elements[elementIndex]) {
+              const elWithPoints = state.snap.elements[elementIndex] as any;
+              elWithPoints.points = elWithPoints.points.map((p: any) => ({
+                x: p.x + dx,
+                y: p.y
+              }));
+            }
+            currentX += bbox.width + gap;
+          });
+        } else {
+          // Vertical
+          selectedElements.sort((a, b) => a.y - b.y);
+          const first = getElementBBox(selectedElements[0]);
+          const last = getElementBBox(selectedElements[selectedElements.length - 1]);
+
+          const minTop = first.y;
+          const maxBottom = last.y + last.height;
+          const totalItemsHeight = selectedElements.reduce((sum, el) => sum + getElementBBox(el).height, 0);
+          const gap = (maxBottom - minTop - totalItemsHeight) / (selectedElements.length - 1);
+
+          let currentY = minTop;
+          selectedElements.forEach((el) => {
+            const bbox = getElementBBox(el);
+            const dy = currentY - bbox.y;
+            const elementIndex = state.snap.elements.findIndex(e => e.id === el.id);
+
+            state.snap.elements[elementIndex].y += dy;
+            if ('points' in state.snap.elements[elementIndex]) {
+              const elWithPoints = state.snap.elements[elementIndex] as any;
+              elWithPoints.points = elWithPoints.points.map((p: any) => ({
+                x: p.x,
+                y: p.y + dy
+              }));
+            }
+            currentY += bbox.height + gap;
+          });
+        }
+      }),
+
+      applyPreset: (preset) => set((state) => {
+        get().saveToHistory();
+
+        if (preset.background) {
+          state.snap.background = { ...state.snap.background, ...preset.background };
+        }
+
+        if (preset.shadow || preset.cornerRadius !== undefined) {
+          state.snap.elements.forEach((el, index) => {
+            if (el.type === 'group') return;
+            const target = state.snap.elements[index] as any;
+            if (!target.props) return;
+
+            if (preset.shadow && (el.type === 'code' || el.type === 'image')) {
+              target.props.shadow = { ...preset.shadow };
+            }
+            if (preset.cornerRadius !== undefined && (el.type === 'code' || el.type === 'image' || el.type === 'text')) {
+              target.props.cornerRadius = preset.cornerRadius;
+            }
+          });
+        }
+      }),
+
+      setContextMenu: (updates) => set((state) => {
+        state.contextMenu = { ...state.contextMenu, ...updates };
+      }),
     })),
     {
       name: 'code-canvas-storage',
@@ -254,8 +678,8 @@ export const useCanvasStore = create<CanvasState>()(
         if (typeof window === 'undefined') {
           return {
             getItem: () => null,
-            setItem: () => {},
-            removeItem: () => {},
+            setItem: () => { },
+            removeItem: () => { },
           };
         }
 
@@ -321,6 +745,8 @@ export const createTextElement = (x: number, y: number): TextElement => ({
   x,
   y,
   rotation: 0,
+  width: 200,
+  height: 40,
   locked: false,
   visible: true,
   props: {
@@ -355,5 +781,47 @@ export const createArrowElement = (x: number, y: number): ArrowElement => ({
     color: '#60a5fa',
     thickness: 3,
     head: 'filled',
+  },
+});
+
+export const createShapeElement = (kind: ShapeKind, x: number, y: number): ShapeElement => ({
+  id: uuidv4(),
+  type: 'shape',
+  x: 0,
+  y: 0,
+  rotation: 0,
+  locked: false,
+  visible: true,
+  width: 0,
+  height: 0,
+  points: kind === 'line' ? [{ x, y }, { x, y }] : undefined,
+  props: {
+    kind,
+    stroke: '#60a5fa',
+    strokeWidth: 3,
+    fill: kind === 'rectangle' || kind === 'ellipse' ? '#60a5f4' : 'transparent',
+    sides: kind === 'polygon' ? 5 : kind === 'star' ? 5 : undefined,
+  },
+});
+
+export const createImageElement = (x: number, y: number, src: string, width: number, height: number): ImageElement => ({
+  id: uuidv4(),
+  type: 'image',
+  x,
+  y,
+  rotation: 0,
+  locked: false,
+  visible: true,
+  width,
+  height,
+  props: {
+    src,
+    width,
+    height,
+    opacity: 1,
+    cornerRadius: 0,
+    shadow: { blur: 0, spread: 0, color: 'rgba(0,0,0,0.4)' },
+    rotate: 0,
+    fit: 'contain',
   },
 });

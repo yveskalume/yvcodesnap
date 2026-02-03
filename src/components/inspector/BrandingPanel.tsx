@@ -3,13 +3,18 @@ import { useCanvasStore } from '../../store/canvasStore';
 import { useBrandingStore } from '../../store/brandingStore';
 import { FONT_FAMILIES } from '../../types';
 import { SocialIcon } from '../elements/SocialIcons';
+import SelectField from '../ui/SelectField';
+import ToggleSwitch from '../ui/ToggleSwitch';
+import SliderField from '../ui/SliderField';
+
+import { ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight } from 'lucide-react';
 
 const POSITION_OPTIONS = [
-  { value: 'top-left', label: 'Top Left' },
-  { value: 'top-right', label: 'Top Right' },
-  { value: 'bottom-left', label: 'Bottom Left' },
-  { value: 'bottom-right', label: 'Bottom Right' },
-] as const;
+  { value: 'top-left' as const, icon: ArrowUpLeft, label: 'Top Left' },
+  { value: 'top-right' as const, icon: ArrowUpRight, label: 'Top Right' },
+  { value: 'bottom-left' as const, icon: ArrowDownLeft, label: 'Bottom Left' },
+  { value: 'bottom-right' as const, icon: ArrowDownRight, label: 'Bottom Right' },
+];
 
 const SOCIAL_PLATFORMS = [
   { key: 'twitter', label: 'X (Twitter)', placeholder: '@username' },
@@ -154,21 +159,18 @@ const BrandingPanel: React.FC = () => {
     <div className="space-y-6">
       {/* Enable Branding */}
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+        <label
+          className="block text-xs font-medium text-neutral-500 uppercase tracking-wider"
+          htmlFor="branding-watermark-toggle"
+        >
           Branding Watermark
         </label>
-        <button
-          onClick={() => handleUpdatePreferences({ enabled: !preferences.enabled })}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-            preferences.enabled ? 'bg-blue-600' : 'bg-white/10'
-          }`}
-        >
-          <span
-            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-              preferences.enabled ? 'translate-x-4' : 'translate-x-1'
-            }`}
-          />
-        </button>
+        <ToggleSwitch
+          id="branding-watermark-toggle"
+          checked={preferences.enabled}
+          onCheckedChange={(checked) => handleUpdatePreferences({ enabled: checked })}
+          ariaLabel="Toggle branding watermark"
+        />
       </div>
 
       {preferences.enabled && (
@@ -179,19 +181,23 @@ const BrandingPanel: React.FC = () => {
               Position
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {POSITION_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleUpdatePreferences({ position: opt.value })}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
-                    preferences.position === opt.value
+              {POSITION_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleUpdatePreferences({ position: opt.value })}
+                    className={`flex items-center justify-center py-2 px-3 rounded-lg transition-all border ${preferences.position === opt.value
                       ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
                       : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+                      }`}
+                    title={opt.label}
+                    aria-label={opt.label}
+                  >
+                    <Icon size={18} />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -203,11 +209,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showAvatar: !preferences.showAvatar })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showAvatar
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showAvatar
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showAvatar ? 'Hide' : 'Show'}
               </button>
@@ -251,13 +256,13 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Size: {preferences.avatarSize}px
                 </label>
-                <input
-                  type="range"
+                <SliderField
                   min={32}
                   max={120}
+                  step={1}
                   value={preferences.avatarSize}
-                  onChange={(e) => handleUpdatePreferences({ avatarSize: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  onValueChange={(v) => handleUpdatePreferences({ avatarSize: v })}
+                  ariaLabel="Avatar size"
                 />
               </div>
             )}
@@ -271,11 +276,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showName: !preferences.showName })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showName
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showName
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showName ? 'Show' : 'Hide'}
               </button>
@@ -297,11 +301,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showWebsite: !preferences.showWebsite })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showWebsite
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showWebsite
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showWebsite ? 'Show' : 'Hide'}
               </button>
@@ -323,11 +326,10 @@ const BrandingPanel: React.FC = () => {
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showSocial: !preferences.showSocial })}
-                className={`text-xs px-2 py-0.5 rounded ${
-                  preferences.showSocial
-                    ? 'bg-blue-600/20 text-blue-400'
-                    : 'bg-white/5 text-neutral-500'
-                }`}
+                className={`text-xs px-2 py-0.5 rounded ${preferences.showSocial
+                  ? 'bg-blue-600/20 text-blue-400'
+                  : 'bg-white/5 text-neutral-500'
+                  }`}
               >
                 {preferences.showSocial ? 'Show' : 'Hide'}
               </button>
@@ -356,21 +358,19 @@ const BrandingPanel: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleUpdatePreferences({ socialLayout: 'horizontal' })}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
-                      preferences.socialLayout === 'horizontal'
-                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
-                    }`}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${preferences.socialLayout === 'horizontal'
+                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      }`}
                   >
                     Horizontal
                   </button>
                   <button
                     onClick={() => handleUpdatePreferences({ socialLayout: 'vertical' })}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
-                      preferences.socialLayout === 'vertical'
-                        ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                        : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
-                    }`}
+                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${preferences.socialLayout === 'vertical'
+                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      }`}
                   >
                     Vertical
                   </button>
@@ -381,13 +381,13 @@ const BrandingPanel: React.FC = () => {
                 <label className="block text-xs text-neutral-500 mb-2">
                   Icon Size: {preferences.socialIconSize}px
                 </label>
-                <input
-                  type="range"
-                  min="14"
-                  max="32"
+                <SliderField
+                  min={14}
+                  max={32}
+                  step={1}
                   value={preferences.socialIconSize}
-                  onChange={(e) => handleUpdatePreferences({ socialIconSize: parseInt(e.target.value) })}
-                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  onValueChange={(v) => handleUpdatePreferences({ socialIconSize: v })}
+                  ariaLabel="Social icon size"
                 />
               </div>
             </div>
@@ -402,17 +402,14 @@ const BrandingPanel: React.FC = () => {
             {/* Font Family */}
             <div className="mb-4">
               <label className="block text-xs text-neutral-500 mb-2">Font</label>
-              <select
+              <SelectField
                 value={preferences.fontFamily}
-                onChange={(e) => handleUpdatePreferences({ fontFamily: e.target.value })}
-                className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
-              >
-                {FONT_FAMILIES.text.map((font) => (
-                  <option key={font} value={font} style={{ fontFamily: font }}>
-                    {font}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(value) => handleUpdatePreferences({ fontFamily: value })}
+                options={FONT_FAMILIES.text.map((font) => ({
+                  value: font,
+                  label: <span style={{ fontFamily: font }}>{font}</span>,
+                }))}
+              />
             </div>
 
             {/* Font Size */}
@@ -420,13 +417,13 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Font Size: {preferences.fontSize}px
               </label>
-              <input
-                type="range"
-                min="10"
-                max="24"
+              <SliderField
+                min={10}
+                max={24}
+                step={1}
                 value={preferences.fontSize}
-                onChange={(e) => handleUpdatePreferences({ fontSize: parseInt(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) => handleUpdatePreferences({ fontSize: v })}
+                ariaLabel="Font size"
               />
             </div>
 
@@ -456,14 +453,13 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Opacity: {Math.round(preferences.opacity * 100)}%
               </label>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.05"
+              <SliderField
+                min={0.1}
+                max={1}
+                step={0.05}
                 value={preferences.opacity}
-                onChange={(e) => handleUpdatePreferences({ opacity: parseFloat(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) => handleUpdatePreferences({ opacity: v })}
+                ariaLabel="Opacity"
               />
             </div>
 
@@ -472,13 +468,13 @@ const BrandingPanel: React.FC = () => {
               <label className="block text-xs text-neutral-500 mb-2">
                 Padding: {preferences.padding}px
               </label>
-              <input
-                type="range"
-                min="8"
-                max="48"
+              <SliderField
+                min={8}
+                max={48}
+                step={1}
                 value={preferences.padding}
-                onChange={(e) => handleUpdatePreferences({ padding: parseInt(e.target.value) })}
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                onValueChange={(v) => handleUpdatePreferences({ padding: v })}
+                ariaLabel="Padding"
               />
             </div>
           </div>

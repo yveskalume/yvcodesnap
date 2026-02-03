@@ -29,7 +29,7 @@ export interface Branding {
   showName: boolean;
   showWebsite: boolean;
   showSocial: boolean;
-  showAvatar?: boolean;
+  showAvatar: boolean;
   fontSize: number;
   fontFamily: string;
   color: string;
@@ -80,6 +80,7 @@ export interface CodeBlockProps {
   lineHeight: number;
   lineNumbers: boolean;
   highlights: LineHighlight[];
+  focusMode?: boolean;
   padding: number;
   cornerRadius: number;
   shadow: Shadow;
@@ -109,7 +110,9 @@ export interface ArrowProps {
   labelPosition?: number; // 0-1, position along the arrow
 }
 
-export type ElementType = 'code' | 'text' | 'arrow';
+export type ShapeKind = 'rectangle' | 'ellipse' | 'line' | 'polygon' | 'star';
+
+export type ElementType = 'code' | 'text' | 'arrow' | 'shape' | 'image' | 'group';
 
 export interface BaseElement {
   id: string;
@@ -119,6 +122,7 @@ export interface BaseElement {
   rotation: number;
   locked: boolean;
   visible: boolean;
+  name?: string;
 }
 
 export interface CodeElement extends BaseElement {
@@ -130,6 +134,8 @@ export interface CodeElement extends BaseElement {
 
 export interface TextElement extends BaseElement {
   type: 'text';
+  width: number;
+  height: number;
   props: TextProps;
 }
 
@@ -139,7 +145,54 @@ export interface ArrowElement extends BaseElement {
   props: ArrowProps;
 }
 
-export type CanvasElement = CodeElement | TextElement | ArrowElement;
+export interface ShapeProps {
+  kind: ShapeKind;
+  stroke: string;
+  strokeWidth: number;
+  fill?: string;
+  sides?: number; // for polygon/star
+}
+
+export interface ShapeElement extends BaseElement {
+  type: 'shape';
+  width: number;
+  height: number;
+  props: ShapeProps;
+  points?: { x: number; y: number }[]; // for line
+}
+
+export interface ImageProps {
+  src: string;
+  width: number;
+  height: number;
+  opacity: number;
+  cornerRadius: number;
+  shadow: Shadow;
+  rotate: number;
+  fit: 'cover' | 'contain' | 'fill';
+}
+
+export interface ImageElement extends BaseElement {
+  type: 'image';
+  width: number;
+  height: number;
+  props: ImageProps;
+}
+
+export interface GroupElement extends BaseElement {
+  type: 'group';
+  elements: CanvasElement[];
+  width: number;
+  height: number;
+}
+
+export type CanvasElement =
+  | CodeElement
+  | TextElement
+  | ArrowElement
+  | ShapeElement
+  | ImageElement
+  | GroupElement;
 
 export interface AspectRatio {
   name: string;
@@ -163,11 +216,14 @@ export interface Snap {
 
 export const ASPECT_RATIOS: AspectRatio[] = [
   { name: 'Square (1:1)', width: 1080, height: 1080 },
-  { name: '16:9 (1920x1080)', width: 1920, height: 1080 },
-  { name: '16:9 (1600x900)', width: 1600, height: 900 },
-  { name: 'LinkedIn', width: 1200, height: 627 },
-  { name: 'Portrait', width: 1080, height: 1350 },
-  { name: 'Story', width: 1080, height: 1920 },
+  { name: 'Landscape (16:9)', width: 1920, height: 1080 },
+  { name: 'Portrait (4:5)', width: 1080, height: 1350 },
+  { name: 'Story (9:16)', width: 1080, height: 1920 },
+  { name: 'Twitter Post (16:9)', width: 1600, height: 900 },
+  { name: 'LinkedIn (4:5)', width: 1200, height: 1500 },
+  { name: 'Dribbble (4:3)', width: 1600, height: 1200 },
+  { name: 'Pinterest (2:3)', width: 1000, height: 1500 },
+  { name: 'Laptop (16:10)', width: 1920, height: 1200 },
 ];
 
 export const CODE_THEMES = [
