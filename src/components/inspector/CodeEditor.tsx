@@ -20,6 +20,18 @@ interface LineTokens {
   tokens: TokenInfo[];
 }
 
+const trimTrailingEmptyLines = (lines: LineTokens[]) => {
+  const trimmed = [...lines];
+  while (
+    trimmed.length > 1 &&
+    (trimmed[trimmed.length - 1].tokens.length === 0 ||
+      trimmed[trimmed.length - 1].tokens.every((t) => t.content.trim() === ''))
+  ) {
+    trimmed.pop();
+  }
+  return trimmed;
+};
+
 const CodeEditor: React.FC<CodeEditorProps> = ({
   value,
   onChange,
@@ -267,9 +279,17 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const textColor = isLight ? '#1f2937' : '#e5e7eb';
   const caretColor = isLight ? '#000000' : '#ffffff';
 
+  const displayLines = trimTrailingEmptyLines(
+    tokens.length > 0
+      ? tokens
+      : value.split('\n').map((line) => ({
+          tokens: [{ content: line, color: textColor }],
+        }))
+  );
+
   return (
     <div
-      className={`relative font-mono text-sm rounded overflow-hidden ${className}`}
+      className={`relative font-mono text-sm rounded overflow-hidden border border-neutral-200 dark:border-white/10 ${className}`}
       style={{ backgroundColor: bgColor }}
     >
       {/* Syntax highlighted overlay */}
@@ -288,7 +308,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         {isLoading ? (
           <span style={{ color: textColor, opacity: 0.5 }}>{value}</span>
         ) : (
-          tokens.map((line, lineIndex) => (
+          displayLines.map((line, lineIndex) => (
             <div key={lineIndex} style={{ minHeight: '1.5em' }}>
               {line.tokens.length === 0 ? (
                 <span>&nbsp;</span>

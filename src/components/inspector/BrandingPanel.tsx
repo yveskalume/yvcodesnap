@@ -160,7 +160,7 @@ const BrandingPanel: React.FC = () => {
       {/* Enable Branding */}
       <div className="flex items-center justify-between">
         <label
-          className="block text-xs font-medium text-neutral-500 uppercase tracking-wider"
+          className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider"
           htmlFor="branding-watermark-toggle"
         >
           Branding Watermark
@@ -177,7 +177,7 @@ const BrandingPanel: React.FC = () => {
         <div className="space-y-5">
           {/* Position */}
           <div>
-            <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">
               Position
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -188,8 +188,8 @@ const BrandingPanel: React.FC = () => {
                     key={opt.value}
                     onClick={() => handleUpdatePreferences({ position: opt.value })}
                     className={`flex items-center justify-center py-2 px-3 rounded-lg transition-all border ${preferences.position === opt.value
-                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      ? 'bg-blue-600/15 text-blue-700 border-blue-500/50 dark:text-blue-400 dark:bg-blue-600/20'
+                      : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 border-neutral-200 dark:bg-white/5 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/10 dark:border-white/5'
                       }`}
                     title={opt.label}
                     aria-label={opt.label}
@@ -204,14 +204,14 @@ const BrandingPanel: React.FC = () => {
           {/* Avatar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider">
                 Avatar
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showAvatar: !preferences.showAvatar })}
-                className={`text-xs px-2 py-0.5 rounded ${preferences.showAvatar
-                  ? 'bg-blue-600/20 text-blue-400'
-                  : 'bg-white/5 text-neutral-500'
+                  className={`text-xs px-2 py-0.5 rounded ${preferences.showAvatar
+                  ? 'bg-blue-600/15 text-blue-700 dark:bg-blue-600/20 dark:text-blue-400'
+                  : 'bg-neutral-100 text-neutral-600 dark:bg-white/5 dark:text-neutral-500'
                   }`}
               >
                 {preferences.showAvatar ? 'Hide' : 'Show'}
@@ -226,7 +226,7 @@ const BrandingPanel: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-neutral-500 group-hover:text-neutral-300">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-neutral-500 dark:text-neutral-500 group-hover:text-neutral-300">
                     <span>Upload</span>
                     <span className="text-[9px] text-neutral-600">PNG/JPG</span>
                   </div>
@@ -239,7 +239,7 @@ const BrandingPanel: React.FC = () => {
                   aria-label="Upload avatar"
                 />
               </label>
-              <div className="flex-1 text-[11px] text-neutral-500 space-y-1">
+              <div className="flex-1 text-[11px] text-neutral-600 dark:text-neutral-500 space-y-1">
                 <p>Use a square image for best results. Supported formats: PNG, JPG, SVG.</p>
                 {info.avatarUrl && (
                   <button
@@ -271,7 +271,7 @@ const BrandingPanel: React.FC = () => {
           {/* Name */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider">
                 Name
               </label>
               <button
@@ -289,14 +289,14 @@ const BrandingPanel: React.FC = () => {
               value={info.name}
               onChange={(e) => handleUpdateInfo({ name: e.target.value })}
               placeholder="Your Name"
-              className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+                className="w-full bg-neutral-100 text-neutral-900 border border-neutral-200 px-3 py-2 rounded-lg text-sm focus:border-blue-500/50 focus:outline-none dark:bg-white/5 dark:text-white dark:border-white/5"
             />
           </div>
 
           {/* Website */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider">
                 Website
               </label>
               <button
@@ -314,21 +314,21 @@ const BrandingPanel: React.FC = () => {
               value={info.website}
               onChange={(e) => handleUpdateInfo({ website: e.target.value })}
               placeholder="yourwebsite.com"
-              className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+                className="w-full bg-neutral-100 text-neutral-900 border border-neutral-200 px-3 py-2 rounded-lg text-sm focus:border-blue-500/50 focus:outline-none dark:bg-white/5 dark:text-white dark:border-white/5"
             />
           </div>
 
           {/* Social Media */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider">
                 Social Media
               </label>
               <button
                 onClick={() => handleUpdatePreferences({ showSocial: !preferences.showSocial })}
                 className={`text-xs px-2 py-0.5 rounded ${preferences.showSocial
-                  ? 'bg-blue-600/20 text-blue-400'
-                  : 'bg-white/5 text-neutral-500'
+                  ? 'bg-blue-600/15 text-blue-700 dark:bg-blue-600/20 dark:text-blue-400'
+                  : 'bg-neutral-100 text-neutral-600 dark:bg-white/5 dark:text-neutral-500'
                   }`}
               >
                 {preferences.showSocial ? 'Hide' : 'Show'}
@@ -336,17 +336,17 @@ const BrandingPanel: React.FC = () => {
             </div>
             <div className="space-y-2">
               {SOCIAL_PLATFORMS.map((platform) => (
-                <div key={platform.key} className="flex items-center gap-2">
-                  <div className="w-5 h-5 shrink-0 flex items-center justify-center text-neutral-400">
-                    <SocialIcon platform={platform.key} size={16} color="currentColor" />
-                  </div>
+                <div key={platform.key} className="relative">
                   <input
                     type="text"
                     value={info.social[platform.key as keyof typeof info.social] || ''}
                     onChange={(e) => handleUpdateSocial(platform.key, e.target.value)}
                     placeholder={platform.placeholder}
-                    className="flex-1 bg-white/5 text-white px-2 py-1.5 rounded-md text-xs border border-white/5 focus:border-blue-500/50 focus:outline-none"
+                    className="w-full pl-9 pr-2 bg-neutral-100 text-neutral-900 py-2 rounded-md text-xs border border-neutral-200 focus:border-blue-500/50 focus:outline-none dark:bg-white/5 dark:text-white dark:border-white/5"
                   />
+                  <div className="absolute inset-y-0 left-2 flex items-center text-neutral-400 pointer-events-none">
+                    <SocialIcon platform={platform.key} size={16} color="currentColor" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -354,13 +354,13 @@ const BrandingPanel: React.FC = () => {
             {/* Social Icons Layout */}
             <div className="mt-4 space-y-3">
               <div>
-                <label className="block text-xs text-neutral-500 mb-2">Layout</label>
+                <label className="block text-xs text-neutral-600 dark:text-neutral-500 mb-2">Layout</label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleUpdatePreferences({ socialLayout: 'horizontal' })}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${preferences.socialLayout === 'horizontal'
-                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      ? 'bg-blue-600/15 text-blue-700 border-blue-500/50 dark:bg-blue-600/20 dark:text-blue-400'
+                      : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 border-neutral-200 dark:bg-white/5 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/10 dark:border-white/5'
                       }`}
                   >
                     Horizontal
@@ -368,8 +368,8 @@ const BrandingPanel: React.FC = () => {
                   <button
                     onClick={() => handleUpdatePreferences({ socialLayout: 'vertical' })}
                     className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all border ${preferences.socialLayout === 'vertical'
-                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
-                      : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border-white/5'
+                      ? 'bg-blue-600/15 text-blue-700 border-blue-500/50 dark:bg-blue-600/20 dark:text-blue-400'
+                      : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 border-neutral-200 dark:bg-white/5 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/10 dark:border-white/5'
                       }`}
                   >
                     Vertical
@@ -378,7 +378,7 @@ const BrandingPanel: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs text-neutral-500 mb-2">
+                <label className="block text-xs text-neutral-600 dark:text-neutral-500 mb-2">
                   Icon Size: {preferences.socialIconSize}px
                 </label>
                 <SliderField
@@ -395,13 +395,13 @@ const BrandingPanel: React.FC = () => {
 
           {/* Styling */}
           <div className="pt-4 border-t border-white/5">
-            <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">
+            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-3">
               Styling
             </label>
 
             {/* Font Family */}
             <div className="mb-4">
-              <label className="block text-xs text-neutral-500 mb-2">Font</label>
+              <label className="block text-xs text-neutral-600 dark:text-neutral-500 mb-2">Font</label>
               <SelectField
                 value={preferences.fontFamily}
                 onValueChange={(value) => handleUpdatePreferences({ fontFamily: value })}
@@ -414,7 +414,7 @@ const BrandingPanel: React.FC = () => {
 
             {/* Font Size */}
             <div className="mb-4">
-              <label className="block text-xs text-neutral-500 mb-2">
+              <label className="block text-xs text-neutral-600 dark:text-neutral-500 mb-2">
                 Font Size: {preferences.fontSize}px
               </label>
               <SliderField
@@ -429,28 +429,28 @@ const BrandingPanel: React.FC = () => {
 
             {/* Color */}
             <div className="mb-4">
-              <label className="block text-xs text-neutral-500 mb-2">Color</label>
-              <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
+              <label className="block text-xs text-neutral-600 dark:text-neutral-500 mb-2">Color</label>
+              <div className="flex gap-2 items-center p-2 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
                 <div className="w-6 h-6 rounded overflow-hidden relative border border-white/10 shrink-0">
                   <input
                     type="color"
                     value={preferences.color}
                     onChange={(e) => handleUpdatePreferences({ color: e.target.value })}
-                    className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer"
+                    className="color-input absolute inset-[-2px] w-[calc(100%+4px)] h-[calc(100%+4px)]"
                   />
                 </div>
                 <input
                   type="text"
                   value={preferences.color}
                   onChange={(e) => handleUpdatePreferences({ color: e.target.value })}
-                  className="w-full bg-transparent text-white text-xs focus:outline-none font-mono"
+                  className="w-full bg-transparent text-neutral-900 dark:text-white text-xs focus:outline-none font-mono"
                 />
               </div>
             </div>
 
             {/* Opacity */}
             <div className="mb-4">
-              <label className="block text-xs text-neutral-500 mb-2">
+              <label className="block text-xs text-neutral-600 dark:text-neutral-500 mb-2">
                 Opacity: {Math.round(preferences.opacity * 100)}%
               </label>
               <SliderField
@@ -465,7 +465,7 @@ const BrandingPanel: React.FC = () => {
 
             {/* Padding */}
             <div>
-              <label className="block text-xs text-neutral-500 mb-2">
+              <label className="block text-xs text-neutral-600 dark:text-neutral-500 mb-2">
                 Padding: {preferences.padding}px
               </label>
               <SliderField

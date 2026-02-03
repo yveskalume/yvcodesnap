@@ -25,14 +25,14 @@ const ImageInspector: React.FC<ImageInspectorProps> = ({ element }) => {
             {/* Dimensions (Read-only for now, or editable?) */}
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="block text-sm text-neutral-400 mb-2">Width</label>
-                    <div className="px-3 py-2 bg-white/5 rounded-md text-sm text-neutral-400 border border-white/5 cursor-not-allowed">
+                    <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">Width</label>
+                    <div className="px-3 py-2 bg-neutral-100 dark:bg-white/5 rounded-md text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-white/5 cursor-not-allowed">
                         {Math.round(element.width)}px
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm text-neutral-400 mb-2">Height</label>
-                    <div className="px-3 py-2 bg-white/5 rounded-md text-sm text-neutral-400 border border-white/5 cursor-not-allowed">
+                    <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">Height</label>
+                    <div className="px-3 py-2 bg-neutral-100 dark:bg-white/5 rounded-md text-sm text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-white/5 cursor-not-allowed">
                         {Math.round(element.height)}px
                     </div>
                 </div>
@@ -40,7 +40,7 @@ const ImageInspector: React.FC<ImageInspectorProps> = ({ element }) => {
 
             {/* Opacity */}
             <div>
-                <label className="block text-sm text-neutral-400 mb-2">
+                <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">
                     Opacity: {Math.round(element.props.opacity * 100)}%
                 </label>
                 <SliderField
@@ -55,7 +55,7 @@ const ImageInspector: React.FC<ImageInspectorProps> = ({ element }) => {
 
             {/* Corner Radius */}
             <div>
-                <label className="block text-sm text-neutral-400 mb-2">Corner Radius</label>
+                <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">Corner Radius</label>
                 <NumberField
                     value={element.props.cornerRadius}
                     onChange={(v) => updateProps({ cornerRadius: typeof v === 'number' ? v : 0 })}
@@ -67,7 +67,7 @@ const ImageInspector: React.FC<ImageInspectorProps> = ({ element }) => {
 
             {/* Shadow */}
             <div>
-                <label className="block text-sm text-neutral-400 mb-2">
+                <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">
                     Shadow Blur: {element.props.shadow.blur}
                 </label>
                 <SliderField
@@ -84,7 +84,7 @@ const ImageInspector: React.FC<ImageInspectorProps> = ({ element }) => {
 
             {/* Fit Mode */}
             <div>
-                <label className="block text-sm text-neutral-400 mb-2">Fit Mode</label>
+                <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">Fit Mode</label>
                 <SelectField
                     value={element.props.fit}
                     onValueChange={(v) => updateProps({ fit: v as 'cover' | 'contain' | 'fill' })}

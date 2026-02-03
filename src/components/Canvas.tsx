@@ -391,6 +391,30 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   };
 
   // Grid overlay - memoized for performance
+  const getLuminance = (hex: string) => {
+    const normalized = hex.replace('#', '');
+    const value = normalized.length === 3
+      ? normalized.split('').map((c) => c + c).join('')
+      : normalized.padEnd(6, '0').slice(0, 6);
+    const r = parseInt(value.slice(0, 2), 16) / 255;
+    const g = parseInt(value.slice(2, 4), 16) / 255;
+    const b = parseInt(value.slice(4, 6), 16) / 255;
+    const toLin = (v: number) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    const [lr, lg, lb] = [toLin(r), toLin(g), toLin(b)];
+    return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+  };
+
+  const gridStroke = useMemo(() => {
+    // Pick a representative background color for contrast
+    const sampleHex =
+      background.type === 'solid'
+        ? background.solid.color || '#ffffff'
+        : background.gradient?.from || '#ffffff';
+    const luminance = getLuminance(sampleHex);
+    const isLightBg = luminance > 0.5;
+    return isLightBg ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.12)';
+  }, [background]);
+
   const gridLines = useMemo(() => {
     if (!showGrid) return null;
     const gridSize = 50;
@@ -402,7 +426,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         <Line
           key={`v-${i}`}
           points={[i, 0, i, height]}
-          stroke="rgba(255,255,255,0.1)"
+          stroke={gridStroke}
           strokeWidth={1}
         />
       );
@@ -414,14 +438,14 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
         <Line
           key={`h-${i}`}
           points={[0, i, width, i]}
-          stroke="rgba(255,255,255,0.1)"
+          stroke={gridStroke}
           strokeWidth={1}
         />
       );
     }
 
     return <>{lines}</>;
-  }, [showGrid, width, height]);
+  }, [showGrid, width, height, gridStroke]);
 
   // Brand strip - memoized
   const brandStripElement = useMemo(() => {
@@ -1142,8 +1166,11 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
   return (
     <div
       ref={containerRef}
-      className="flex-1 bg-neutral-900 overflow-hidden relative"
-      style={{ cursor: isPanning ? 'grabbing' : tool !== 'select' ? 'crosshair' : spaceHeld ? 'grab' : 'grab' }}
+      className="flex-1 bg-neutral-200 dark:bg-neutral-900 overflow-hidden relative touch-none"
+      style={{
+        cursor: isPanning ? 'grabbing' : tool !== 'select' ? 'crosshair' : spaceHeld ? 'grab' : 'grab',
+        touchAction: 'none' // Prevent default touch behaviors
+      }}
       onWheel={handleContainerWheel}
       onDoubleClick={(e) => {
         // Double-click on empty area to reset pan
@@ -1324,7 +1351,7 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
           ].map((h) => (
             <button
               key={h.edge}
-              className="pointer-events-auto absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 bg-white text-black rounded-[2px] shadow-sm border border-blue-400 hover:shadow hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+              className="pointer-events-auto absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-neutral-800 text-black dark:text-white rounded-[2px] shadow-sm border border-blue-400 dark:border-blue-500 hover:shadow hover:border-blue-500 dark:hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
               style={{ left: h.x, top: h.y, cursor: h.cursor }}
               onMouseDown={(e) => handleResizeStart(h.edge as ResizeEdge, e)}
               aria-label={`Resize ${h.edge}`}

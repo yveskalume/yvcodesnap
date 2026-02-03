@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import type Konva from 'konva';
 import { useNavigate } from 'react-router-dom';
 import Canvas from './Canvas';
@@ -17,6 +17,8 @@ export default function Editor() {
     const navigate = useNavigate();
     const { snap, selectElement } = useCanvasStore();
     const { addRecentSnap } = useRecentSnapsStore();
+    const [showLayersPanel, setShowLayersPanel] = useState(true);
+    const [showInspector, setShowInspector] = useState(true);
 
     const { commands } = useAppCommands();
 
@@ -92,16 +94,75 @@ export default function Editor() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [commands, selectElement]);
 
+    // Auto-hide panels on mobile
+    useEffect(() => {
+        const handleResize = () => {
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+                setShowLayersPanel(false);
+                setShowInspector(false);
+            } else {
+                setShowLayersPanel(true);
+                setShowInspector(true);
+            }
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return (
-        <div className="h-screen flex flex-col bg-[#09090b] text-white">
+        <div className="h-screen flex flex-col bg-white dark:bg-[#09090b] text-neutral-900 dark:text-white">
             <FontLoader />
-            <Toaster theme="dark" position="top-center" toastOptions={{ duration: 2600 }} />
-            <TopBar stageRef={stageRef} onGoHome={handleGoToMainScreen} />
-            <div className="flex-1 flex overflow-hidden">
-                <LayersPanel />
+            <Toaster position="top-center" toastOptions={{ duration: 2600 }} />
+            <TopBar
+                stageRef={stageRef}
+                onGoHome={handleGoToMainScreen}
+                onToggleLayers={() => setShowLayersPanel(!showLayersPanel)}
+                onToggleInspector={() => setShowInspector(!showInspector)}
+                showLayersPanel={showLayersPanel}
+                showInspector={showInspector}
+            />
+            <div className="flex-1 flex overflow-hidden relative">
+                {/* Layers Panel - Collapsible on mobile */}
+                <div className={`
+                    absolute md:relative z-30 h-full
+                    transition-transform duration-300 ease-in-out
+                    ${showLayersPanel ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                    ${showLayersPanel ? 'md:block' : 'md:hidden'}
+                `}>
+                    <LayersPanel />
+                </div>
+
+                {/* Backdrop for mobile */}
+                {showLayersPanel && (
+                    <div
+                        className="md:hidden fixed inset-0 bg-black/50 z-20"
+                        onClick={() => setShowLayersPanel(false)}
+                    />
+                )}
+
                 <Toolbar />
                 <Canvas stageRef={stageRef} />
-                <Inspector />
+
+                {/* Inspector Panel - Collapsible on mobile */}
+                <div className={`
+                    absolute md:relative right-0 z-30 h-full
+                    transition-transform duration-300 ease-in-out
+                    ${showInspector ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+                    ${showInspector ? 'md:block' : 'md:hidden'}
+                `}>
+                    <Inspector />
+                </div>
+
+                {/* Backdrop for mobile */}
+                {showInspector && (
+                    <div
+                        className="md:hidden fixed inset-0 bg-black/50 z-20"
+                        onClick={() => setShowInspector(false)}
+                    />
+                )}
             </div>
         </div>
     );

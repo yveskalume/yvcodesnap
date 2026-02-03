@@ -72,23 +72,23 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
       {/* Position */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">X</label>
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">X</label>
           <input
             type="number"
             value={props.kind === 'line' && element.points ? element.points[0].x : element.x}
             onChange={(e) => updatePosition({ x: Number(e.target.value) })}
             onBlur={saveToHistory}
-            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+            className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Y</label>
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">Y</label>
           <input
             type="number"
             value={props.kind === 'line' && element.points ? element.points[0].y : element.y}
             onChange={(e) => updatePosition({ y: Number(e.target.value) })}
             onBlur={saveToHistory}
-            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+            className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
       </div>
@@ -96,7 +96,7 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
       {/* Rotation */}
       {props.kind !== 'line' && (
         <div>
-          <label className="block text-sm text-neutral-400 mb-2">
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">
             Rotation: {Math.round((element.rotation || 0) * 10) / 10}°
           </label>
           <SliderField
@@ -113,50 +113,50 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
       {/* Dimensions */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Width</label>
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">Width</label>
           <input
             type="number"
             value={Math.round(width)}
             onChange={(e) => updateSize({ width: Math.max(1, Number(e.target.value) || width) })}
             onBlur={saveToHistory}
-            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+            className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Height</label>
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">Height</label>
           <input
             type="number"
             value={Math.round(height)}
             onChange={(e) => updateSize({ height: Math.max(1, Number(e.target.value) || height) })}
             onBlur={saveToHistory}
-            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+            className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Stroke */}
       <div>
-        <label className="block text-sm text-neutral-400 mb-2">Stroke</label>
-        <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
-          <div className="w-7 h-7 rounded overflow-hidden relative border border-white/10 shrink-0">
+        <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">Stroke</label>
+        <div className="flex gap-2 items-center p-2 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
+          <div className="w-7 h-7 rounded overflow-hidden relative border border-neutral-300 dark:border-white/10 shrink-0">
             <input
               type="color"
               value={props.stroke}
               onChange={(e) => updateProps({ stroke: e.target.value })}
-              className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer p-0 m-0 border-none"
+              className="color-input absolute inset-[-2px] w-[calc(100%+4px)] h-[calc(100%+4px)]"
             />
           </div>
           <input
             type="text"
             value={props.stroke}
             onChange={(e) => updateProps({ stroke: e.target.value })}
-            className="flex-1 bg-transparent text-white text-sm focus:outline-none font-mono"
+            className="flex-1 bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none font-mono"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm text-neutral-400 mb-2">
+        <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">
           Stroke Width: {props.strokeWidth}px
         </label>
         <SliderField
@@ -173,7 +173,7 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
       {canFill && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm text-neutral-400">Fill</label>
+            <label className="text-sm text-neutral-600 dark:text-neutral-400">Fill</label>
             <ToggleSwitch
               checked={!!props.fill && props.fill !== 'transparent'}
               onCheckedChange={(checked) =>
@@ -182,20 +182,20 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
               ariaLabel="Toggle fill"
             />
           </div>
-          <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
-            <div className="w-7 h-7 rounded overflow-hidden relative border border-white/10 shrink-0">
+          <div className="flex gap-2 items-center p-2 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
+            <div className="w-7 h-7 rounded overflow-hidden relative border border-neutral-300 dark:border-white/10 shrink-0">
               <input
                 type="color"
                 value={toHexColor(props.fill && props.fill !== 'transparent' ? props.fill : '#60a5f4')}
                 onChange={(e) => updateProps({ fill: e.target.value })}
-                className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer p-0 m-0 border-none"
+                className="color-input absolute inset-[-2px] w-[calc(100%+4px)] h-[calc(100%+4px)]"
               />
             </div>
             <input
               type="text"
               value={props.fill && props.fill !== 'transparent' ? props.fill : 'transparent'}
               onChange={(e) => updateProps({ fill: e.target.value })}
-              className="flex-1 bg-transparent text-white text-sm focus:outline-none font-mono"
+              className="flex-1 bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none font-mono"
             />
           </div>
         </div>
@@ -204,7 +204,7 @@ const ShapeInspector: React.FC<{ element: ShapeElement }> = ({ element }) => {
       {/* Polygon / Star sides */}
       {(props.kind === 'polygon' || props.kind === 'star') && (
         <div>
-          <label className="block text-sm text-neutral-400 mb-2">
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-2">
             {props.kind === 'star' ? 'Points' : 'Sides'}: {props.sides || 5}
           </label>
           <SliderField

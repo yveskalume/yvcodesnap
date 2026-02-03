@@ -79,13 +79,13 @@ const PresetsPanel: React.FC = () => {
                             shadow: preset.shadow,
                             cornerRadius: preset.cornerRadius,
                         })}
-                        className="group relative flex flex-col gap-2 p-2 rounded-xl bg-white/5 border border-white/5 hover:border-blue-500/50 hover:bg-white/10 transition-all text-left"
+                        className="group relative flex flex-col gap-2 p-2 rounded-xl bg-white border border-neutral-200 hover:border-blue-500/50 hover:bg-blue-50 transition-all text-left dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10"
                     >
                         <div
-                            className="w-full aspect-[4/3] rounded-lg border border-white/10 shadow-inner"
+                            className="w-full aspect-[4/3] rounded-lg border border-neutral-200 shadow-inner dark:border-white/10"
                             style={{ background: preset.preview }}
                         />
-                        <span className="text-[11px] font-medium text-neutral-400 group-hover:text-white px-1">
+                        <span className="text-[11px] font-medium text-neutral-700 group-hover:text-neutral-900 px-1 dark:text-neutral-400 dark:group-hover:text-white">
                             {preset.name}
                         </span>
                     </button>

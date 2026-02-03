@@ -114,17 +114,17 @@ const LayerItem = memo(({
     <div
       onClick={onSelect}
       className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${isSelected
-        ? 'bg-blue-600/20 border border-blue-500/50'
-        : 'hover:bg-white/5 border border-transparent'
+        ? 'bg-blue-100 dark:bg-blue-600/20 border border-blue-300 dark:border-blue-500/50'
+        : 'hover:bg-neutral-100 dark:hover:bg-white/5 border border-transparent'
         }`}
     >
       {/* Element type icon */}
-      <div className={`shrink-0 ${isSelected ? 'text-blue-400' : 'text-neutral-400'}`}>
+      <div className={`shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-600 dark:text-neutral-400'}`}>
         {getElementIcon(element)}
       </div>
 
       {/* Element name */}
-      <span className={`flex-1 text-sm truncate ${isSelected ? 'text-white' : 'text-neutral-300'
+      <span className={`flex-1 text-sm truncate ${isSelected ? 'text-neutral-900 dark:text-white' : 'text-neutral-700 dark:text-neutral-300'
         } ${!element.visible ? 'opacity-50' : ''}`}>
         {getElementLabel(element)}
       </span>
@@ -137,7 +137,7 @@ const LayerItem = memo(({
             e.stopPropagation();
             onToggleLock();
           }}
-          className={`p-1 rounded hover:bg-white/10 transition-colors ${element.locked ? 'text-yellow-400' : 'text-neutral-500 hover:text-neutral-300'
+          className={`p-1 rounded hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors ${element.locked ? 'text-yellow-600 dark:text-yellow-400' : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
             }`}
           title={element.locked ? 'Unlock' : 'Lock'}
         >
@@ -158,7 +158,7 @@ const LayerItem = memo(({
             e.stopPropagation();
             onToggleVisibility();
           }}
-          className={`p-1 rounded hover:bg-white/10 transition-colors ${element.visible ? 'text-neutral-500 hover:text-neutral-300' : 'text-red-400'
+          className={`p-1 rounded hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors ${element.visible ? 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300' : 'text-red-500 dark:text-red-400'
             }`}
           title={element.visible ? 'Hide' : 'Show'}
         >
@@ -222,14 +222,15 @@ const LayersPanel: React.FC = () => {
   );
 
   return (
-    <div className="w-56 bg-[#09090b] border-r border-white/5 flex flex-col h-full">
-      <div className="p-4 border-b border-white/5">
-        <h3 className="text-white font-semibold text-sm uppercase tracking-wider">Layers</h3>
+    <div className="w-64 sm:w-56 bg-white dark:bg-[#09090b] border-r border-neutral-200 dark:border-white/5 flex flex-col h-full shadow-2xl md:shadow-none">
+      <div className="p-3 sm:p-4 border-b border-neutral-200 dark:border-white/5 flex items-center justify-between">
+        <h3 className="text-neutral-900 dark:text-white font-semibold text-sm uppercase tracking-wider">Layers</h3>
+        <span className="text-xs text-neutral-400 dark:text-neutral-500">{elements.length}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2 overscroll-contain">
         {elements.length === 0 ? (
-          <div className="text-neutral-500 text-xs text-center py-8">
+          <div className="text-neutral-400 dark:text-neutral-500 text-xs text-center py-8">
             No elements yet.
             <br />
             Click on the canvas to add elements.
@@ -255,19 +256,19 @@ const LayersPanel: React.FC = () => {
 
       {/* Layer actions footer */}
       {selectedElement && (
-        <div className="p-3 border-t border-white/5 space-y-3">
+        <div className="p-2 sm:p-3 border-t border-neutral-200 dark:border-white/5 space-y-2 sm:space-y-3 bg-neutral-50 dark:bg-[#09090b]/80 backdrop-blur-sm">
           <input
             type="text"
             value={selectedElement.name ?? getElementLabel(selectedElement)}
             onChange={(e) => updateElement(selectedElement.id, { name: e.target.value })}
-            className="w-full px-2.5 py-2 rounded-md bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-blue-500/60"
+            className="w-full px-2.5 py-2 rounded-md bg-neutral-100 dark:bg-white/5 border border-neutral-200 dark:border-white/10 text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500/60 placeholder:text-neutral-400 dark:placeholder:text-neutral-600"
             placeholder="Layer name"
           />
           <div className="flex items-center justify-between gap-2">
             <div className="flex gap-1">
               <button
                 onClick={handleMoveDown}
-                className="p-1.5 rounded-md hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
+                className="p-2 sm:p-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors active:scale-95"
                 title="Move Down (Back)"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -276,7 +277,7 @@ const LayersPanel: React.FC = () => {
               </button>
               <button
                 onClick={handleMoveUp}
-                className="p-1.5 rounded-md hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
+                className="p-2 sm:p-1.5 rounded-md hover:bg-neutral-200 dark:hover:bg-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors active:scale-95"
                 title="Move Up (Front)"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,7 +287,7 @@ const LayersPanel: React.FC = () => {
             </div>
             <button
               onClick={handleDelete}
-              className="p-1.5 rounded-md hover:bg-red-500/10 text-neutral-400 hover:text-red-400 transition-colors"
+              className="p-2 sm:p-1.5 rounded-md hover:bg-red-500/10 text-neutral-600 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors active:scale-95"
               title="Delete"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

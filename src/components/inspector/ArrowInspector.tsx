@@ -73,53 +73,53 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
       {/* Position */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">Start X</label>
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">Start X</label>
           <input
             type="number"
           value={Math.round(start.x)}
           onChange={(e) => updateStart('x', Number(e.target.value))}
-          className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+          className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
         />
       </div>
       <div>
-        <label className="block text-sm text-neutral-400 mb-1">Start Y</label>
+        <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">Start Y</label>
         <input
           type="number"
           value={Math.round(start.y)}
           onChange={(e) => updateStart('y', Number(e.target.value))}
-          className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+          className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
         />
       </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">End X</label>
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">End X</label>
           <input
             type="number"
             value={Math.round(end.x)}
             onChange={(e) => updateEnd('x', Number(e.target.value))}
-            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+            className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
         <div>
-          <label className="block text-sm text-neutral-400 mb-1">End Y</label>
+          <label className="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">End Y</label>
           <input
             type="number"
             value={Math.round(end.y)}
             onChange={(e) => updateEnd('y', Number(e.target.value))}
-            className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+            className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Style */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Style</label>
-        <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/5">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Style</label>
+        <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
           <button
             onClick={() => updateProps({ style: 'straight' })}
             className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
               element.props.style === 'straight'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             Straight
@@ -128,8 +128,8 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
             onClick={() => updateProps({ style: 'curved' })}
             className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
               element.props.style === 'curved'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             Curved
@@ -140,7 +140,7 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
       {/* Control points for curved arrows */}
       {element.props.style === 'curved' && (
         <div>
-          <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">
             Control Points ({(element.props.controlPoints || []).length}/2)
           </label>
           <div className="space-y-2">
@@ -148,14 +148,14 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
               <button
                 onClick={addControlPoint}
                 disabled={(element.props.controlPoints || []).length >= 2}
-                className="flex-1 py-2 px-3 rounded-lg text-xs font-medium bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 py-2 px-3 rounded-lg text-xs font-medium bg-blue-600/20 text-blue-600 dark:text-blue-400 hover:bg-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 + Add Point
               </button>
               <button
                 onClick={resetControlPoints}
                 disabled={(element.props.controlPoints || []).length === 0}
-                className="py-2 px-3 rounded-lg text-xs font-medium bg-white/5 text-neutral-400 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="py-2 px-3 rounded-lg text-xs font-medium bg-neutral-100 dark:bg-white/5 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-white/10 hover:text-neutral-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Reset
               </button>
@@ -163,13 +163,13 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
             {(element.props.controlPoints || []).length > 0 && (
               <div className="space-y-1">
                 {(element.props.controlPoints || []).map((cp, index) => (
-                  <div key={index} className="flex items-center justify-between py-1.5 px-2 bg-white/5 rounded-md">
-                    <span className="text-xs text-neutral-400">
+                  <div key={index} className="flex items-center justify-between py-1.5 px-2 bg-neutral-100 dark:bg-white/5 rounded-md">
+                    <span className="text-xs text-neutral-600 dark:text-neutral-400">
                       Point {index + 1}: ({Math.round(cp.x)}, {Math.round(cp.y)})
                     </span>
                     <button
                       onClick={() => removeControlPoint(index)}
-                      className="p-1 rounded hover:bg-red-500/20 text-neutral-500 hover:text-red-400 transition-colors"
+                      className="p-1 rounded hover:bg-red-500/20 text-neutral-500 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -179,7 +179,7 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
                 ))}
               </div>
             )}
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">
               Drag the blue handles on the canvas to adjust the curve shape.
             </p>
           </div>
@@ -188,28 +188,28 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
 
       {/* Color */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Color</label>
-        <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
-          <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Color</label>
+        <div className="flex gap-2 items-center p-2 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
+          <div className="w-8 h-8 rounded overflow-hidden relative border border-neutral-300 dark:border-white/10 shrink-0">
             <input
               type="color"
               value={element.props.color}
               onChange={(e) => updateProps({ color: e.target.value })}
-              className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer p-0 m-0 border-none"
+              className="color-input absolute inset-[-2px] w-[calc(100%+4px)] h-[calc(100%+4px)]"
             />
           </div>
           <input
             type="text"
             value={element.props.color}
             onChange={(e) => updateProps({ color: e.target.value })}
-            className="flex-1 bg-transparent text-white text-sm focus:outline-none font-mono"
+            className="flex-1 bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none font-mono"
           />
         </div>
       </div>
 
       {/* Thickness */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">
           Thickness: {element.props.thickness}px
         </label>
         <SliderField
@@ -224,14 +224,14 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
 
       {/* Arrow head */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Arrow Head</label>
-        <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/5">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Arrow Head</label>
+        <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
           <button
             onClick={() => updateProps({ head: 'filled' })}
             className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
               element.props.head === 'filled'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             Filled
@@ -240,8 +240,8 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
             onClick={() => updateProps({ head: 'outline' })}
             className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
               element.props.head === 'outline'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             Outline
@@ -250,8 +250,8 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
             onClick={() => updateProps({ head: 'none' })}
             className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${
               element.props.head === 'none'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             None
@@ -261,20 +261,20 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
 
       {/* Label */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Label (Optional)</label>
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Label (Optional)</label>
         <input
           type="text"
           value={element.props.label || ''}
           onChange={(e) => updateProps({ label: e.target.value || undefined })}
           placeholder="Add a label..."
-          className="w-full bg-white/5 text-white px-3 py-2 rounded-lg text-sm border border-white/5 focus:border-blue-500/50 focus:outline-none"
+          className="w-full bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white px-3 py-2 rounded-lg text-sm border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-600"
         />
       </div>
 
       {/* Label position */}
       {element.props.label && (
         <div>
-          <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">
             Label Position: {Math.round((element.props.labelPosition || 0.5) * 100)}%
           </label>
           <SliderField
@@ -289,8 +289,8 @@ const ArrowInspector: React.FC<ArrowInspectorProps> = ({ element }) => {
       )}
 
       {/* Points info */}
-      <div className="pt-2 border-t border-white/5">
-        <p className="text-xs text-neutral-500">
+      <div className="pt-2 border-t border-neutral-200 dark:border-white/5">
+        <p className="text-xs text-neutral-500 dark:text-neutral-500">
           Drag the white handles on the canvas to move the arrow endpoints.
         </p>
       </div>

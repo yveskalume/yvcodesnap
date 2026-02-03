@@ -16,10 +16,10 @@ type SliderFieldProps = {
 };
 
 const rootBase = 'group relative flex h-7 w-full select-none items-center';
-const trackBase = 'relative h-1.5 w-full rounded-full bg-white/10';
-const rangeBase = 'absolute h-full rounded-full bg-blue-500/80 group-data-[disabled]:bg-white/20';
+const trackBase = 'relative h-1.5 w-full rounded-full bg-neutral-200 dark:bg-white/10';
+const rangeBase = 'absolute h-full rounded-full bg-blue-600 dark:bg-blue-500/80 group-data-[disabled]:bg-neutral-300 dark:group-data-[disabled]:bg-white/20';
 const thumbBase =
-  'block h-4 w-4 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.35)] border border-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 transition-transform data-[state=active]:scale-105 group-data-[disabled]:opacity-60';
+  'block h-4 w-4 rounded-full bg-white dark:bg-neutral-50 shadow-[0_2px_8px_rgba(0,0,0,0.25)] border border-neutral-300 dark:border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 transition-transform data-[state=active]:scale-105 group-data-[disabled]:opacity-60';
 
 const SliderField: React.FC<SliderFieldProps> = ({
   value,

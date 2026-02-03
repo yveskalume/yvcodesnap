@@ -48,34 +48,32 @@ const CanvasSizePanel: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Canvas Size</label>
+        <label className="text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider">Canvas Size</label>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white/5 px-3 py-3 rounded-lg border border-white/10">
-        <div className="flex items-center gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-neutral-500">W</label>
-          <NumberField
-            value={draft.width === '' ? '' : Number(draft.width)}
-            onChange={(v) => updateWidth(v === '' ? '' : String(v))}
-            min={MIN_CANVAS}
-            max={MAX_CANVAS}
-            step={10}
-            className="max-w-[140px]"
-          />
-          <span className="text-neutral-500 text-xs">px</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-neutral-500">H</label>
-          <NumberField
-            value={draft.height === '' ? '' : Number(draft.height)}
-            onChange={(v) => updateHeight(v === '' ? '' : String(v))}
-            min={MIN_CANVAS}
-            max={MAX_CANVAS}
-            step={10}
-            className="max-w-[140px]"
-          />
-          <span className="text-neutral-500 text-xs">px</span>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-white/5 px-3 py-3 rounded-lg border border-neutral-200 dark:border-white/10">
+        <NumberField
+          value={draft.width === '' ? '' : Number(draft.width)}
+          onChange={(v) => updateWidth(v === '' ? '' : String(v))}
+          min={MIN_CANVAS}
+          max={MAX_CANVAS}
+          step={10}
+          prefix="W"
+          suffix="px"
+          className="w-full"
+          inputClassName="text-sm"
+        />
+        <NumberField
+          value={draft.height === '' ? '' : Number(draft.height)}
+          onChange={(v) => updateHeight(v === '' ? '' : String(v))}
+          min={MIN_CANVAS}
+          max={MAX_CANVAS}
+          step={10}
+          prefix="H"
+          suffix="px"
+          className="w-full"
+          inputClassName="text-sm"
+        />
       </div>
     </div>
   );

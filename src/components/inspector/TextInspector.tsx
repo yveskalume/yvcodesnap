@@ -30,27 +30,27 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
     <div className="space-y-4">
       {/* Text */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Text</label>
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Text</label>
         <textarea
           value={element.props.text}
           onChange={(e) => updateProps({ text: e.target.value })}
           onBlur={saveToHistory}
-          className="w-full h-24 bg-white/5 text-white text-sm p-3 rounded-lg resize-y border border-white/5 focus:border-blue-500/50 focus:outline-none"
+          className="w-full h-24 bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white text-sm p-3 rounded-lg resize-y border border-neutral-200 dark:border-white/5 focus:border-blue-500/50 focus:outline-none"
         />
       </div>
 
       {/* Font Family with Preview */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Font Family</label>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto p-1 bg-white/5 rounded-lg border border-white/5">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Font Family</label>
+        <div className="space-y-1.5 max-h-48 overflow-y-auto p-1 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
           {FONT_FAMILIES.text.map((font) => (
             <button
               key={font}
               onClick={() => handleFontChange(font)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-all ${
                 element.props.fontFamily === font
-                  ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                  : 'text-neutral-300 hover:bg-white/5 border border-transparent'
+                  ? 'bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-white/5 border border-transparent'
               }`}
             >
               <span style={{ fontFamily: font }}>{font}</span>
@@ -66,7 +66,7 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
 
       {/* Font size */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">
           Size: {element.props.fontSize}px
         </label>
         <SliderField
@@ -81,35 +81,35 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
 
       {/* Color */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Color</label>
-        <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
-          <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Color</label>
+        <div className="flex gap-2 items-center p-2 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
+          <div className="w-8 h-8 rounded overflow-hidden relative border border-neutral-300 dark:border-white/10 shrink-0">
             <input
               type="color"
               value={element.props.color}
               onChange={(e) => updateProps({ color: e.target.value })}
-              className="absolute inset-[-4px] w-[200%] h-[200%] cursor-pointer p-0 m-0 border-none"
+              className="color-input absolute inset-[-2px] w-[calc(100%+4px)] h-[calc(100%+4px)]"
             />
           </div>
           <input
             type="text"
             value={element.props.color}
             onChange={(e) => updateProps({ color: e.target.value })}
-            className="flex-1 bg-transparent text-white text-sm focus:outline-none font-mono"
+            className="flex-1 bg-transparent text-neutral-900 dark:text-white text-sm focus:outline-none font-mono"
           />
         </div>
       </div>
 
       {/* Style buttons */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Style</label>
-        <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/5">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Style</label>
+        <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
           <button
             onClick={() => updateProps({ bold: !element.props.bold })}
             className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${
               element.props.bold
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             B
@@ -118,8 +118,8 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
             onClick={() => updateProps({ italic: !element.props.italic })}
             className={`flex-1 py-2 rounded-md text-sm italic transition-all ${
               element.props.italic
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             I
@@ -128,8 +128,8 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
             onClick={() => updateProps({ underline: !element.props.underline })}
             className={`flex-1 py-2 rounded-md text-sm underline transition-all ${
               element.props.underline
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             U
@@ -139,14 +139,14 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
 
       {/* Alignment */}
       <div>
-        <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Alignment</label>
-        <div className="flex gap-2 p-1 bg-white/5 rounded-lg border border-white/5">
+        <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider mb-2">Alignment</label>
+        <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
           <button
             onClick={() => updateProps({ align: 'left' })}
             className={`flex-1 py-2 rounded-md text-sm transition-all ${
               element.props.align === 'left'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             <svg className="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,8 +157,8 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
             onClick={() => updateProps({ align: 'center' })}
             className={`flex-1 py-2 rounded-md text-sm transition-all ${
               element.props.align === 'center'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             <svg className="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,8 +169,8 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
             onClick={() => updateProps({ align: 'right' })}
             className={`flex-1 py-2 rounded-md text-sm transition-all ${
               element.props.align === 'right'
-                ? 'bg-neutral-700 text-white shadow-sm'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                ? 'bg-neutral-300 dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-white/5'
             }`}
           >
             <svg className="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -183,7 +183,7 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
       {/* Background */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Background</label>
+          <label className="text-xs font-medium text-neutral-500 dark:text-neutral-500 uppercase tracking-wider">Background</label>
           <ToggleSwitch
             checked={!!element.props.background}
             onCheckedChange={(checked) =>
@@ -195,8 +195,8 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
           />
         </div>
         {element.props.background && (
-          <div className="flex gap-2 items-center p-2 bg-white/5 rounded-lg border border-white/5">
-            <div className="w-6 h-6 rounded overflow-hidden relative border border-white/10 shrink-0">
+          <div className="flex gap-2 items-center p-2 bg-neutral-100 dark:bg-white/5 rounded-lg border border-neutral-200 dark:border-white/5">
+            <div className="w-6 h-6 rounded overflow-hidden relative border border-neutral-300 dark:border-white/10 shrink-0">
               <input
                 type="color"
                 value={element.props.background.color.substring(0, 7)}
@@ -208,7 +208,7 @@ const TextInspector: React.FC<TextInspectorProps> = ({ element }) => {
               type="text"
               value={element.props.background.color}
               onChange={(e) => updateProps({ background: { color: e.target.value } })}
-              className="flex-1 bg-transparent text-white text-xs focus:outline-none font-mono"
+              className="flex-1 bg-transparent text-neutral-900 dark:text-white text-xs focus:outline-none font-mono"
             />
           </div>
         )}
