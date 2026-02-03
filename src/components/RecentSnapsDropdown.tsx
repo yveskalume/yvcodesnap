@@ -28,7 +28,7 @@ const RecentSnapItem = memo(({
     >
       {/* Thumbnail Preview */}
       <div 
-        className="w-12 h-9 rounded bg-neutral-800 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0"
+        className="w-12 h-9 rounded bg-neutral-800 border border-white/10 flex items-center justify-center overflow-hidden shrink-0"
         style={{
           background: entry.snap.background.type === 'gradient'
             ? `linear-gradient(${entry.snap.background.gradient.angle}deg, ${entry.snap.background.gradient.from}, ${entry.snap.background.gradient.to})`

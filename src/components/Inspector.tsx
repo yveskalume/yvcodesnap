@@ -111,7 +111,7 @@ const Inspector: React.FC = () => {
 
   return (
     <div
-      className="relative flex-shrink-0 h-full bg-[#09090b] border-l border-white/5 transition-[width] duration-150 ease-out"
+      className="relative shrink-0 h-full bg-[#09090b] border-l border-white/5 transition-[width] duration-150 ease-out"
       style={{ width }}
     >
       <div

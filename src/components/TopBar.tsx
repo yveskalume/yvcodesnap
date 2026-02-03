@@ -42,14 +42,12 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
   }, [snap.meta.aspect, snap.meta.width, snap.meta.height]);
 
   const handleNewSnap = useCallback(() => {
-    if (confirm('Create a new canvas? Unsaved changes will be lost.')) {
-      // Save current snap to recent before creating new
-      if (snap.elements.length > 0) {
-        addRecentSnap(snap);
-      }
-      newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
-      toast.success('New canvas created');
+    // Save current snap to recent before creating new
+    if (snap.elements.length > 0) {
+      addRecentSnap(snap);
     }
+    newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
+    toast.success('New canvas created');
   }, [snap, addRecentSnap, newSnap]);
 
   const handleAspectChange = useCallback((value: string) => {
@@ -214,13 +212,13 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
         />
       )}
 
-      <div className="h-14 bg-[#09090b] border-b border-white/[0.08] flex items-center justify-between px-5 z-40 relative select-none">
+      <div className="h-14 bg-[#09090b] border-b border-white/8 flex items-center justify-between px-5 z-40 relative select-none">
         {/* Left section: Logo & Actions */}
         <div className="flex items-center gap-5">
-          <div className="flex items-center gap-3 pr-5 border-r border-white/[0.08]">
+          <div className="flex items-center gap-3 pr-5 border-r border-white/8">
             <button
               onClick={onGoHome}
-              className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-500/20 flex items-center justify-center hover:from-blue-500 hover:to-blue-600 transition-all"
+              className="w-8 h-8 rounded-lg bg-linear-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-500/20 flex items-center justify-center hover:from-blue-500 hover:to-blue-600 transition-all"
               title="Go to Home"
             >
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -285,7 +283,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
             placeholder="Untitled Project"
           />
           <div className="h-4 w-px bg-white/10" />
-          <div className="min-w-[150px]">
+          <div className="min-w-37.5">
             <SelectField
               value={snap.meta.aspect}
               onValueChange={handleAspectChange}
@@ -383,10 +381,10 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
 
                   <button
                     onClick={() => handleExportImage('png', 2, exportTransparent)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.02] hover:border-white/10 transition-all group active:scale-[0.98]"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/3 hover:bg-white/8 border border-white/2 hover:border-white/10 transition-all group active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <span className="font-bold text-[10px]">PNG</span>
                       </div>
                       <div className="flex flex-col items-start gap-0.5">
@@ -398,10 +396,10 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
 
                   <button
                     onClick={() => handleExportImage('jpeg', 2, exportTransparent)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.02] hover:border-white/10 transition-all group active:scale-[0.98]"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/3 hover:bg-white/8 border border-white/2 hover:border-white/10 transition-all group active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="w-10 h-10 rounded-lg bg-linear-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <span className="font-bold text-[10px]">JPG</span>
                       </div>
                       <div className="flex flex-col items-start gap-0.5">
@@ -412,7 +410,7 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
                   </button>
                 </div>
 
-                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-2" />
+                <div className="h-px bg-linear-to-r from-transparent via-white/10 to-transparent my-2" />
 
                 <div className="px-3 py-1.5">
                   <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest pl-1">Project File</span>
@@ -421,10 +419,10 @@ const TopBar: React.FC<TopBarProps> = ({ stageRef, onGoHome }) => {
                 <div className="px-1 pb-1">
                   <button
                     onClick={handleExportJSON}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.02] hover:border-white/10 transition-all group active:scale-[0.98]"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/3 hover:bg-white/8 border border-white/2 hover:border-white/10 transition-all group active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="w-10 h-10 rounded-lg bg-linear-to-br from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20 text-yellow-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>

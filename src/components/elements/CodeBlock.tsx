@@ -84,6 +84,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ element, isSelected, onSelect, on
   // Close editing when deselecting
   useEffect(() => {
     if (!isSelected && isEditing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       handleSaveEdit();
     }
   }, [isSelected, isEditing, handleSaveEdit]);

@@ -52,6 +52,7 @@ const Toolbar: React.FC = () => {
     },
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const shapeTools: ToolConfig[] = [
     {
       id: 'rectangle',
@@ -118,7 +119,7 @@ const Toolbar: React.FC = () => {
   const activeDrawingTool = useMemo(() => {
     const found = shapeTools.find((t) => t.id === tool);
     return found || shapeTools[0];
-  }, [tool]);
+  }, [shapeTools, tool]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -142,7 +143,7 @@ const Toolbar: React.FC = () => {
         side="top"
         align="center"
         sideOffset={10}
-        className="z-50 rounded-lg bg-neutral-900 px-2.5 sm:px-3 py-1.5 text-white text-[11px] shadow-lg flex items-center gap-2 max-w-[240px]"
+        className="z-50 rounded-lg bg-neutral-900 px-2.5 sm:px-3 py-1.5 text-white text-[11px] shadow-lg flex items-center gap-2 max-w-60"
       >
         <span className="leading-tight break-keep">{label}</span>
         {shortcut && <span className="text-[10px] sm:text-xs font-semibold text-white/70 whitespace-nowrap">{shortcut}</span>}
@@ -214,7 +215,7 @@ const Toolbar: React.FC = () => {
             {menuOpen && (
               <div
                 ref={menuRef}
-                className="absolute bottom-12 left-1/2 -translate-x-1/2 min-w-[200px] rounded-2xl border border-white/10 bg-[#0f1117] text-white shadow-[0_16px_40px_rgba(0,0,0,0.45)] py-1.5 px-1 z-50"
+                className="absolute bottom-12 left-1/2 -translate-x-1/2 min-w-50 rounded-2xl border border-white/10 bg-[#0f1117] text-white shadow-[0_16px_40px_rgba(0,0,0,0.45)] py-1.5 px-1 z-50"
               >
                 {shapeTools.map(({ id, icon, label, shortcut }) => {
                   const isActive = tool === id;

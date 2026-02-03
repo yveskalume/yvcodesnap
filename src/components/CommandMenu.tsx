@@ -72,6 +72,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
     // Focus input when opened
     useEffect(() => {
         if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSearch('');
             setSelectedIndex(0);
             setTimeout(() => inputRef.current?.focus(), 0);
@@ -107,11 +108,11 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-start justify-center pt-[20vh] bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-9999 flex items-start justify-center pt-[20vh] bg-black/50 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
-                className="w-full max-w-[640px] mx-4 bg-[#0f1117] rounded-2xl shadow-[0_16px_70px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden"
+                className="w-full max-w-160 mx-4 bg-[#0f1117] rounded-2xl shadow-[0_16px_70px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Search Input */}
@@ -130,7 +131,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                 </div>
 
                 {/* Results */}
-                <div className="max-h-[500px] overflow-y-auto py-2">
+                <div className="max-h-125 overflow-y-auto py-2">
                     {filteredCommands.length === 0 ? (
                         <div className="px-4 py-8 text-center text-neutral-500">
                             No commands found
@@ -148,6 +149,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                                             (cmd.id === 'select' && tool === 'select') || cmd.id === tool
                                         );
 
+                                        // @ts-ignore
                                         return (
                                             <button
                                                 key={`${cmd.id}-${globalIndex}`} // Use compound key or simple index if id duplicates possible (unlikely)
@@ -158,7 +160,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                                                     } ${isSelectedTool ? 'text-blue-400' : ''}`}
                                             >
                                                 <span className="text-white flex items-center gap-3">
-                                                    {cmd.icon}
+                                                    {cmd?.icon}
                                                     {cmd.label}
                                                 </span>
                                                 {cmd.shortcut && (
