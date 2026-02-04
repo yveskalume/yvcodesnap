@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { ToolId } from '../store/canvasStore';
 import { useAppCommands } from '../hooks/useAppCommands';
+import type { Command } from '../hooks/useAppCommands';
 
 interface CommandMenuProps {
     isOpen: boolean;
@@ -31,7 +32,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
     const { commands } = useAppCommands();
 
     // Create extra commands specific to this menu context if needed (like Clear Canvas)
-    const extraCommands = [];
+    const extraCommands: Command[] = [];
     if (onClearCanvas) {
         extraCommands.push({
             id: 'clear-canvas',

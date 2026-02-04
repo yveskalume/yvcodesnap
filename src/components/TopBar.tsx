@@ -22,8 +22,8 @@ const TopBar: React.FC<TopBarProps> = ({
   onGoHome,
   onToggleLayers,
   onToggleInspector,
-  showLayersPanel,
-  showInspector
+  showLayersPanel: _showLayersPanel,
+  showInspector: _showInspector
 }) => {
   const [showRecentSnaps, setShowRecentSnaps] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);

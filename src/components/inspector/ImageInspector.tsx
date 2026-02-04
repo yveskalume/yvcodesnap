@@ -10,14 +10,10 @@ interface ImageInspectorProps {
 }
 
 const ImageInspector: React.FC<ImageInspectorProps> = ({ element }) => {
-    const { updateElement, saveToHistory } = useCanvasStore();
+    const { updateElement } = useCanvasStore();
 
     const updateProps = (props: Partial<ImageElement['props']>) => {
         updateElement(element.id, { props: { ...element.props, ...props } });
-    };
-
-    const handleBlur = () => {
-        saveToHistory();
     };
 
     return (

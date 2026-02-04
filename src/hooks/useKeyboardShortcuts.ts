@@ -3,7 +3,7 @@ import { useCanvasStore } from '../store/canvasStore';
 
 export function useKeyboardShortcuts() {
   const {
-    selectedElementId,
+    selectedElementIds,
     deleteElement,
     duplicateElement,
     undo,
@@ -34,9 +34,9 @@ export function useKeyboardShortcuts() {
       const isMeta = e.metaKey || e.ctrlKey;
 
       // Delete selected element (Backspace or Delete)
-      if ((e.key === 'Backspace' || e.key === 'Delete') && selectedElementId) {
+      if ((e.key === 'Backspace' || e.key === 'Delete') && selectedElementIds.length > 0) {
         e.preventDefault();
-        deleteElement(selectedElementId);
+        deleteElement();
         return;
       }
 
@@ -55,9 +55,9 @@ export function useKeyboardShortcuts() {
       }
 
       // Duplicate: Cmd+D
-      if (isMeta && e.key === 'd' && selectedElementId) {
+      if (isMeta && e.key === 'd' && selectedElementIds.length > 0) {
         e.preventDefault();
-        duplicateElement(selectedElementId);
+        duplicateElement();
         return;
       }
 
@@ -109,7 +109,7 @@ export function useKeyboardShortcuts() {
       }
     },
     [
-      selectedElementId,
+      selectedElementIds,
       deleteElement,
       duplicateElement,
       undo,

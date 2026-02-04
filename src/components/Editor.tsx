@@ -36,10 +36,11 @@ export default function Editor() {
             // Ignore if input is focused
             const active = document.activeElement;
             const isInputFocused =
-                active?.tagName === 'INPUT' ||
-                active?.tagName === 'TEXTAREA' ||
-                active?.tagName === 'SELECT' ||
-                active?.isContentEditable;
+                active instanceof HTMLElement &&
+                (active.tagName === 'INPUT' ||
+                    active.tagName === 'TEXTAREA' ||
+                    active.tagName === 'SELECT' ||
+                    active.isContentEditable);
             if (isInputFocused) return;
 
             const isMeta = e.metaKey || e.ctrlKey;

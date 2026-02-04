@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
     Hand, Square, Circle, Triangle, Star as StarIcon,
     Minus, ArrowRight, Type, Code, Grid, ZoomIn,
@@ -21,11 +20,9 @@ export interface Command {
 }
 
 export const useAppCommands = () => {
-    const navigate = useNavigate();
     const {
         snap,
         setTool,
-        tool,
         setShowGrid,
         showGrid,
         setZoom,
@@ -37,7 +34,6 @@ export const useAppCommands = () => {
         undo,
         redo,
         deleteElement,
-        selectElement,
         newSnap,
         exportSnap,
         importSnap,

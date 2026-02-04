@@ -23,14 +23,14 @@ const BackgroundPanel: React.FC = () => {
   const { background } = snap;
 
   return (
-    <div className="space-y-6">
-      {/* Background type */}
+    <div className="space-y-3">
+      <h3 className="text-neutral-900 dark:text-white font-semibold text-[10px] uppercase tracking-wider">Appearance</h3>
       <div>
-        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-3">Type</label>
+        <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-3">Type</label>
         <div className="flex gap-2 p-1 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
           <button
             onClick={() => setBackground({ type: 'solid' })}
-            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex-1 py-1.5 rounded-md text-[10px] font-medium transition-all ${
               background.type === 'solid'
                 ? 'bg-blue-600/20 text-blue-700 border border-blue-500/30 dark:bg-neutral-700 dark:text-white dark:border-transparent shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/5'
@@ -40,7 +40,7 @@ const BackgroundPanel: React.FC = () => {
           </button>
           <button
             onClick={() => setBackground({ type: 'gradient' })}
-            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex-1 py-1.5 rounded-md text-[10px] font-medium transition-all ${
               background.type === 'gradient'
                 ? 'bg-blue-600/20 text-blue-700 border border-blue-500/30 dark:bg-neutral-700 dark:text-white dark:border-transparent shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/5'
@@ -53,7 +53,7 @@ const BackgroundPanel: React.FC = () => {
 
       {background.type === 'solid' ? (
         <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Color</label>
+          <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Color</label>
           <div className="flex gap-2 items-center p-2 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
              <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
                <input
@@ -73,8 +73,8 @@ const BackgroundPanel: React.FC = () => {
       </div>
     ) : (
       <>
-        <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-3">Presets</label>
+        <div className="space-y-3">
+          <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-3">Presets</label>
             <div className="grid grid-cols-5 gap-2">
               {GRADIENT_PRESETS.map((preset, i) => (
                 <button
@@ -94,7 +94,7 @@ const BackgroundPanel: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">From</label>
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">From</label>
               <div className="flex gap-2 items-center p-2 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
                  <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
                     <input
@@ -112,12 +112,12 @@ const BackgroundPanel: React.FC = () => {
                     onChange={(e) => setBackground({
                       gradient: { ...background.gradient, from: e.target.value }
                     })}
-                    className="w-full bg-transparent text-neutral-900 dark:text-white text-xs focus:outline-none font-mono"
+                    className="w-full bg-transparent text-neutral-900 dark:text-white text-[10px] focus:outline-none font-mono"
                   />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">To</label>
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">To</label>
                <div className="flex gap-2 items-center p-2 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
                  <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
                     <input
@@ -135,14 +135,14 @@ const BackgroundPanel: React.FC = () => {
                     onChange={(e) => setBackground({
                       gradient: { ...background.gradient, from: e.target.value }
                     })}
-                    className="w-full bg-transparent text-neutral-900 dark:text-white text-xs focus:outline-none font-mono"
+                    className="w-full bg-transparent text-neutral-900 dark:text-white text-[10px] focus:outline-none font-mono"
                   />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Angle: {background.gradient.angle}°</label>
+            <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Angle: {background.gradient.angle}°</label>
             <SliderField
               min={0}
               max={360}
@@ -163,7 +163,7 @@ const BackgroundPanel: React.FC = () => {
       <div className="pt-4 border-t border-white/5">
         <div className="flex items-center justify-between mb-3">
           <label
-            className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider"
+            className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider"
             htmlFor="brand-strip-toggle"
           >
             Brand Strip
@@ -184,13 +184,13 @@ const BackgroundPanel: React.FC = () => {
           <div className="space-y-4">
             {/* Position */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Position</label>
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Position</label>
               <div className="flex gap-2 p-1 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
                 <button
                   onClick={() => setBackground({
                     brandStrip: { ...background.brandStrip, position: 'top' }
                   })}
-                  className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-medium transition-all ${
                     background.brandStrip.position === 'top'
                       ? 'bg-blue-600/20 text-blue-700 border border-blue-500/30 dark:bg-neutral-700 dark:text-white dark:border-transparent shadow-sm'
                       : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/5'
@@ -202,7 +202,7 @@ const BackgroundPanel: React.FC = () => {
                   onClick={() => setBackground({
                     brandStrip: { ...background.brandStrip, position: 'bottom' }
                   })}
-                  className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  className={`flex-1 py-1.5 rounded-md text-[10px] font-medium transition-all ${
                     background.brandStrip.position === 'bottom'
                       ? 'bg-blue-600/20 text-blue-700 border border-blue-500/30 dark:bg-neutral-700 dark:text-white dark:border-transparent shadow-sm'
                       : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-white/5'
@@ -215,7 +215,7 @@ const BackgroundPanel: React.FC = () => {
 
             {/* Height */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">
                 Height: {background.brandStrip.height || 60}px
               </label>
               <SliderField
@@ -234,7 +234,7 @@ const BackgroundPanel: React.FC = () => {
 
             {/* Strip Color */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Strip Color</label>
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Strip Color</label>
               <div className="flex gap-2 items-center p-2 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
                 <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
                   <input
@@ -252,14 +252,14 @@ const BackgroundPanel: React.FC = () => {
                   onChange={(e) => setBackground({
                     brandStrip: { ...background.brandStrip, color: e.target.value }
                   })}
-                className="w-full bg-transparent text-neutral-900 dark:text-white text-xs focus:outline-none font-mono"
+                className="w-full bg-transparent text-neutral-900 dark:text-white text-[10px] focus:outline-none font-mono"
               />
             </div>
           </div>
 
             {/* Brand Text */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Text</label>
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Text</label>
               <input
                 type="text"
                 value={background.brandStrip.text || ''}
@@ -273,7 +273,7 @@ const BackgroundPanel: React.FC = () => {
 
             {/* Text Color */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Text Color</label>
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Text Color</label>
             <div className="flex gap-2 items-center p-2 bg-neutral-100 border border-neutral-200 rounded-lg dark:bg-white/5 dark:border-white/5">
                 <div className="w-8 h-8 rounded overflow-hidden relative border border-white/10 shrink-0">
                   <input
@@ -291,14 +291,14 @@ const BackgroundPanel: React.FC = () => {
                   onChange={(e) => setBackground({
                     brandStrip: { ...background.brandStrip, textColor: e.target.value }
                   })}
-                  className="w-full bg-transparent text-neutral-900 dark:text-white text-xs focus:outline-none font-mono"
+                  className="w-full bg-transparent text-neutral-900 dark:text-white text-[10px] focus:outline-none font-mono"
                 />
               </div>
             </div>
 
             {/* Font Family */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Font</label>
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">Font</label>
               <SelectField
                 value={background.brandStrip.fontFamily || 'Inter'}
                 onValueChange={(v) => setBackground({
@@ -313,7 +313,7 @@ const BackgroundPanel: React.FC = () => {
 
             {/* Font Size */}
             <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">
+              <label className="block text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider mb-2">
                 Font Size: {background.brandStrip.fontSize || 16}px
               </label>
               <SliderField

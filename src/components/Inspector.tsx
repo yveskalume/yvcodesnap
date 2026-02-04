@@ -149,7 +149,7 @@ const Inspector: React.FC = () => {
       )}
       <div className="p-4 sm:p-6 overflow-y-auto h-full">
         {selectedElement ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Header with Title and Element Actions */}
             <div className="flex items-center justify-between">
               <h3 className="text-neutral-900 dark:text-white font-semibold text-sm uppercase tracking-wider">
@@ -184,7 +184,7 @@ const Inspector: React.FC = () => {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handleMoveDown}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors border border-neutral-200 dark:border-white/5"
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-lg text-[10px] font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors border border-neutral-200 dark:border-white/5"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -193,7 +193,7 @@ const Inspector: React.FC = () => {
               </button>
               <button
                 onClick={handleMoveUp}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors border border-neutral-200 dark:border-white/5"
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-lg text-[10px] font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors border border-neutral-200 dark:border-white/5"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
@@ -224,15 +224,15 @@ const Inspector: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {selectedElementIds.length > 1 ? (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex flex-col items-center justify-center pt-2 pb-6 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-white/5">
-                  <span className="font-medium text-neutral-900 dark:text-white mb-1">{selectedElementIds.length} elements selected</span>
+                  <span className="font-medium text-neutral-900 dark:text-white">{selectedElementIds.length} elements selected</span>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-neutral-900 dark:text-white font-semibold text-xs uppercase tracking-wider">Alignment</h3>
+                  <h3 className="text-neutral-900 dark:text-white font-semibold text-[10px] uppercase tracking-wider">Alignment</h3>
                   <div className="grid grid-cols-3 gap-2">
                     <button onClick={() => alignSelection('left')} className="flex flex-col items-center gap-2 p-3 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-xl border border-neutral-200 dark:border-white/5 group transition-all">
                       <svg className="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20M8 6h10a2 2 0 012 2v2a2 2 0 01-2 2H8M8 14h6a2 2 0 012 2v2a2 2 0 01-2 2H8" /></svg>
@@ -263,7 +263,7 @@ const Inspector: React.FC = () => {
 
                 {selectedElementIds.length > 2 && (
                   <div className="space-y-4">
-                    <h3 className="text-neutral-900 dark:text-white font-semibold text-xs uppercase tracking-wider">Distribution</h3>
+                    <h3 className="text-neutral-900 dark:text-white font-semibold text-[10px] uppercase tracking-wider">Distribution</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <button onClick={() => distributeSelection('horizontal')} className="flex items-center justify-center gap-2 py-3 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-xl border border-neutral-200 dark:border-white/5 group transition-all">
                         <svg className="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 2v20M20 2v20M8 12h8" /></svg>
@@ -278,47 +278,43 @@ const Inspector: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Tabs */}
                 <div className="flex p-1 bg-neutral-100 dark:bg-white/5 rounded-xl border border-neutral-200 dark:border-white/5">
                   <button
                     onClick={() => setActiveTab('settings')}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'settings' ? 'bg-white dark:bg-white/10 text-neutral-900 dark:text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}`}
+                    className={`flex-1 py-2 text-[10px] font-semibold rounded-lg transition-all ${activeTab === 'settings' ? 'bg-white dark:bg-white/10 text-neutral-900 dark:text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}`}
                   >
                     Canvas
                   </button>
                   <button
                     onClick={() => setActiveTab('presets')}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'presets' ? 'bg-white dark:bg-white/10 text-neutral-900 dark:text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}`}
+                    className={`flex-1 py-2 text-[10px] font-semibold rounded-lg transition-all ${activeTab === 'presets' ? 'bg-white dark:bg-white/10 text-neutral-900 dark:text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}`}
                   >
                     Presets
                   </button>
                 </div>
 
                 {activeTab === 'settings' ? (
-                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-                    <div>
-                      <h3 className="text-neutral-900 dark:text-white font-semibold text-xs uppercase tracking-wider mb-4">Canvas Settings</h3>
-                      <CanvasSizePanel />
-                    </div>
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <CanvasSizePanel />
 
                     <div className="h-px bg-neutral-200 dark:bg-white/5 w-full" />
 
                     <div>
-                      <h3 className="text-neutral-900 dark:text-white font-semibold text-xs uppercase tracking-wider mb-4">Appearance</h3>
                       <BackgroundPanel />
                     </div>
 
                     <div className="h-px bg-neutral-200 dark:bg-white/5 w-full" />
 
                     <div>
-                      <h3 className="text-neutral-900 dark:text-white font-semibold text-xs uppercase tracking-wider mb-4">Branding</h3>
+                      <h3 className="text-neutral-900 dark:text-white font-semibold text-[10px] uppercase tracking-wider">Branding</h3>
                       <BrandingPanel />
                     </div>
                   </div>
                 ) : (
                   <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-                    <h3 className="text-neutral-900 dark:text-white font-semibold text-xs uppercase tracking-wider mb-4">Design Presets</h3>
+                    <h3 className="text-neutral-900 dark:text-white font-semibold text-[10px] uppercase tracking-wider">Design Presets</h3>
                     <PresetsPanel />
                   </div>
                 )}

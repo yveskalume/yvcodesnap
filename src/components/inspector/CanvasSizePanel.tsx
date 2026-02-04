@@ -46,12 +46,12 @@ const CanvasSizePanel: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <label className="text-xs font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider">Canvas Size</label>
+        <label className="text-[10px] font-medium text-neutral-600 dark:text-neutral-500 uppercase tracking-wider">Canvas Size</label>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-white/5 px-3 py-3 rounded-lg border border-neutral-200 dark:border-white/10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <NumberField
           value={draft.width === '' ? '' : Number(draft.width)}
           onChange={(v) => updateWidth(v === '' ? '' : String(v))}

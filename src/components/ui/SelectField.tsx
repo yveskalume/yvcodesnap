@@ -17,7 +17,7 @@ interface SelectFieldProps {
 }
 
 const baseTrigger =
-  'w-full h-10 inline-flex items-center justify-between gap-2 rounded-lg border border-neutral-200 dark:border-white/12 bg-white dark:bg-[#0f1117] px-3 text-sm text-neutral-900 dark:text-white hover:border-blue-400/70 hover:bg-neutral-50 dark:hover:bg-white/6 focus:outline-none focus:border-blue-400/90 focus:ring-2 focus:ring-blue-500/25 transition data-[state=open]:border-blue-400/90';
+  'w-full inline-flex items-center py-1 justify-between gap-2 rounded-lg border border-neutral-200 dark:border-white/12 bg-white dark:bg-[#0f1117] px-3 text-sm text-neutral-900 dark:text-white hover:border-blue-400/70 hover:bg-neutral-50 dark:hover:bg-white/6 focus:outline-none focus:border-blue-400/90 focus:ring-2 focus:ring-blue-500/25 transition data-[state=open]:border-blue-400/90';
 
 const SelectField: React.FC<SelectFieldProps> = ({
   value,

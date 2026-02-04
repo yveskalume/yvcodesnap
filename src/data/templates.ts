@@ -81,6 +81,8 @@ console.log(message);`,
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '🚀 Quick Tip: Array Methods',
             fontFamily: 'Inter',
@@ -139,6 +141,8 @@ const sum = numbers.reduce((a, b) => a + b, 0);
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '@yourhandle',
             fontFamily: 'Inter',
@@ -180,6 +184,8 @@ const sum = numbers.reduce((a, b) => a + b, 0);
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '❌ Before',
             fontFamily: 'Inter',
@@ -235,6 +241,8 @@ getData(function(a) {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '✅ After',
             fontFamily: 'Inter',
@@ -305,6 +313,8 @@ async function fetchAll() {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '💡 Pro tip: async/await makes asynchronous code much more readable!',
             fontFamily: 'Inter',
@@ -346,6 +356,8 @@ async function fetchAll() {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'React useEffect Explained',
             fontFamily: 'Inter',
@@ -400,6 +412,8 @@ async function fetchAll() {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '1️⃣ Hook that runs\nside effects',
             fontFamily: 'Inter',
@@ -438,6 +452,8 @@ async function fetchAll() {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '2️⃣ Cleanup runs\nbefore next effect',
             fontFamily: 'Inter',
@@ -476,6 +492,8 @@ async function fetchAll() {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '3️⃣ Re-run when\nthese change',
             fontFamily: 'Inter',
@@ -533,6 +551,8 @@ async function fetchAll() {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '💡',
             fontFamily: 'Inter',
@@ -555,6 +575,8 @@ async function fetchAll() {
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Did you know?',
             fontFamily: 'Inter',
@@ -608,6 +630,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '?? treats 0 and "" as valid values,\nwhile || treats them as falsy!',
             fontFamily: 'Inter',
@@ -630,6 +654,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '💾 Save for later!',
             fontFamily: 'Inter',
@@ -671,6 +697,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'API Request Flow 🔄',
             fontFamily: 'Inter',
@@ -693,6 +721,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Step 1: Make Request',
             fontFamily: 'Inter',
@@ -757,6 +787,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Step 2: Check Response',
             fontFamily: 'Inter',
@@ -821,6 +853,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Step 3: Parse Data',
             fontFamily: 'Inter',
@@ -884,6 +918,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Step 4: Return Result',
             fontFamily: 'Inter',
@@ -933,6 +969,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '✅ Complete!',
             fontFamily: 'Inter',
@@ -974,6 +1012,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '01',
             fontFamily: 'Inter',
@@ -996,6 +1036,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Clean Code Principle',
             fontFamily: 'Inter',
@@ -1018,6 +1060,8 @@ value ?? 'default'  // 0 ✅
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Use meaningful variable names',
             fontFamily: 'Inter',
@@ -1070,6 +1114,8 @@ const timestamp = currentDate.getTime();`,
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Swipe →',
             fontFamily: 'Inter',
@@ -1111,6 +1157,8 @@ const timestamp = currentDate.getTime();`,
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: '⚡ Getting Started with npm',
             fontFamily: 'Inter',
@@ -1206,6 +1254,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Start',
             fontFamily: 'Inter',
@@ -1263,6 +1313,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Is Valid?',
             fontFamily: 'Inter',
@@ -1301,6 +1353,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Yes',
             fontFamily: 'Inter',
@@ -1340,6 +1394,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Process Data',
             fontFamily: 'Inter',
@@ -1398,6 +1454,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Client',
             fontFamily: 'Inter',
@@ -1454,6 +1512,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'API\nGateway',
             fontFamily: 'Inter',
@@ -1525,6 +1585,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Auth Service',
             fontFamily: 'Inter',
@@ -1564,6 +1626,8 @@ $ npm run dev
           rotation: 0,
           locked: false,
           visible: true,
+          width: 800,
+          height: 80,
           props: {
             text: 'Data Service',
             fontFamily: 'Inter',

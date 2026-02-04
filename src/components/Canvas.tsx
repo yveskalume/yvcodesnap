@@ -1091,6 +1091,54 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
     metaKey: boolean;
   } | null>(null);
 
+  const drawingGuide = useMemo(() => {
+    // Shapes (rectangle, ellipse, polygon, star) while drawing
+    if (drawingShapeId) {
+      const el = findElement(drawingShapeId) as ShapeElement | undefined;
+      if (!el) return null;
+      if (el.props.kind === 'line' && el.points?.length === 2) {
+        const [p1, p2] = el.points;
+        const minX = Math.min(p1.x, p2.x);
+        const maxX = Math.max(p1.x, p2.x);
+        const minY = Math.min(p1.y, p2.y);
+        const maxY = Math.max(p1.y, p2.y);
+        return {
+          type: 'line' as const,
+          start: p1,
+          end: p2,
+          bbox: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+          center: { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
+        };
+      }
+      return {
+        type: 'shape' as const,
+        bbox: { x: el.x, y: el.y, width: el.width, height: el.height },
+        center: { x: el.x + el.width / 2, y: el.y + el.height / 2 },
+      };
+    }
+
+    // Arrow while drawing
+    if (drawingArrowId) {
+      const el = findElement(drawingArrowId) as ArrowElement | undefined;
+      if (el?.points?.length === 2) {
+        const [p1, p2] = el.points;
+        const minX = Math.min(p1.x, p2.x);
+        const maxX = Math.max(p1.x, p2.x);
+        const minY = Math.min(p1.y, p2.y);
+        const maxY = Math.max(p1.y, p2.y);
+        return {
+          type: 'line' as const,
+          start: p1,
+          end: p2,
+          bbox: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+          center: { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
+        };
+      }
+    }
+
+    return null;
+  }, [drawingShapeId, drawingArrowId, findElement]);
+
   useEffect(() => {
     return () => {
       if (wheelRaf.current) cancelAnimationFrame(wheelRaf.current);
@@ -1321,6 +1369,115 @@ const Canvas: React.FC<CanvasProps> = ({ stageRef }) => {
                 return null;
             }
           })}
+
+          {/* Live drawing guides (dimensions + center axes) */}
+          {drawingGuide && (
+            <Group listening={false}>
+              {drawingGuide.type === 'shape' && (
+                <>
+                  <Line
+                    points={[drawingGuide.center.x, drawingGuide.bbox.y, drawingGuide.center.x, drawingGuide.bbox.y + drawingGuide.bbox.height]}
+                    stroke="#1da1f2"
+                    strokeWidth={1.5}
+                    dash={[6, 6]}
+                  />
+                  <Line
+                    points={[drawingGuide.bbox.x, drawingGuide.center.y, drawingGuide.bbox.x + drawingGuide.bbox.width, drawingGuide.center.y]}
+                    stroke="#1da1f2"
+                    strokeWidth={1.5}
+                    dash={[6, 6]}
+                  />
+                  {(() => {
+                    const text = `${Math.max(0, Math.round(drawingGuide.bbox.width))} × ${Math.max(0, Math.round(drawingGuide.bbox.height))}`;
+                    const charWidth = 7;
+                    const paddingH = 10;
+                    const paddingV = 6;
+                    const rectWidth = text.length * charWidth + paddingH * 2;
+                    const rectHeight = 20 + paddingV * 2;
+                    const posX = drawingGuide.center.x - rectWidth / 2;
+                    const posY = drawingGuide.bbox.y + drawingGuide.bbox.height + 12;
+                    return (
+                      <Group x={posX} y={posY}>
+                        <Rect
+                          width={rectWidth}
+                          height={rectHeight}
+                          fill="#1da1f2"
+                          cornerRadius={6}
+                          shadowColor="rgba(0,0,0,0.2)"
+                          shadowBlur={4}
+                          shadowOpacity={0.4}
+                        />
+                        <Text
+                          x={paddingH}
+                          y={paddingV}
+                          text={text}
+                          fontSize={14}
+                          fontStyle="bold"
+                          fill="#ffffff"
+                        />
+                      </Group>
+                    );
+                  })()}
+                </>
+              )}
+
+              {drawingGuide.type === 'line' && (
+                <>
+                  <Line
+                    points={[drawingGuide.start.x, 0, drawingGuide.start.x, height]}
+                    stroke="#1da1f2"
+                    strokeWidth={1.5}
+                    dash={[6, 6]}
+                  />
+                  <Line
+                    points={[0, drawingGuide.start.y, width, drawingGuide.start.y]}
+                    stroke="#1da1f2"
+                    strokeWidth={1.5}
+                    dash={[6, 6]}
+                  />
+                  {(() => {
+                    const text = `${(drawingGuide.bbox.width).toFixed(1)} × ${(drawingGuide.bbox.height).toFixed(1)}`;
+                    const charWidth = 7;
+                    const paddingH = 10;
+                    const paddingV = 6;
+                    const rectWidth = text.length * charWidth + paddingH * 2;
+                    const rectHeight = 20 + paddingV * 2;
+                    const posX = drawingGuide.center.x;
+                    const posY = drawingGuide.center.y;
+                    const offsetX = rectWidth / 2;
+                    const offsetY = rectHeight / 2;
+                    return (
+                      <Group
+                        x={posX}
+                        y={posY}
+                        offsetX={offsetX}
+                        offsetY={offsetY}
+                        rotation={Math.atan2(drawingGuide.end.y - drawingGuide.start.y, drawingGuide.end.x - drawingGuide.start.x) * 180 / Math.PI}
+                      >
+                        <Rect
+                          width={rectWidth}
+                          height={rectHeight}
+                          fill="#1da1f2"
+                          cornerRadius={6}
+                          shadowColor="rgba(0,0,0,0.2)"
+                          shadowBlur={4}
+                          shadowOpacity={0.4}
+                        />
+                        <Text
+                          x={paddingH}
+                          y={paddingV}
+                          text={text}
+                          fontSize={14}
+                          fontStyle="bold"
+                          fill="#ffffff"
+                        />
+                      </Group>
+                    );
+                  })()}
+                </>
+              )}
+            </Group>
+          )}
 
           <Transformer
             ref={transformerRef}

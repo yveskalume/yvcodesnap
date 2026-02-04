@@ -150,6 +150,10 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             min={10}
             max={32}
             step={1}
+            prefix="S"
+            suffix="px"
+            className="w-full"
+            inputClassName="text-sm"
           />
         </div>
         <div>
@@ -160,6 +164,10 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             min={1}
             max={3}
             step={0.1}
+            prefix="L"
+            suffix="px"
+            className="w-full"
+            inputClassName="text-sm"
           />
         </div>
       </div>
@@ -197,6 +205,10 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             min={0}
             max={64}
             step={2}
+            prefix="P"
+            suffix="px"
+            className="w-full"
+            inputClassName="text-sm"
           />
         </div>
         <div>
@@ -207,6 +219,10 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
             min={0}
             max={32}
             step={1}
+            prefix="R"
+            suffix="px"
+            className="w-full"
+            inputClassName="text-sm"
           />
         </div>
       </div>
@@ -265,8 +281,8 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
         )}
 
         {/* Add new highlight */}
-        <div className="space-y-2">
-          <div className="flex gap-2">
+        <div className="space-y-2 flex flex-col">
+          <div className="flex flex-wrap gap-2">
             <NumberField
               value={highlightFrom === '' ? '' : Number(highlightFrom)}
               onChange={(v) => setHighlightFrom(v === '' ? '' : String(v))}
@@ -274,7 +290,9 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
               max={totalLines}
               step={1}
               placeholder="From"
-              className="w-24"
+              className="flex-1 min-w-[120px]"
+              prefix="F"
+              inputClassName="text-sm"
             />
             <NumberField
               value={highlightTo === '' ? '' : Number(highlightTo)}
@@ -283,7 +301,9 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
               max={totalLines}
               step={1}
               placeholder="To"
-              className="w-24"
+              className="flex-1 min-w-[120px]"
+              prefix="T"
+              inputClassName="text-sm"
             />
             <SelectField
               value={highlightStyle}
@@ -293,7 +313,8 @@ const CodeInspector: React.FC<CodeInspectorProps> = ({ element }) => {
                 { value: 'added', label: 'Added' },
                 { value: 'removed', label: 'Removed' },
               ]}
-              triggerClassName="bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-white px-2 py-1.5 rounded text-sm"
+
+              triggerClassName="bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-white px-2 py-1.5 rounded text-sm w-full min-w-[130px]"
             />
           </div>
           <button
