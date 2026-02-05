@@ -1,16 +1,16 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type Konva from 'konva';
 import { useNavigate } from 'react-router-dom';
-import Canvas from './Canvas';
-import TopBar from './TopBar';
-import Toolbar from './Toolbar';
-import Inspector from './Inspector';
-import LayersPanel from './LayersPanel';
-import FontLoader from './FontLoader';
 import { useCanvasStore } from '../store/canvasStore';
 import { useRecentSnapsStore } from '../store/recentSnapsStore';
 import { Toaster } from 'sonner';
 import { useAppCommands } from '../hooks/useAppCommands';
+import FontLoader from '../components/FontLoader';
+import TopBar from '../components/TopBar';
+import Inspector from '../components/Inspector';
+import LayersPanel from '../components/LayersPanel';
+import Toolbar from '../components/Toolbar';
+import Canvas from '../components/Canvas';
 
 export default function Editor() {
     const stageRef = useRef<Konva.Stage>(null);
