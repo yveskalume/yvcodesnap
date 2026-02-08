@@ -304,3 +304,37 @@ export const GOOGLE_FONTS = [
   { name: 'IBM Plex Mono', url: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap' },
   { name: 'Cascadia Code', url: 'https://fonts.googleapis.com/css2?family=Cascadia+Code&display=swap' },
 ];
+
+// Auth and Cloud Types
+export interface User {
+  id: string;
+  email: string;
+  created_at: string;
+  subscription_tier?: 'free' | 'pro';
+}
+
+export interface CloudSnap {
+  id: string;
+  user_id: string;
+  title: string;
+  data: Snap;
+  thumbnail_url?: string;
+  created_at: string;
+  updated_at: string;
+  is_public: boolean;
+}
+
+export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
+
+export interface SyncState {
+  status: SyncStatus;
+  lastSyncAt?: number;
+  pendingChanges: number;
+  error?: string;
+}
+
+export interface Subscription {
+  tier: 'free' | 'pro';
+  snap_limit: number; // -1 for unlimited
+  current_snap_count: number;
+}

@@ -51,3 +51,6 @@ Then open the URL printed by Vite.
 
 - Product spec: [docs/spec.md](docs/spec.md)
 - UI design notes: [docs/design.md](docs/design.md)
+
+plugin marketplace add anthropics/claude-code                                                                                 
+     /plugin install frontend-design@claude-code-plugins  

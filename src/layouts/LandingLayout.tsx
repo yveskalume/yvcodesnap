@@ -1,15 +1,12 @@
 import { Outlet } from 'react-router-dom';
 import { Zap, Check, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useCanvasStore } from '../store/canvasStore';
 
 export default function LandingLayout() {
   const navigate = useNavigate();
-  const { newSnap } = useCanvasStore();
 
   const handleNewSnap = () => {
-    newSnap({ title: 'Untitled', aspect: '16:9', width: 1920, height: 1080 });
-    navigate('/editor');
+    navigate('/auth/login');
   };
 
   return (

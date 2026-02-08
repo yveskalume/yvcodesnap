@@ -1,12 +1,18 @@
 import React, { useState, useRef, useCallback, useMemo, memo, useEffect } from 'react';
 import { useCanvasStore } from '../store/canvasStore';
 import { useRecentSnapsStore } from '../store/recentSnapsStore';
+import { useAuthStore } from '../store/authStore';
+import { useSyncStore } from '../store/syncStore';
 import { ASPECT_RATIOS } from '../types';
 import type Konva from 'konva';
+import { useNavigate } from 'react-router-dom';
 import RecentSnapsDropdown from './RecentSnapsDropdown';
+import UserMenu from './auth/UserMenu';
+import CloudSnapsManager from './CloudSnapsManager';
 import { toast } from 'sonner';
 import SelectField from './ui/SelectField';
 import ThemeToggle from './ThemeToggle';
+import { Cloud } from 'lucide-react';
 
 interface TopBarProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -25,9 +31,11 @@ const TopBar: React.FC<TopBarProps> = ({
   showLayersPanel: _showLayersPanel,
   showInspector: _showInspector
 }) => {
+  const navigate = useNavigate();
   const [showRecentSnaps, setShowRecentSnaps] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exportTransparent, setExportTransparent] = useState(false);
+  const [savingToCloud, setSavingToCloud] = useState(false);
   const recentButtonRef = useRef<HTMLButtonElement>(null);
   const exportButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -44,6 +52,8 @@ const TopBar: React.FC<TopBarProps> = ({
   } = useCanvasStore();
 
   const { addRecentSnap } = useRecentSnapsStore();
+  const { user } = useAuthStore();
+  const { saveSnapToCloud } = useSyncStore();
 
   const aspectOptions = useMemo(() => {
     const names = ASPECT_RATIOS.map((r) => r.name);
@@ -204,6 +214,49 @@ const TopBar: React.FC<TopBarProps> = ({
     }
   }, [stageRef]);
 
+  const handleSaveToCloud = useCallback(async () => {
+    if (!user) {
+      setShowExportMenu(false);
+      navigate('/auth/login');
+      return;
+    }
+
+    const stage = stageRef.current;
+    if (!stage) {
+      toast.error('Canvas not ready');
+      return;
+    }
+
+    setSavingToCloud(true);
+    try {
+      // Generate thumbnail at lower quality for faster upload
+      const dataUrl = stage.toDataURL({ pixelRatio: 0.5 });
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+
+      // Check file size (limit to 500KB for thumbnail)
+      if (blob.size > 500 * 1024) {
+        toast.error('Thumbnail too large. Try simplifying your snap.');
+        setSavingToCloud(false);
+        return;
+      }
+
+      const result = await saveSnapToCloud(snap, blob);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Snap saved to cloud!');
+        setShowExportMenu(false);
+        addRecentSnap(snap);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save to cloud');
+    } finally {
+      setSavingToCloud(false);
+    }
+  }, [user, navigate, stageRef, snap, saveSnapToCloud, addRecentSnap]);
+
   useEffect(() => {
     const handleGlobalCopy = () => handleCopyImage();
     window.addEventListener('copy-canvas-image' as any, handleGlobalCopy);
@@ -350,6 +403,25 @@ const TopBar: React.FC<TopBarProps> = ({
 
           <div className="hidden sm:block h-6 w-px bg-neutral-200 dark:bg-white/10" />
 
+          {/* Auth & Cloud */}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <CloudSnapsManager />
+                <UserMenu />
+              </>
+            ) : (
+              <button
+                onClick={() => navigate('/auth/login')}
+                className="hidden sm:flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+
+          <div className="hidden sm:block h-6 w-px bg-neutral-200 dark:bg-white/10" />
+
           <div className="relative z-50">
             <button
               ref={exportButtonRef}
@@ -392,6 +464,24 @@ const TopBar: React.FC<TopBarProps> = ({
                       </div>
                     </div>
                   </button>
+
+                  {user && (
+                    <button
+                      onClick={handleSaveToCloud}
+                      disabled={savingToCloud}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-cyan-100 dark:bg-cyan-600/10 hover:bg-cyan-200 dark:hover:bg-cyan-600/20 border border-cyan-200 dark:border-cyan-500/20 hover:border-cyan-300 dark:hover:border-cyan-500/40 transition-all group active:scale-[0.98] disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-cyan-200 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <Cloud className="w-5 h-5" />
+                        </div>
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="text-sm font-medium text-cyan-600 dark:text-cyan-400">{savingToCloud ? 'Saving...' : 'Save to Cloud'}</span>
+                          <span className="text-[10px] text-cyan-600/70 dark:text-cyan-500/70">Backup & sync</span>
+                        </div>
+                      </div>
+                    </button>
+                  )}
                 </div>
 
                 <div className="px-3 py-2 mt-2">
@@ -487,6 +577,7 @@ const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
       </div>
+
     </>
   );
 };
